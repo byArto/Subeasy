@@ -132,7 +132,10 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
+    <div
+      className="app-container fixed inset-0 flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]"
+      style={{ height: '100dvh' }}
+    >
       <Header
         title={tabTitles[activeTab]}
         collapsed={headerCollapsed}

@@ -142,10 +142,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -153,9 +155,6 @@ html, body {
   -webkit-overflow-scrolling: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body {
   background-color: #0A0A0F;
   color: #F0F0F5;
   font-family: 'Manrope', sans-serif;
@@ -165,28 +164,33 @@ body {
 /* ── App shell container ── */
 #__next,
 .app-shell {
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   overscroll-behavior: none;
 }
 
-/* ── iOS standalone PWA: fill entire screen ── */
+/* ── Standalone PWA (Home Screen) ── */
 @media all and (display-mode: standalone) {
-  html, body {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 100% !important;
+  .app-container {
+    height: 100vh;
+    height: 100dvh;
   }
+}
 
-  #__next,
-  .app-shell {
-    height: 100% !important;
+/* ── Regular browser ── */
+@media not all and (display-mode: standalone) {
+  .app-container {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
+/* ── dvh fallback ── */
+@supports not (height: 100dvh) {
+  .app-container {
+    height: -webkit-fill-available;
   }
 }
 

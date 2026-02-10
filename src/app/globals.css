@@ -144,6 +144,7 @@
 
 html {
   height: 100%;
+  background-color: #111118; /* surface-2: fills safe area to match TabBar */
 }
 
 body {

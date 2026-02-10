@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { CURRENCY_SYMBOLS, CYCLE_LABELS, PAYMENT_METHODS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 
 /* ── Constants ── */
@@ -23,6 +23,49 @@ const COLOR_PALETTE = [
 
 const CURRENCIES: Currency[] = ['RUB', 'USD', 'EUR'];
 const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time'];
+
+/* ── Payment method encoding ── */
+
+type PaymentType = 'card' | 'crypto' | 'paypal' | 'other';
+type CardType = 'physical' | 'virtual';
+
+const PAYMENT_TYPES: { type: PaymentType; label: string }[] = [
+  { type: 'card', label: 'Карта' },
+  { type: 'crypto', label: 'Крипто' },
+  { type: 'paypal', label: 'PayPal' },
+  { type: 'other', label: 'Другое' },
+];
+
+function parsePaymentMethod(raw: string): { type: PaymentType; cardType: CardType; detail: string } {
+  if (raw.startsWith('card:')) {
+    const rest = raw.substring(5);
+    const idx = rest.indexOf(':');
+    if (idx >= 0) {
+      const ct = rest.substring(0, idx) === 'virtual' ? 'virtual' : 'physical';
+      return { type: 'card', cardType: ct, detail: rest.substring(idx + 1) };
+    }
+    return { type: 'card', cardType: 'physical', detail: '' };
+  }
+  if (raw.startsWith('crypto:')) return { type: 'crypto', cardType: 'physical', detail: raw.substring(7) };
+  if (raw.startsWith('paypal:')) return { type: 'paypal', cardType: 'physical', detail: raw.substring(7) };
+  if (raw.startsWith('other:')) return { type: 'other', cardType: 'physical', detail: raw.substring(6) };
+
+  // Legacy values
+  if (raw === 'Карта' || raw === 'Apple Pay' || raw === 'Google Pay') return { type: 'card', cardType: 'physical', detail: '' };
+  if (raw === 'Крипто') return { type: 'crypto', cardType: 'physical', detail: '' };
+  if (raw === 'PayPal') return { type: 'paypal', cardType: 'physical', detail: '' };
+  return { type: 'other', cardType: 'physical', detail: raw === 'Другое' ? '' : raw };
+}
+
+function encodePaymentMethod(type: PaymentType, cardType: CardType, detail: string): string {
+  const d = detail.trim();
+  switch (type) {
+    case 'card': return `card:${cardType}:${d}`;
+    case 'crypto': return `crypto:${d}`;
+    case 'paypal': return `paypal:${d}`;
+    case 'other': return `other:${d}`;
+  }
+}
 
 /* ── Types ── */
 
@@ -75,7 +118,10 @@ export function SubForm({
   const [nextPaymentDate, setNextPaymentDate] = useState(
     initialData?.nextPaymentDate || new Date().toISOString().split('T')[0]
   );
-  const [paymentMethod, setPaymentMethod] = useState(initialData?.paymentMethod || 'Карта');
+  const initialParsed = parsePaymentMethod(initialData?.paymentMethod || 'Карта');
+  const [paymentType, setPaymentType] = useState<PaymentType>(initialParsed.type);
+  const [cardType, setCardType] = useState<CardType>(initialParsed.cardType);
+  const [paymentDetail, setPaymentDetail] = useState(initialParsed.detail);
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [color, setColor] = useState(initialData?.color || '#007AFF');
 
@@ -121,7 +167,7 @@ export function SubForm({
       cycle,
       nextPaymentDate,
       startDate: initialData?.startDate || new Date().toISOString().split('T')[0],
-      paymentMethod,
+      paymentMethod: encodePaymentMethod(paymentType, cardType, paymentDetail),
       notes: notes.trim(),
       color,
       icon,
@@ -440,24 +486,159 @@ export function SubForm({
         animate="visible"
       >
         <FieldLabel text="Способ оплаты" />
+
+        {/* Type pills */}
         <div className="flex flex-wrap gap-1.5">
-          {PAYMENT_METHODS.map((m) => (
+          {PAYMENT_TYPES.map((m) => (
             <motion.button
-              key={m}
+              key={m.type}
               type="button"
               whileTap={{ scale: 0.93 }}
-              onClick={() => setPaymentMethod(m)}
+              onClick={() => {
+                if (m.type !== paymentType) {
+                  setPaymentType(m.type);
+                  setPaymentDetail('');
+                  if (m.type === 'card') setCardType('physical');
+                }
+              }}
               className={cn(
                 'min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-colors',
-                paymentMethod === m
+                paymentType === m.type
                   ? 'bg-neon text-surface'
                   : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
               )}
             >
-              {m}
+              {m.label}
             </motion.button>
           ))}
         </div>
+
+        {/* Expandable details per type */}
+        <AnimatePresence mode="wait">
+          {paymentType === 'card' && (
+            <motion.div
+              key="card-fields"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-2.5 mt-2.5">
+                {/* Physical / Virtual toggle */}
+                <div className="flex gap-1.5">
+                  {([
+                    { value: 'physical' as const, label: '🏦 Физическая' },
+                    { value: 'virtual' as const, label: '📱 Виртуальная' },
+                  ]).map((ct) => (
+                    <motion.button
+                      key={ct.value}
+                      type="button"
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => setCardType(ct.value)}
+                      className={cn(
+                        'flex-1 min-h-[36px] rounded-xl text-xs font-semibold transition-colors',
+                        cardType === ct.value
+                          ? 'bg-surface-4 text-text-primary border border-neon/30'
+                          : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
+                      )}
+                    >
+                      {ct.label}
+                    </motion.button>
+                  ))}
+                </div>
+
+                {/* Card name */}
+                <input
+                  type="text"
+                  value={paymentDetail}
+                  onChange={(e) => setPaymentDetail(e.target.value)}
+                  placeholder="Название карты (Tinkoff Black, Альфа...)"
+                  className={cn(
+                    'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+                    'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                  )}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {paymentType === 'crypto' && (
+            <motion.div
+              key="crypto-fields"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2.5">
+                <input
+                  type="text"
+                  value={paymentDetail}
+                  onChange={(e) => setPaymentDetail(e.target.value)}
+                  placeholder="Кошелёк / сеть (Bitcoin, USDT TRC-20...)"
+                  className={cn(
+                    'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+                    'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                  )}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {paymentType === 'paypal' && (
+            <motion.div
+              key="paypal-fields"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2.5">
+                <input
+                  type="text"
+                  value={paymentDetail}
+                  onChange={(e) => setPaymentDetail(e.target.value)}
+                  placeholder="Email или заметка"
+                  className={cn(
+                    'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+                    'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                  )}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {paymentType === 'other' && (
+            <motion.div
+              key="other-fields"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2.5">
+                <input
+                  type="text"
+                  value={paymentDetail}
+                  onChange={(e) => setPaymentDetail(e.target.value)}
+                  placeholder="Способ оплаты..."
+                  className={cn(
+                    'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+                    'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                  )}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* ── Color ── */}

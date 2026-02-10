@@ -73,6 +73,38 @@ function getStatusBadge(sub: Subscription) {
   return { variant: 'success' as const, label: 'Активна', pulse: false };
 }
 
+/* ── Payment method display ── */
+
+function formatPaymentMethod(raw: string): React.ReactNode {
+  if (raw.startsWith('card:')) {
+    const rest = raw.substring(5);
+    const idx = rest.indexOf(':');
+    const ct = idx >= 0 ? rest.substring(0, idx) : 'physical';
+    const name = idx >= 0 ? rest.substring(idx + 1).trim() : '';
+    const typeLabel = ct === 'virtual' ? 'Виртуальная' : 'Физическая';
+    return (
+      <span className="flex flex-col items-end gap-0.5">
+        <span>💳 {typeLabel} карта</span>
+        {name && <span className="text-text-muted text-xs">{name}</span>}
+      </span>
+    );
+  }
+  if (raw.startsWith('crypto:')) {
+    const detail = raw.substring(7).trim();
+    return detail ? <span>🪙 {detail}</span> : <span>🪙 Криптовалюта</span>;
+  }
+  if (raw.startsWith('paypal:')) {
+    const detail = raw.substring(7).trim();
+    return detail ? <span>PayPal · {detail}</span> : <span>PayPal</span>;
+  }
+  if (raw.startsWith('other:')) {
+    const detail = raw.substring(6).trim();
+    return <span>{detail || 'Другое'}</span>;
+  }
+  // Legacy string values
+  return <span>{raw || '—'}</span>;
+}
+
 /* ── Stagger ── */
 
 const rowVariants = {
@@ -155,7 +187,7 @@ export function SubDetail({
     },
     {
       label: 'Метод оплаты',
-      value: sub.paymentMethod || '—',
+      value: formatPaymentMethod(sub.paymentMethod),
     },
     {
       label: 'Дата начала',

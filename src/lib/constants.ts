@@ -35,9 +35,7 @@ export const CYCLE_LABELS: Record<string, string> = {
 
 export const PAYMENT_METHODS = [
   'Карта',
-  'Apple Pay',
-  'Google Pay',
-  'PayPal',
   'Крипто',
+  'PayPal',
   'Другое',
 ];

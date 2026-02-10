@@ -143,13 +143,11 @@
 }
 
 html, body {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: auto;
@@ -167,11 +165,10 @@ body {
 /* ── App shell container ── */
 #__next,
 .app-shell {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   overscroll-behavior: none;
 }

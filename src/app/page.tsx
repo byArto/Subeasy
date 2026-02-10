@@ -132,7 +132,7 @@ export default function Home() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="flex flex-col h-dvh overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
         title={tabTitles[activeTab]}
         collapsed={headerCollapsed}
@@ -140,7 +140,7 @@ export default function Home() {
         onNotificationTap={activeTab === 'home' ? () => {} : undefined}
       />
 
-      <main ref={mainRef} className="flex-1 scrollable-content">
+      <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
@@ -148,7 +148,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: tabDirection * -40 }}
             transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-            className="pb-20"
+            className="pb-4"
           >
             {activeTab === 'home' && (
               <HomeTab

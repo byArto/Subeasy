@@ -1,20 +1,24 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
+
+function getSnapshot(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+  );
+}
+
+function getServerSnapshot(): boolean {
+  return false;
+}
+
+function subscribe(callback: () => void): () => void {
+  const mql = window.matchMedia('(display-mode: standalone)');
+  mql.addEventListener('change', callback);
+  return () => mql.removeEventListener('change', callback);
+}
 
 export function useStandaloneMode(): boolean {
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-    setIsStandalone(standalone);
-
-    const mql = window.matchMedia('(display-mode: standalone)');
-    const handler = (e: MediaQueryListEvent) => setIsStandalone(e.matches);
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
-
-  return isStandalone;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

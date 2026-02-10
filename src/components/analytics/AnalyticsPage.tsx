@@ -55,6 +55,26 @@ function formatAmount(n: number): string {
   return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
 }
 
+/** Total monthly cost of all subs active during a given month */
+function getMonthlyTotal(
+  subscriptions: Subscription[],
+  year: number,
+  month: number,
+  rate: number,
+  displayCurrency: string,
+): number {
+  const monthEnd = new Date(year, month + 1, 0); // last day of month
+  return subscriptions
+    .filter((sub) => {
+      if (!sub.isActive) return false;
+      return new Date(sub.startDate) <= monthEnd;
+    })
+    .reduce((total, sub) => {
+      const monthly = getMonthlyPrice(sub);
+      return total + convertCurrency(monthly, sub.currency as Currency, displayCurrency as Currency, rate);
+    }, 0);
+}
+
 /* ── Component ── */
 
 export function AnalyticsPage({ subscriptions, categories, settings }: AnalyticsPageProps) {
@@ -226,64 +246,64 @@ function MonthComparison({
   symbol: string;
 }) {
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
-  const activeSubs = subscriptions.filter((s) => s.isActive);
+  const thisMonthTotal = getMonthlyTotal(subscriptions, currentYear, currentMonth, exchangeRate, displayCurrency);
 
-  // Current month: all active subscriptions monthly total
-  const currentTotal = activeSubs.reduce(
-    (sum, s) => sum + getMonthlyInCurrency(s, displayCurrency, exchangeRate), 0,
-  );
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const lastMonthTotal = getMonthlyTotal(subscriptions, prevYear, prevMonth, exchangeRate, displayCurrency);
 
-  // Previous month: subscriptions that existed before start of current month
-  const prevMonthSubs = activeSubs.filter((s) => new Date(s.startDate) < startOfMonth);
-  const prevTotal = prevMonthSubs.reduce(
-    (sum, s) => sum + getMonthlyInCurrency(s, displayCurrency, exchangeRate), 0,
-  );
-
-  const hasEnoughData = prevMonthSubs.length > 0 && prevTotal > 0;
-  const diff = hasEnoughData ? currentTotal - prevTotal : 0;
-  const pct = hasEnoughData ? Math.round((diff / prevTotal) * 100) : 0;
+  const diff = thisMonthTotal - lastMonthTotal;
+  const pct = lastMonthTotal > 0 ? Math.round((diff / lastMonthTotal) * 100) : 0;
   const isUp = diff > 0;
+  const isNewPeriod = lastMonthTotal === 0 && thisMonthTotal > 0;
 
   return (
     <div>
       <SectionHeader title="Сравнение" />
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
-        {hasEnoughData ? (
-          <div className="flex items-center gap-3">
-            {/* This month */}
-            <div className="flex-1 text-center">
-              <p className="text-[11px] text-text-muted mb-1">Этот месяц</p>
-              <p className="text-sm font-bold text-text-primary tabular-nums">
-                {formatAmount(Math.round(currentTotal))} {symbol}
-              </p>
-            </div>
-
-            {/* Arrow + percentage */}
-            <div className="flex flex-col items-center gap-0.5 shrink-0">
-              <span className={cn('text-lg', isUp ? 'text-danger' : 'text-neon')}>
-                {isUp ? '↑' : '↓'}
-              </span>
-              <span className={cn(
-                'text-xs font-bold',
-                isUp ? 'text-danger' : 'text-neon',
-              )}>
-                {isUp ? '+' : ''}{pct}%
-              </span>
-            </div>
-
-            {/* Previous month */}
-            <div className="flex-1 text-center">
-              <p className="text-[11px] text-text-muted mb-1">Прошлый месяц</p>
-              <p className="text-sm font-bold text-text-secondary tabular-nums">
-                {formatAmount(Math.round(prevTotal))} {symbol}
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          {/* This month */}
+          <div className="flex-1 text-center">
+            <p className="text-[11px] text-text-muted mb-1">Этот месяц</p>
+            <p className="text-sm font-bold text-text-primary tabular-nums">
+              {formatAmount(Math.round(thisMonthTotal))} {symbol}
+            </p>
           </div>
-        ) : (
-          <p className="text-center text-xs text-text-muted py-2">
-            Недостаточно данных для сравнения
+
+          {/* Arrow + percentage */}
+          <div className="flex flex-col items-center gap-0.5 shrink-0">
+            {isNewPeriod ? (
+              <span className="text-xs font-bold text-neon">NEW</span>
+            ) : (
+              <>
+                <span className={cn('text-lg', isUp ? 'text-danger' : diff < 0 ? 'text-neon' : 'text-text-muted')}>
+                  {isUp ? '↑' : diff < 0 ? '↓' : '='}
+                </span>
+                <span className={cn(
+                  'text-xs font-bold',
+                  isUp ? 'text-danger' : diff < 0 ? 'text-neon' : 'text-text-muted',
+                )}>
+                  {isUp ? '+' : ''}{pct}%
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Previous month */}
+          <div className="flex-1 text-center">
+            <p className="text-[11px] text-text-muted mb-1">Прошлый месяц</p>
+            <p className="text-sm font-bold text-text-secondary tabular-nums">
+              {formatAmount(Math.round(lastMonthTotal))} {symbol}
+            </p>
+          </div>
+        </div>
+
+        {isNewPeriod && (
+          <p className="text-center text-[11px] text-text-muted mt-2">
+            Новый период отслеживания
           </p>
         )}
       </div>
@@ -505,28 +525,13 @@ function SpendingTimeline({
   symbol: string;
 }) {
   const data = useMemo(() => {
-    const active = subscriptions.filter((s) => s.isActive);
-    if (active.length === 0) return [];
-
     const now = new Date();
     const points: MonthPoint[] = [];
+    const monthsBack = 6;
 
-    // Go back up to 11 months from current month
-    for (let i = 11; i >= 0; i--) {
+    for (let i = monthsBack - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-
-      // Subscriptions that were active during this month
-      const subsForMonth = active.filter((s) => {
-        const start = new Date(s.startDate);
-        return start <= monthEnd;
-      });
-
-      if (subsForMonth.length === 0 && points.length === 0) continue;
-
-      const total = subsForMonth.reduce(
-        (sum, s) => sum + getMonthlyInCurrency(s, displayCurrency, exchangeRate), 0,
-      );
+      const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
 
       points.push({
         label: MONTH_NAMES_SHORT[d.getMonth()],
@@ -537,13 +542,16 @@ function SpendingTimeline({
     return points;
   }, [subscriptions, displayCurrency, exchangeRate]);
 
-  if (data.length < 2) {
+  const hasAnyData = data.some((p) => p.total > 0);
+  const monthsWithData = data.filter((p) => p.total > 0).length;
+
+  if (!hasAnyData) {
     return (
       <div>
         <SectionHeader title="Динамика расходов" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6">
           <p className="text-center text-xs text-text-muted">
-            Копим данные для графика...
+            Добавьте подписки для аналитики
           </p>
         </div>
       </div>
@@ -591,6 +599,11 @@ function SpendingTimeline({
             />
           </AreaChart>
         </ResponsiveContainer>
+        {monthsWithData < 2 && (
+          <p className="text-center text-[11px] text-text-muted mt-2">
+            Копим историю... Данные за {monthsWithData} мес.
+          </p>
+        )}
       </div>
     </div>
   );

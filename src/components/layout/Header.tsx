@@ -9,6 +9,8 @@ interface HeaderProps {
   collapsed?: boolean;
   onSearchTap?: () => void;
   onNotificationTap?: () => void;
+  notificationCount?: number;
+  hasDanger?: boolean;
   className?: string;
 }
 
@@ -17,6 +19,8 @@ export function Header({
   collapsed = false,
   onSearchTap,
   onNotificationTap,
+  notificationCount = 0,
+  hasDanger = false,
   className,
 }: HeaderProps) {
   return (
@@ -68,6 +72,19 @@ export function Header({
               className="relative flex items-center justify-center w-10 h-10 rounded-full active:bg-surface-3 transition-colors"
             >
               <BellIcon className="w-[22px] h-[22px] text-text-secondary" />
+              {notificationCount > 0 && (
+                <span
+                  className={cn(
+                    'absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1',
+                    'flex items-center justify-center',
+                    'bg-danger rounded-full',
+                    'text-[10px] font-bold text-white leading-none',
+                    hasDanger && 'animate-pulse',
+                  )}
+                >
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
             </motion.button>
           )}
         </div>

@@ -18,6 +18,8 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Subscription } from '@/lib/types';
+import { SearchPanel } from '@/components/search/SearchPanel';
+import { NotificationPanel, getUrgentCount, hasDangerNotifications } from '@/components/notifications/NotificationPanel';
 
 /* ── Lazy-loaded heavy components ── */
 const SubForm = dynamic(() =>
@@ -57,6 +59,8 @@ export default function Home() {
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [tabDirection, setTabDirection] = useState(0);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
@@ -136,8 +140,10 @@ export default function Home() {
       <Header
         title={tabTitles[activeTab]}
         collapsed={headerCollapsed}
-        onSearchTap={activeTab === 'home' ? () => {} : undefined}
-        onNotificationTap={activeTab === 'home' ? () => {} : undefined}
+        onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
+        onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
+        notificationCount={activeTab === 'home' ? getUrgentCount(subscriptions) : 0}
+        hasDanger={activeTab === 'home' ? hasDangerNotifications(subscriptions) : false}
       />
 
       <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
@@ -200,6 +206,22 @@ export default function Home() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onFabTap={openAdd}
+      />
+
+      {/* Search Panel */}
+      <SearchPanel
+        open={showSearch}
+        subscriptions={subscriptions}
+        categories={categories}
+        onClose={() => setShowSearch(false)}
+        onSelectSubscription={openDetail}
+      />
+
+      {/* Notification Panel */}
+      <NotificationPanel
+        open={showNotifications}
+        subscriptions={subscriptions}
+        onClose={() => setShowNotifications(false)}
       />
 
       {/* Add Modal */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Subscription } from '@/lib/types';
 import { getDaysUntilPayment, cn } from '@/lib/utils';
@@ -8,7 +8,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 
 /* ── Types ── */
 
-interface NotificationItem {
+export interface NotificationItem {
   id: string;
   type: 'danger' | 'warning' | 'info';
   icon: string;
@@ -22,6 +22,9 @@ interface NotificationPanelProps {
   open: boolean;
   subscriptions: Subscription[];
   onClose: () => void;
+  isRead: (id: string) => boolean;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: (ids: string[]) => void;
 }
 
 /* ── Helpers ── */
@@ -49,10 +52,12 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
   subscriptions.filter((s) => s.isActive).forEach((sub) => {
     const daysUntil = getDaysUntilPayment(sub.nextPaymentDate);
     const price = formatPrice(sub.price, sub.currency);
+    // Stable ID: subId-type-nextPaymentDate
+    const dateKey = sub.nextPaymentDate;
 
     if (daysUntil < 0) {
       items.push({
-        id: sub.id + '-overdue',
+        id: `${sub.id}-overdue-${dateKey}`,
         type: 'danger',
         icon: '🔴',
         title: `${sub.name} — платёж просрочен`,
@@ -62,7 +67,7 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       });
     } else if (daysUntil === 0) {
       items.push({
-        id: sub.id + '-today',
+        id: `${sub.id}-today-${dateKey}`,
         type: 'danger',
         icon: '⚡',
         title: `${sub.name} — платёж сегодня!`,
@@ -72,7 +77,7 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       });
     } else if (daysUntil <= 3) {
       items.push({
-        id: sub.id + '-soon',
+        id: `${sub.id}-soon-${dateKey}`,
         type: 'warning',
         icon: '⏰',
         title: `${sub.name} — через ${daysUntil} дн.`,
@@ -82,7 +87,7 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       });
     } else if (daysUntil <= 7) {
       items.push({
-        id: sub.id + '-week',
+        id: `${sub.id}-week-${dateKey}`,
         type: 'info',
         icon: '📅',
         title: `${sub.name} — через ${daysUntil} дн.`,
@@ -93,26 +98,38 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
     }
   });
 
-  // Sort: overdue first (most negative), then by closest date
   return items.sort((a, b) => a.daysUntil - b.daysUntil);
-}
-
-/** Count of danger + warning notifications (for badge) */
-export function getUrgentCount(subscriptions: Subscription[]): number {
-  return generateNotifications(subscriptions).filter(
-    (n) => n.type === 'danger' || n.type === 'warning',
-  ).length;
-}
-
-/** Whether any danger notifications exist (for pulse animation) */
-export function hasDangerNotifications(subscriptions: Subscription[]): boolean {
-  return generateNotifications(subscriptions).some((n) => n.type === 'danger');
 }
 
 /* ── Component ── */
 
-export function NotificationPanel({ open, subscriptions, onClose }: NotificationPanelProps) {
+export function NotificationPanel({
+  open,
+  subscriptions,
+  onClose,
+  isRead,
+  onMarkAsRead,
+  onMarkAllAsRead,
+}: NotificationPanelProps) {
   const notifications = useMemo(() => generateNotifications(subscriptions), [subscriptions]);
+
+  const unread = useMemo(() => notifications.filter((n) => !isRead(n.id)), [notifications, isRead]);
+  const read = useMemo(() => notifications.filter((n) => isRead(n.id)), [notifications, isRead]);
+
+  const [showDone, setShowDone] = useState(false);
+
+  // Reset "done" flash when panel closes
+  useEffect(() => {
+    if (!open) setShowDone(false);
+  }, [open]);
+
+  function handleMarkAll() {
+    onMarkAllAsRead(notifications.map((n) => n.id));
+    setShowDone(true);
+    setTimeout(() => setShowDone(false), 1500);
+  }
+
+  const allRead = notifications.length > 0 && unread.length === 0;
 
   return (
     <AnimatePresence>
@@ -148,13 +165,44 @@ export function NotificationPanel({ open, subscriptions, onClose }: Notification
               <h2 className="font-display font-bold text-base text-text-primary">
                 Уведомления
               </h2>
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="text-sm font-medium text-text-secondary px-2 py-1"
-              >
-                Готово
-              </motion.button>
+
+              <div className="flex items-center gap-2">
+                {/* Mark all as read */}
+                <AnimatePresence mode="wait">
+                  {unread.length > 0 && !showDone && (
+                    <motion.button
+                      key="mark-all"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleMarkAll}
+                      className="text-xs font-medium text-neon px-2 py-1"
+                    >
+                      Прочитать все
+                    </motion.button>
+                  )}
+                  {showDone && (
+                    <motion.span
+                      key="done"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-xs font-medium text-neon px-2 py-1"
+                    >
+                      ✓ Готово
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={onClose}
+                  className="text-sm font-medium text-text-secondary px-2 py-1"
+                >
+                  Закрыть
+                </motion.button>
+              </div>
             </div>
 
             {/* Notification list */}
@@ -167,38 +215,72 @@ export function NotificationPanel({ open, subscriptions, onClose }: Notification
                     Нет предстоящих платежей на ближайшую неделю
                   </p>
                 </div>
+              ) : allRead ? (
+                /* All read state */
+                <div className="flex flex-col items-center py-10 gap-3">
+                  <span className="text-3xl">✅</span>
+                  <p className="text-sm font-medium text-neon">Всё прочитано</p>
+                  <p className="text-xs text-text-muted text-center max-w-[240px]">
+                    Уведомления появятся при приближении даты платежа
+                  </p>
+
+                  {/* Show read items below, faded */}
+                  <div className="w-full mt-4 space-y-1.5">
+                    <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
+                      Ранее
+                    </p>
+                    {read.map((notif, i) => (
+                      <NotifRow
+                        key={notif.id}
+                        notif={notif}
+                        index={i}
+                        isRead
+                        onTap={() => {}}
+                      />
+                    ))}
+                  </div>
+                </div>
               ) : (
-                <div className="space-y-2">
-                  {notifications.map((notif, i) => (
-                    <motion.div
-                      key={notif.id}
-                      initial={{ opacity: 0, x: -12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 30 }}
-                      className={cn(
-                        'flex items-start gap-3 p-3.5',
-                        'bg-surface-3 rounded-xl',
-                        'border-l-[3px]',
-                        TYPE_BORDER[notif.type],
-                      )}
-                    >
-                      {/* Icon */}
-                      <span className="text-lg shrink-0 mt-0.5">{notif.icon}</span>
-
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-text-primary leading-snug">
-                          {notif.title}
-                        </p>
-                        <p className="text-xs text-text-muted mt-0.5">{notif.subtitle}</p>
+                <div className="space-y-4">
+                  {/* Unread group */}
+                  {unread.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
+                        Новые
+                      </p>
+                      <div className="space-y-2">
+                        {unread.map((notif, i) => (
+                          <NotifRow
+                            key={notif.id}
+                            notif={notif}
+                            index={i}
+                            isRead={false}
+                            onTap={() => onMarkAsRead(notif.id)}
+                          />
+                        ))}
                       </div>
+                    </div>
+                  )}
 
-                      {/* Time */}
-                      <span className="text-[11px] text-text-muted shrink-0 mt-0.5">
-                        {notif.time}
-                      </span>
-                    </motion.div>
-                  ))}
+                  {/* Read group */}
+                  {read.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
+                        Ранее
+                      </p>
+                      <div className="space-y-1.5">
+                        {read.map((notif, i) => (
+                          <NotifRow
+                            key={notif.id}
+                            notif={notif}
+                            index={unread.length + i}
+                            isRead
+                            onTap={() => {}}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -206,5 +288,59 @@ export function NotificationPanel({ open, subscriptions, onClose }: Notification
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+/* ── Notification row ── */
+
+function NotifRow({
+  notif,
+  index,
+  isRead,
+  onTap,
+}: {
+  notif: NotificationItem;
+  index: number;
+  isRead: boolean;
+  onTap: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: isRead ? 0.5 : 1, x: 0 }}
+      transition={{ delay: index * 0.04, type: 'spring', stiffness: 300, damping: 30 }}
+      onClick={onTap}
+      className={cn(
+        'flex items-start gap-3 p-3.5',
+        'bg-surface-3 rounded-xl',
+        isRead
+          ? 'border-l-[3px] border-l-transparent'
+          : cn('border-l-[3px]', TYPE_BORDER[notif.type]),
+        !isRead && 'cursor-pointer active:bg-surface-4 transition-colors',
+      )}
+    >
+      {/* Icon */}
+      <span className="text-lg shrink-0 mt-0.5">
+        {isRead ? '✓' : notif.icon}
+      </span>
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            'text-sm font-semibold leading-snug',
+            isRead ? 'text-text-muted' : 'text-text-primary',
+          )}
+        >
+          {notif.title}
+        </p>
+        <p className="text-xs text-text-muted mt-0.5">{notif.subtitle}</p>
+      </div>
+
+      {/* Time */}
+      <span className="text-[11px] text-text-muted shrink-0 mt-0.5">
+        {notif.time}
+      </span>
+    </motion.div>
   );
 }

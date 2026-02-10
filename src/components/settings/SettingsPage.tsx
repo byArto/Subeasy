@@ -89,7 +89,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.2.0',
+      version: '1.2.1',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -482,7 +482,7 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             NeonSub
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.2.0</p>
+          <p className="text-xs text-text-muted">Версия 1.2.1</p>
           <p className="text-xs text-text-secondary mt-1">Сделано для личного использования</p>
         </div>
       </motion.div>

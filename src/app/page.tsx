@@ -19,7 +19,8 @@ import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Subscription } from '@/lib/types';
 import { SearchPanel } from '@/components/search/SearchPanel';
-import { NotificationPanel, getUrgentCount, hasDangerNotifications } from '@/components/notifications/NotificationPanel';
+import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
+import { useNotificationRead } from '@/hooks/useNotificationRead';
 
 /* ── Lazy-loaded heavy components ── */
 const SubForm = dynamic(() =>
@@ -107,6 +108,25 @@ export default function Home() {
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(subscriptions, settings);
 
+  // Notification read state
+  const { isRead, markAsRead, markAllAsRead, cleanup } = useNotificationRead();
+  const allNotifications = useMemo(() => generateNotifications(subscriptions), [subscriptions]);
+  const unreadCount = useMemo(
+    () => allNotifications.filter((n) => !isRead(n.id)).length,
+    [allNotifications, isRead],
+  );
+  const hasUnreadDanger = useMemo(
+    () => allNotifications.some((n) => n.type === 'danger' && !isRead(n.id)),
+    [allNotifications, isRead],
+  );
+
+  // Cleanup stale read IDs on mount
+  useEffect(() => {
+    if (allNotifications.length > 0 || subscriptions.length > 0) {
+      cleanup(allNotifications.map((n) => n.id));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleTabChange = useCallback((tab: TabId) => {
     const prevIdx = TAB_ORDER.indexOf(activeTab);
     const nextIdx = TAB_ORDER.indexOf(tab);
@@ -142,8 +162,8 @@ export default function Home() {
         collapsed={headerCollapsed}
         onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
         onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
-        notificationCount={activeTab === 'home' ? getUrgentCount(subscriptions) : 0}
-        hasDanger={activeTab === 'home' ? hasDangerNotifications(subscriptions) : false}
+        notificationCount={activeTab === 'home' ? unreadCount : 0}
+        hasDanger={activeTab === 'home' ? hasUnreadDanger : false}
       />
 
       <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
@@ -222,6 +242,9 @@ export default function Home() {
         open={showNotifications}
         subscriptions={subscriptions}
         onClose={() => setShowNotifications(false)}
+        isRead={isRead}
+        onMarkAsRead={markAsRead}
+        onMarkAllAsRead={markAllAsRead}
       />
 
       {/* Add Modal */}

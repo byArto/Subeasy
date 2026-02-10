@@ -16,6 +16,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Subscription } from '@/lib/types';
 
 /* ── Lazy-loaded heavy components ── */
@@ -75,6 +76,21 @@ export default function Home() {
   const { settings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
 
   const { playSuccess, playDelete } = useSound();
+
+  // Auto exchange rate from CBR
+  const {
+    rate: autoRate,
+    lastUpdated: rateLastUpdated,
+    isLoading: rateIsLoading,
+    refresh: refreshRate,
+  } = useExchangeRate(settings.exchangeRate);
+
+  // Sync auto rate to settings (only if not using manual rate)
+  useEffect(() => {
+    if (!settings.useManualRate && autoRate !== settings.exchangeRate) {
+      setExchangeRate(autoRate);
+    }
+  }, [autoRate, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(subscriptions, settings);
@@ -153,6 +169,9 @@ export default function Home() {
                 updateCategory={updateCategory}
                 deleteCategory={deleteCategory}
                 subscriptions={subscriptions}
+                rateLastUpdated={rateLastUpdated}
+                rateIsLoading={rateIsLoading}
+                onRefreshRate={refreshRate}
               />
             )}
           </motion.div>

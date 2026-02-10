@@ -29,7 +29,8 @@ export interface Category {
 
 export interface AppSettings {
   displayCurrency: DisplayCurrency;
-  exchangeRate: number; // ручной курс RUB/USD
+  exchangeRate: number; // курс RUB/USD
+  useManualRate: boolean; // true = ручной курс, false = авто от ЦБ
   notificationsEnabled: boolean;
   notifyDaysBefore: number; // за сколько дней до платежа
 }

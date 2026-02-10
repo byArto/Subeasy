@@ -20,6 +20,9 @@ interface SettingsPageProps {
   updateCategory: (id: string, u: Partial<Category>) => void;
   deleteCategory: (id: string) => void;
   subscriptions: Subscription[];
+  rateLastUpdated: string | null;
+  rateIsLoading: boolean;
+  onRefreshRate: () => Promise<number>;
 }
 
 /* ── Stagger ── */
@@ -49,6 +52,9 @@ export function SettingsPage({
   updateCategory,
   deleteCategory,
   subscriptions,
+  rateLastUpdated,
+  rateIsLoading,
+  onRefreshRate,
 }: SettingsPageProps) {
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -163,31 +169,96 @@ export function SettingsPage({
             <CurrencySwitch value={settings.displayCurrency} onToggle={toggleCurrency} />
           </div>
 
-          {/* Exchange rate */}
-          <div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-text-primary font-medium">Курс USD/RUB</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                value={settings.exchangeRate}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (!isNaN(v) && v > 0) setExchangeRate(v);
-                }}
-                className={cn(
-                  'w-24 min-h-[40px] px-3 rounded-xl bg-surface-3 border border-border-subtle',
-                  'text-sm text-text-primary text-right outline-none tabular-nums',
-                  'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]',
-                  'appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+          {/* Current rate display */}
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-primary font-medium">
+                  1$ = {settings.exchangeRate}₽
+                </span>
+                {rateIsLoading && (
+                  <svg className="animate-spin h-3.5 w-3.5 text-neon" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
                 )}
-                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
-              />
+              </div>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                {settings.useManualRate
+                  ? 'Ручной курс'
+                  : rateLastUpdated
+                    ? `ЦБ РФ · ${formatRateDate(rateLastUpdated)}`
+                    : 'ЦБ РФ · загрузка...'}
+              </p>
             </div>
-            <p className="text-[11px] text-text-muted mt-1.5 pl-0.5">
-              Используется для конвертации цен
-            </p>
+
+            {/* Refresh button */}
+            {!settings.useManualRate && (
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.9, rotate: 180 }}
+                disabled={rateIsLoading}
+                onClick={() => onRefreshRate()}
+                className={cn(
+                  'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center',
+                  'bg-surface-3 border border-border-subtle',
+                  'text-text-secondary active:text-neon active:border-neon/30',
+                  'transition-colors disabled:opacity-40'
+                )}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 21h5v-5" />
+                </svg>
+              </motion.button>
+            )}
           </div>
+
+          {/* Manual rate toggle */}
+          <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
+            <div>
+              <span className="text-sm text-text-primary font-medium">Свой курс</span>
+              <p className="text-[11px] text-text-muted mt-0.5">Не обновлять автоматически</p>
+            </div>
+            <NeonToggle
+              value={settings.useManualRate}
+              onToggle={() => updateSettings({ useManualRate: !settings.useManualRate })}
+            />
+          </div>
+
+          {/* Manual rate input */}
+          <AnimatePresence>
+            {settings.useManualRate && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-text-secondary">Курс USD/RUB</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={settings.exchangeRate}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      if (!isNaN(v) && v > 0) setExchangeRate(v);
+                    }}
+                    className={cn(
+                      'w-24 min-h-[40px] px-3 rounded-xl bg-surface-3 border border-border-subtle',
+                      'text-sm text-text-primary text-right outline-none tabular-nums',
+                      'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]',
+                      'appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                    )}
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
@@ -482,6 +553,19 @@ function NeonToggle({ value, onToggle }: { value: boolean; onToggle: () => void 
       />
     </motion.button>
   );
+}
+
+/* ── Format rate date ── */
+
+function formatRateDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday =
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear();
+  if (isToday) return `сегодня, ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
 /* ── Currency Switch ── */

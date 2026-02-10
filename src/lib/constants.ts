@@ -15,6 +15,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
 export const DEFAULT_SETTINGS: AppSettings = {
   displayCurrency: 'RUB',
   exchangeRate: 96,
+  useManualRate: false,
   notificationsEnabled: true,
   notifyDaysBefore: 3,
 };

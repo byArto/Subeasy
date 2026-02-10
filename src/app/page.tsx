@@ -15,6 +15,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
+import { useSound } from '@/hooks/useSound';
 import { Subscription } from '@/lib/types';
 
 /* ── Lazy-loaded heavy components ── */
@@ -72,6 +73,8 @@ export default function Home() {
   } = useSubscriptions();
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
   const { settings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
+
+  const { playSuccess, playDelete } = useSound();
 
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(subscriptions, settings);
@@ -173,6 +176,7 @@ export default function Home() {
           categories={categories}
           onSubmit={(data) => {
             addSubscription(data);
+            playSuccess();
             closeAdd();
           }}
           onAddCategory={addCategory}
@@ -202,6 +206,7 @@ export default function Home() {
             }}
             onDelete={() => {
               deleteSubscription(selectedSub.id);
+              playDelete();
               closeDetail();
             }}
           />
@@ -221,10 +226,12 @@ export default function Home() {
             categories={categories}
             onSubmit={(data) => {
               updateSubscription(editingSubId!, data);
+              playSuccess();
               closeEdit();
             }}
             onDelete={() => {
               deleteSubscription(editingSubId!);
+              playDelete();
               closeEdit();
             }}
             onAddCategory={addCategory}

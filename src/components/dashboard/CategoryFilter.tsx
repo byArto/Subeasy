@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Category, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { soundEngine } from '@/lib/sounds';
 
 interface CategoryFilterProps {
   categories: Category[];
@@ -75,7 +76,7 @@ function PillButton({
   return (
     <motion.button
       whileTap={{ scale: 0.93 }}
-      onClick={onTap}
+      onClick={() => { soundEngine.tap(); onTap(); }}
       className={cn(
         'relative flex items-center gap-1.5 shrink-0 snap-start',
         'min-h-[36px] px-3.5 rounded-full',

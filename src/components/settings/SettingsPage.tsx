@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { requestNotificationPermission } from '@/lib/notifications';
+import { useSound } from '@/hooks/useSound';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -49,6 +50,7 @@ export function SettingsPage({
   deleteCategory,
   subscriptions,
 }: SettingsPageProps) {
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatEmoji, setEditCatEmoji] = useState('');
@@ -238,7 +240,24 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 3. Категории ── */}
+      {/* ── 3. Звуки ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title="Звуки" />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-text-primary font-medium">Звуковые эффекты</span>
+              <p className="text-[11px] text-text-muted mt-0.5">Тактильные звуки при нажатиях</p>
+            </div>
+            <NeonToggle
+              value={soundEnabled}
+              onToggle={() => setSoundEnabled(!soundEnabled)}
+            />
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── 4. Категории ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="Категории" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
@@ -335,7 +354,7 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 4. Данные ── */}
+      {/* ── 5. Данные ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="Данные" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
@@ -385,7 +404,7 @@ export function SettingsPage({
         />
       </motion.div>
 
-      {/* ── 5. О приложении ── */}
+      {/* ── 6. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="О приложении" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-2">

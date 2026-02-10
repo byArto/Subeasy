@@ -142,9 +142,17 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html {
-  scroll-behavior: smooth;
-  overscroll-behavior: contain;
+html, body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -153,12 +161,40 @@ body {
   background-color: #0A0A0F;
   color: #F0F0F5;
   font-family: 'Manrope', sans-serif;
-  min-height: 100dvh;
+  -webkit-touch-callout: none;
+}
+
+/* ── App shell container ── */
+#__next,
+.app-shell {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* ── Scrollable content zone ── */
+.scrollable-content {
+  overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior-y: contain;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* ── Horizontal scroll containers (pills, chips) ── */
+.scroll-x-contain {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scrollbar-width: none;
+}
+.scroll-x-contain::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Hide scrollbar globally ── */

@@ -48,8 +48,7 @@ export function TabBar({
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-30',
-        'mx-auto max-w-[430px]',
+        'relative z-50 w-full shrink-0',
         className
       )}
     >

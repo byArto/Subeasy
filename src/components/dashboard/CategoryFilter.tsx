@@ -32,7 +32,7 @@ export function CategoryFilter({
   return (
     <div
       className={cn(
-        'flex gap-2 overflow-x-auto snap-x snap-mandatory',
+        'flex gap-2 scroll-x-contain snap-x snap-mandatory',
         'pb-1 -mx-5 px-5',
         className
       )}

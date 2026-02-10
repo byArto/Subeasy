@@ -30,22 +30,19 @@ export function Modal({
 }: ModalProps) {
   const dragControls = useDragControls();
 
-  // Lock body scroll when modal is open
+  // Block main content scroll when modal is open
   useEffect(() => {
     if (!open) return;
 
-    const scrollY = window.scrollY;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
+    const mainEl = document.querySelector('.scrollable-content') as HTMLElement | null;
+    if (mainEl) {
+      mainEl.style.overflow = 'hidden';
+    }
 
     return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      window.scrollTo(0, scrollY);
+      if (mainEl) {
+        mainEl.style.overflow = '';
+      }
     };
   }, [open]);
 
@@ -108,7 +105,7 @@ export function Modal({
             )}
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-5 pb-5 touch-pan-y">
               {children}
             </div>
           </motion.div>

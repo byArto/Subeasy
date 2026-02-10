@@ -51,7 +51,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">
-        <div className="relative min-h-dvh w-full max-w-[430px] mx-auto">
+        <div className="app-shell w-full max-w-[430px] mx-auto">
           {children}
         </div>
       </body>

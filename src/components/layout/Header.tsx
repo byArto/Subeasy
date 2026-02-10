@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, useMotionValueEvent, useScroll } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   title: string;
+  collapsed?: boolean;
   onSearchTap?: () => void;
   onNotificationTap?: () => void;
   className?: string;
@@ -14,21 +14,15 @@ interface HeaderProps {
 
 export function Header({
   title,
+  collapsed = false,
   onSearchTap,
   onNotificationTap,
   className,
 }: HeaderProps) {
-  const { scrollY } = useScroll();
-  const [collapsed, setCollapsed] = useState(false);
-
-  useMotionValueEvent(scrollY, 'change', (y) => {
-    setCollapsed(y > 40);
-  });
-
   return (
     <motion.header
       className={cn(
-        'sticky top-0 z-30 w-full',
+        'relative z-50 w-full shrink-0',
         'pt-[env(safe-area-inset-top)]',
         className
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, useCallback } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Header } from '@/components/layout/Header';
@@ -47,6 +47,17 @@ export default function Home() {
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const prevIndex = useRef(0);
+  const mainRef = useRef<HTMLElement>(null);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+
+  // Track scroll position for header collapse
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onScroll = () => setHeaderCollapsed(el.scrollTop > 40);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [splashDone]);
 
   // Shared hooks
   const {
@@ -95,14 +106,15 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
         title={tabTitles[activeTab]}
+        collapsed={headerCollapsed}
         onSearchTap={activeTab === 'home' ? () => {} : undefined}
         onNotificationTap={activeTab === 'home' ? () => {} : undefined}
       />
 
-      <main className="flex-1 overflow-y-auto pb-28">
+      <main ref={mainRef} className="flex-1 scrollable-content">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
@@ -110,6 +122,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction * -40 }}
             transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+            className="pb-20"
           >
             {activeTab === 'home' && (
               <HomeTab

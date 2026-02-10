@@ -27,7 +27,7 @@ function formatRelativeDate(days: number): string {
 
 export function UpcomingPayments({
   subscriptions,
-  currency,
+  currency: _currency,
   maxItems = 5,
   className,
 }: UpcomingPaymentsProps) {

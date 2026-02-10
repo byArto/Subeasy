@@ -56,7 +56,7 @@ export default function Home() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
-  const prevIndex = useRef(0);
+  const [tabDirection, setTabDirection] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
@@ -103,11 +103,10 @@ export default function Home() {
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(subscriptions, settings);
 
-  const currentIndex = TAB_ORDER.indexOf(activeTab);
-  const direction = currentIndex > prevIndex.current ? 1 : -1;
-
   const handleTabChange = useCallback((tab: TabId) => {
-    prevIndex.current = TAB_ORDER.indexOf(activeTab);
+    const prevIdx = TAB_ORDER.indexOf(activeTab);
+    const nextIdx = TAB_ORDER.indexOf(tab);
+    setTabDirection(nextIdx > prevIdx ? 1 : -1);
     setActiveTab(tab);
   }, [activeTab]);
 
@@ -145,9 +144,9 @@ export default function Home() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, x: direction * 40 }}
+            initial={{ opacity: 0, x: tabDirection * 40 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -40 }}
+            exit={{ opacity: 0, x: tabDirection * -40 }}
             transition={{ type: 'spring', stiffness: 350, damping: 35 }}
             className="pb-20"
           >

@@ -17,7 +17,6 @@ import {
   format,
   getDay,
   addWeeks,
-  addYears,
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Subscription, AppSettings, Currency } from '@/lib/types';
@@ -313,8 +312,6 @@ function CalendarGrid({
   const calStart = startOfWeek(mStart, { weekStartsOn: 1 });
   const calEnd = endOfWeek(mEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
-
-  const today = new Date();
 
   return (
     <div className="bg-surface-2 rounded-2xl border border-border-subtle p-3">

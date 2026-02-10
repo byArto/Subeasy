@@ -128,7 +128,7 @@ export function SubDetail({
   subscription: sub,
   category,
   settings,
-  onClose,
+  onClose: _onClose,
   onEdit,
   onToggleActive,
   onDelete,

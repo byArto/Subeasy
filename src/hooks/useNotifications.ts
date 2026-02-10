@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Subscription, AppSettings } from '@/lib/types';
 import {
   registerServiceWorker,
@@ -11,28 +11,24 @@ import {
 
 type Permission = NotificationPermission | 'unsupported';
 
+function checkSupport(): boolean {
+  return typeof window !== 'undefined' && 'Notification' in window;
+}
+
+function getInitialPermission(): Permission {
+  if (!checkSupport()) return 'default';
+  return getNotificationPermission();
+}
+
 export function useNotifications(
   subscriptions: Subscription[],
   settings: AppSettings
 ) {
-  const [isSupported, setIsSupported] = useState(false);
-  const [permission, setPermission] = useState<Permission>('default');
-  const initialized = useRef(false);
+  const [isSupported] = useState(checkSupport);
+  const [permission, setPermission] = useState<Permission>(getInitialPermission);
 
-  // Init: check support, register SW, check permission
+  // Register service worker on mount
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
-    const supported =
-      typeof window !== 'undefined' && 'Notification' in window;
-    setIsSupported(supported);
-
-    if (supported) {
-      setPermission(getNotificationPermission());
-    }
-
-    // Register service worker
     registerServiceWorker();
   }, []);
 

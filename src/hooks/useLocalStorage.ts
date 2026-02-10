@@ -1,30 +1,23 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 type SetValue<T> = T | ((prev: T) => T);
+
+function readStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+  } catch { /* ignore */ }
+  return fallback;
+}
 
 export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: SetValue<T>) => void, () => void] {
-  const hydrated = useRef(false);
-  const [storedValue, setStoredValue] = useState<T>(initialValue);
-
-  // Hydrate from localStorage after mount (SSR-safe)
-  useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-
-    try {
-      const raw = window.localStorage.getItem(key);
-      if (raw !== null) {
-        setStoredValue(JSON.parse(raw));
-      }
-    } catch (error) {
-      console.warn(`[useLocalStorage] Error reading "${key}":`, error);
-    }
-  }, [key]);
+  const [storedValue, setStoredValue] = useState<T>(() => readStorage(key, initialValue));
 
   // Sync across tabs
   useEffect(() => {

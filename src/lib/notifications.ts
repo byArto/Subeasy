@@ -4,14 +4,6 @@ import { CURRENCY_SYMBOLS } from './constants';
 
 /* ── Helpers ── */
 
-function isStandalone(): boolean {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    ('standalone' in window.navigator && (window.navigator as unknown as { standalone: boolean }).standalone === true)
-  );
-}
-
 function isNotificationSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }

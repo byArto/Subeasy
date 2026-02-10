@@ -7,7 +7,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), 1600);
+    const timer = setTimeout(() => setVisible(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -17,16 +17,19 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         <motion.div
           key="splash"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          exit={{ opacity: 0, scale: 1.1 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-surface"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+          style={{
+            background: 'radial-gradient(circle at center, #0a1a0f 0%, #0A0A0F 70%)',
+          }}
         >
-          {/* Radial glow background */}
+          {/* Radial glow behind logo */}
           <div className="absolute inset-0 overflow-hidden">
             <motion.div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full"
               style={{
-                background: 'radial-gradient(circle, rgba(0,255,65,0.15) 0%, rgba(0,255,65,0.03) 50%, transparent 70%)',
+                background: 'radial-gradient(circle, rgba(0,255,65,0.18) 0%, rgba(0,255,65,0.04) 50%, transparent 70%)',
               }}
               animate={{
                 scale: [1, 1.3, 1],
@@ -40,48 +43,61 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             />
           </div>
 
-          {/* Logo */}
+          {/* Logo + text */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
-            className="relative z-10 flex flex-col items-center gap-4"
+            transition={{ type: 'spring' as const, stiffness: 200, damping: 20, delay: 0.1 }}
+            className="relative z-10 flex flex-col items-center gap-5"
           >
-            {/* Icon circle */}
+            {/* Logo image with glow */}
             <motion.div
-              className="w-20 h-20 rounded-2xl flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, rgba(0,255,65,0.15), rgba(0,255,65,0.05))',
-                boxShadow: '0 0 30px rgba(0,255,65,0.2), 0 0 60px rgba(0,255,65,0.08)',
-              }}
+              className="relative w-[120px] h-[120px] flex items-center justify-center"
               animate={{
-                boxShadow: [
-                  '0 0 20px rgba(0,255,65,0.15), 0 0 40px rgba(0,255,65,0.06)',
-                  '0 0 40px rgba(0,255,65,0.3), 0 0 80px rgba(0,255,65,0.12)',
-                  '0 0 20px rgba(0,255,65,0.15), 0 0 40px rgba(0,255,65,0.06)',
-                ],
+                scale: [1, 1.05, 1],
               }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <span className="text-4xl">⚡</span>
+              {/* Glow ring behind logo */}
+              <motion.div
+                className="absolute inset-0 rounded-3xl"
+                style={{
+                  background: 'radial-gradient(circle, rgba(0,255,65,0.2) 0%, transparent 70%)',
+                }}
+                animate={{
+                  opacity: [0.5, 1, 0.5],
+                  scale: [0.95, 1.1, 0.95],
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              <img
+                src="/icons/splash-logo.png"
+                alt="NeonSub"
+                width={120}
+                height={120}
+                className="relative z-10 rounded-3xl"
+                style={{
+                  filter: 'drop-shadow(0 0 20px rgba(0,255,65,0.3)) drop-shadow(0 0 40px rgba(0,255,65,0.1))',
+                }}
+              />
             </motion.div>
 
             {/* Title */}
             <motion.h1
-              className="text-3xl font-display font-bold tracking-tight neon-text"
-              initial={{ opacity: 0, y: 10 }}
+              className="text-3xl font-display font-extrabold tracking-tight neon-text"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
             >
               NeonSub
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p
-              className="text-text-muted text-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
+              className="text-text-secondary text-sm font-medium"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
             >
               Трекер подписок
             </motion.p>

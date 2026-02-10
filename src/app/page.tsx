@@ -36,6 +36,10 @@ const AnalyticsPage = dynamic(() =>
   import('@/components/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
   { ssr: false }
 );
+const CalendarPage = dynamic(() =>
+  import('@/components/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })),
+  { ssr: false }
+);
 
 const TAB_ORDER: TabId[] = ['home', 'analytics', 'calendar', 'settings'];
 
@@ -167,7 +171,12 @@ export default function Home() {
                 settings={settings}
               />
             )}
-            {activeTab === 'calendar' && <PlaceholderTab emoji="📅" label="Календарь" />}
+            {activeTab === 'calendar' && (
+              <CalendarPage
+                subscriptions={subscriptions}
+                settings={settings}
+              />
+            )}
             {activeTab === 'settings' && (
               <SettingsPage
                 settings={settings}
@@ -352,13 +361,3 @@ function HomeTab({
   );
 }
 
-/* ── Placeholder ── */
-function PlaceholderTab({ emoji, label }: { emoji: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center pt-32 px-5 gap-3">
-      <span className="text-5xl">{emoji}</span>
-      <p className="text-text-secondary text-sm font-medium">{label}</p>
-      <p className="text-text-muted text-xs">Скоро будет</p>
-    </div>
-  );
-}

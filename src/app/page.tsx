@@ -32,6 +32,10 @@ const SettingsPage = dynamic(() =>
   import('@/components/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
   { ssr: false }
 );
+const AnalyticsPage = dynamic(() =>
+  import('@/components/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+  { ssr: false }
+);
 
 const TAB_ORDER: TabId[] = ['home', 'analytics', 'calendar', 'settings'];
 
@@ -156,7 +160,13 @@ export default function Home() {
                 onSubTap={openDetail}
               />
             )}
-            {activeTab === 'analytics' && <PlaceholderTab emoji="📊" label="Аналитика" />}
+            {activeTab === 'analytics' && (
+              <AnalyticsPage
+                subscriptions={subscriptions}
+                categories={categories}
+                settings={settings}
+              />
+            )}
             {activeTab === 'calendar' && <PlaceholderTab emoji="📅" label="Календарь" />}
             {activeTab === 'settings' && (
               <SettingsPage

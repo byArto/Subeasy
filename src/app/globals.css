@@ -171,29 +171,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* ── Standalone PWA (Home Screen) ── */
-@media all and (display-mode: standalone) {
-  .app-container {
-    height: 100vh;
-    height: 100dvh;
-  }
-}
-
-/* ── Regular browser ── */
-@media not all and (display-mode: standalone) {
-  .app-container {
-    height: 100vh;
-    height: 100dvh;
-  }
-}
-
-/* ── dvh fallback ── */
-@supports not (height: 100dvh) {
-  .app-container {
-    height: -webkit-fill-available;
-  }
-}
-
 /* ── Scrollable content zone ── */
 .scrollable-content {
   overflow-y: auto;

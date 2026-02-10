@@ -16,7 +16,6 @@ import {
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { soundEngine } from '@/lib/sounds';
-import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 
 export type TabId = 'home' | 'analytics' | 'calendar' | 'settings';
 
@@ -47,8 +46,6 @@ export function TabBar({
   onFabTap,
   className,
 }: TabBarProps) {
-  const isStandalone = useStandaloneMode();
-
   return (
     <div
       className={cn(
@@ -78,7 +75,7 @@ export function TabBar({
       <nav
         className={cn(
           'glass-bg border-t border-border-subtle',
-          isStandalone ? 'pb-[env(safe-area-inset-bottom,8px)]' : 'pb-2'
+          'pb-[max(8px,env(safe-area-inset-bottom))]'
         )}
       >
         <div className="flex items-start justify-around px-2 pt-2 pb-1">

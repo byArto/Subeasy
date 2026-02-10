@@ -132,7 +132,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col h-dvh overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="flex flex-col h-full overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
         title={tabTitles[activeTab]}
         collapsed={headerCollapsed}

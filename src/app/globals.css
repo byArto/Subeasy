@@ -173,6 +173,23 @@ body {
   overscroll-behavior: none;
 }
 
+/* ── iOS standalone PWA: fill entire screen ── */
+@media all and (display-mode: standalone) {
+  html, body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100% !important;
+  }
+
+  #__next,
+  .app-shell {
+    height: 100% !important;
+  }
+}
+
 /* ── Scrollable content zone ── */
 .scrollable-content {
   overflow-y: auto;

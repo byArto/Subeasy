@@ -44,6 +44,7 @@ export function getMonthlyPrice(sub: Subscription): number {
     case 'yearly':
       return sub.price / 12;
     case 'one-time':
+    case 'trial':
       return 0;
     default:
       return sub.price;

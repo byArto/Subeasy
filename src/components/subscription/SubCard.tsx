@@ -18,6 +18,7 @@ const cycleSuffix: Record<BillingCycle, string> = {
   yearly: '/год',
   weekly: '/нед',
   'one-time': '',
+  trial: '',
 };
 
 function getPaymentStatus(sub: Subscription) {
@@ -26,6 +27,15 @@ function getPaymentStatus(sub: Subscription) {
   }
 
   const days = getDaysUntilPayment(sub.nextPaymentDate);
+
+  if (sub.cycle === 'trial') {
+    if (days < 0) return { label: 'Триал истёк', variant: 'danger' as const, pulse: true };
+    if (days === 0) return { label: 'Последний день!', variant: 'danger' as const, pulse: true };
+    if (days === 1) return { label: 'Завтра истекает!', variant: 'danger' as const, pulse: true };
+    if (days <= 3) return { label: `${days} дн. осталось`, variant: 'warning' as const, pulse: false };
+    if (days <= 7) return { label: `${days} дн. осталось`, variant: 'warning' as const, pulse: false };
+    return { label: `${days} дн. осталось`, variant: 'success' as const, pulse: false };
+  }
 
   if (days < 0) {
     return { label: 'Просрочена', variant: 'danger' as const, pulse: true };
@@ -97,21 +107,36 @@ export function SubCard({
         </div>
 
         <p className="text-xs text-text-muted mt-0.5 truncate">
-          {days < 0
-            ? `Просрочен · ${formatNextPayment(sub.nextPaymentDate)}`
-            : `Следующий · ${formatNextPayment(sub.nextPaymentDate)}`}
+          {sub.cycle === 'trial'
+            ? `Триал до · ${formatNextPayment(sub.nextPaymentDate)}`
+            : days < 0
+              ? `Просрочен · ${formatNextPayment(sub.nextPaymentDate)}`
+              : `Следующий · ${formatNextPayment(sub.nextPaymentDate)}`}
         </p>
       </div>
 
       {/* Right — price */}
       <div className="text-right shrink-0">
-        <p className="text-sm font-bold text-text-primary tabular-nums">
-          {Math.round(sub.price).toLocaleString('ru-RU')}
-          <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
-        </p>
-        <p className="text-[10px] text-text-muted">
-          {cycleSuffix[sub.cycle]}
-        </p>
+        {sub.cycle === 'trial' ? (
+          <>
+            <p className="text-sm font-bold text-neon tabular-nums">FREE</p>
+            {sub.price > 0 && (
+              <p className="text-[10px] text-text-muted">
+                далее {Math.round(sub.price).toLocaleString('ru-RU')}{symbol}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-bold text-text-primary tabular-nums">
+              {Math.round(sub.price).toLocaleString('ru-RU')}
+              <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
+            </p>
+            <p className="text-[10px] text-text-muted">
+              {cycleSuffix[sub.cycle]}
+            </p>
+          </>
+        )}
       </div>
     </motion.button>
   );

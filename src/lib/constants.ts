@@ -31,6 +31,7 @@ export const CYCLE_LABELS: Record<string, string> = {
   yearly: 'Ежегодно',
   weekly: 'Еженедельно',
   'one-time': 'Разовый',
+  trial: 'Пробный',
 };
 
 export const PAYMENT_METHODS = [

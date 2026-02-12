@@ -1,6 +1,6 @@
 export type Currency = 'RUB' | 'USD' | 'EUR';
 export type DisplayCurrency = 'RUB' | 'USD';
-export type BillingCycle = 'monthly' | 'yearly' | 'weekly' | 'one-time';
+export type BillingCycle = 'monthly' | 'yearly' | 'weekly' | 'one-time' | 'trial';
 
 export interface Subscription {
   id: string;

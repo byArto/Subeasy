@@ -26,6 +26,7 @@ const CYCLE_SUFFIX: Record<string, string> = {
   yearly: '/год',
   weekly: '/нед',
   'one-time': '',
+  trial: '',
 };
 
 function formatDate(iso: string): string {
@@ -34,6 +35,7 @@ function formatDate(iso: string): string {
 }
 
 function getTotalSpent(sub: Subscription): number {
+  if (sub.cycle === 'trial') return 0;
   if (sub.cycle === 'one-time') return sub.price;
 
   const start = new Date(sub.startDate);
@@ -66,6 +68,14 @@ function getStatusBadge(sub: Subscription) {
     return { variant: 'neutral' as const, label: 'Приостановлена', pulse: false };
   }
   const days = getDaysUntilPayment(sub.nextPaymentDate);
+
+  if (sub.cycle === 'trial') {
+    if (days < 0) return { variant: 'danger' as const, label: 'Триал истёк', pulse: true };
+    if (days === 0) return { variant: 'danger' as const, label: 'Последний день!', pulse: true };
+    if (days <= 3) return { variant: 'warning' as const, label: `Осталось ${days} дн.`, pulse: false };
+    return { variant: 'success' as const, label: `Осталось ${days} дн.`, pulse: false };
+  }
+
   if (days < 0) return { variant: 'danger' as const, label: 'Просрочена', pulse: true };
   if (days === 0) return { variant: 'danger' as const, label: 'Сегодня', pulse: true };
   if (days === 1) return { variant: 'warning' as const, label: 'Завтра', pulse: false };
@@ -103,6 +113,15 @@ function formatPaymentMethod(raw: string): React.ReactNode {
   }
   // Legacy string values
   return <span>{raw || '—'}</span>;
+}
+
+function getCostPerDay(sub: Subscription): number | null {
+  switch (sub.cycle) {
+    case 'monthly': return sub.price / 30.44;
+    case 'yearly': return sub.price / 365;
+    case 'weekly': return sub.price / 7;
+    default: return null;
+  }
 }
 
 /* ── Stagger ── */
@@ -180,21 +199,34 @@ export function SubDetail({
 
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const isTrial = sub.cycle === 'trial';
+  const costPerDay = getCostPerDay(sub);
+
   const rows: { label: string; value: React.ReactNode }[] = [
     {
-      label: 'Стоимость',
-      value: `${sub.price.toLocaleString('ru-RU')} ${symbol} ${CYCLE_SUFFIX[sub.cycle] || ''}`,
+      label: isTrial ? 'Цена после триала' : 'Стоимость',
+      value: isTrial
+        ? (sub.price > 0
+            ? `${sub.price.toLocaleString('ru-RU')} ${symbol}`
+            : 'Бесплатно → отмена')
+        : `${sub.price.toLocaleString('ru-RU')} ${symbol} ${CYCLE_SUFFIX[sub.cycle] || ''}`,
     },
+    ...(costPerDay !== null
+      ? [{
+          label: 'В день',
+          value: `${costPerDay < 1 ? costPerDay.toFixed(2) : costPerDay.toFixed(1)} ${symbol}`,
+        }]
+      : []),
     {
       label: 'Метод оплаты',
       value: formatPaymentMethod(sub.paymentMethod),
     },
     {
-      label: 'Дата начала',
+      label: isTrial ? 'Начало триала' : 'Дата начала',
       value: formatDate(sub.startDate),
     },
     {
-      label: 'Следующий платёж',
+      label: isTrial ? 'Окончание триала' : 'Следующий платёж',
       value: (
         <span className="flex items-center gap-2">
           {formatDate(sub.nextPaymentDate)}
@@ -202,13 +234,19 @@ export function SubDetail({
             <Badge
               variant={days <= 1 ? 'danger' : days <= 7 ? 'warning' : 'neutral'}
             >
-              {days < 0
-                ? 'просрочен'
-                : days === 0
-                  ? 'сегодня'
-                  : days === 1
-                    ? 'завтра'
-                    : `${days} дн.`}
+              {isTrial
+                ? (days < 0
+                    ? 'истёк'
+                    : days === 0
+                      ? 'последний день'
+                      : `${days} дн.`)
+                : (days < 0
+                    ? 'просрочен'
+                    : days === 0
+                      ? 'сегодня'
+                      : days === 1
+                        ? 'завтра'
+                        : `${days} дн.`)}
             </Badge>
           )}
         </span>
@@ -216,16 +254,18 @@ export function SubDetail({
     },
     {
       label: 'Цикл',
-      value: CYCLE_LABELS[sub.cycle] || sub.cycle,
+      value: isTrial ? 'Пробный период' : (CYCLE_LABELS[sub.cycle] || sub.cycle),
     },
-    {
-      label: 'Всего потрачено',
-      value: (
-        <span className="text-neon">
-          {`≈ ${Math.round(totalSpent).toLocaleString('ru-RU')} ${symbol}`}
-        </span>
-      ),
-    },
+    ...(isTrial
+      ? []
+      : [{
+          label: 'Всего потрачено',
+          value: (
+            <span className="text-neon">
+              {`≈ ${Math.round(totalSpent).toLocaleString('ru-RU')} ${symbol}`}
+            </span>
+          ),
+        }]),
     {
       label: 'Заметки',
       value: sub.notes || '—',
@@ -277,17 +317,38 @@ export function SubDetail({
         transition={{ delay: 0.08, type: 'spring', stiffness: 300, damping: 30 }}
         className="text-center py-3"
       >
-        <p className="font-display font-extrabold text-[48px] leading-none text-neon neon-text tabular-nums">
-          {animatedPrice.toLocaleString('ru-RU')}
-          <span className="text-xl font-bold ml-1">{symbol}</span>
-        </p>
-        <p className="text-text-muted text-sm mt-1.5">
-          {CYCLE_SUFFIX[sub.cycle] ? CYCLE_LABELS[sub.cycle]?.toLowerCase() : 'разовый платёж'}
-          {' · '}
-          <span className="text-text-secondary">
-            ≈ {altPrice.toLocaleString('ru-RU')} {altSymbol}
-          </span>
-        </p>
+        {isTrial ? (
+          <>
+            <p className="font-display font-extrabold text-[48px] leading-none text-neon neon-text">
+              FREE
+            </p>
+            <p className="text-text-muted text-sm mt-1.5">
+              пробный период
+              {sub.price > 0 && (
+                <>
+                  {' · далее '}
+                  <span className="text-text-secondary">
+                    {sub.price.toLocaleString('ru-RU')} {symbol}
+                  </span>
+                </>
+              )}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="font-display font-extrabold text-[48px] leading-none text-neon neon-text tabular-nums">
+              {animatedPrice.toLocaleString('ru-RU')}
+              <span className="text-xl font-bold ml-1">{symbol}</span>
+            </p>
+            <p className="text-text-muted text-sm mt-1.5">
+              {CYCLE_SUFFIX[sub.cycle] ? CYCLE_LABELS[sub.cycle]?.toLowerCase() : 'разовый платёж'}
+              {' · '}
+              <span className="text-text-secondary">
+                ≈ {altPrice.toLocaleString('ru-RU')} {altSymbol}
+              </span>
+            </p>
+          </>
+        )}
       </motion.div>
 
       {/* ── Detail Rows ── */}

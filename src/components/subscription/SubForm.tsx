@@ -6,6 +6,7 @@ import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui';
+import { searchServices, ServiceTemplate } from '@/lib/services';
 
 /* ── Constants ── */
 
@@ -22,7 +23,7 @@ const COLOR_PALETTE = [
 ];
 
 const CURRENCIES: Currency[] = ['RUB', 'USD', 'EUR'];
-const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time'];
+const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time', 'trial'];
 
 /* ── Payment method encoding ── */
 
@@ -132,6 +133,29 @@ export function SubForm({
   const [newCatName, setNewCatName] = useState('');
   const [newCatEmoji, setNewCatEmoji] = useState('📦');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [suggestions, setSuggestions] = useState<ServiceTemplate[]>([]);
+
+  /* ── Service autocomplete ── */
+
+  function handleNameChange(value: string) {
+    setName(value);
+    if (mode === 'add' && value.length >= 1) {
+      setSuggestions(searchServices(value));
+    } else {
+      setSuggestions([]);
+    }
+  }
+
+  function applyService(svc: ServiceTemplate) {
+    setName(svc.name);
+    setIcon(svc.emoji);
+    setColor(svc.color);
+    setPrice(svc.defaultPrice.toString());
+    setCurrency(svc.defaultCurrency);
+    setCycle(svc.cycle);
+    setCategory(svc.categoryId);
+    setSuggestions([]);
+  }
 
   /* ── Validation ── */
 
@@ -139,7 +163,11 @@ export function SubForm({
     const e: FormErrors = {};
 
     if (!name.trim()) e.name = 'Укажите название';
-    if (!price || parseFloat(price) <= 0) e.price = 'Укажите цену';
+    if (cycle === 'trial') {
+      if (price && parseFloat(price) < 0) e.price = 'Цена не может быть отрицательной';
+    } else {
+      if (!price || parseFloat(price) <= 0) e.price = 'Укажите цену';
+    }
     if (!category) e.category = 'Выберите категорию';
     if (!nextPaymentDate) e.nextPaymentDate = 'Укажите дату';
 
@@ -161,7 +189,7 @@ export function SubForm({
 
     onSubmit({
       name: name.trim(),
-      price: parseFloat(price),
+      price: parseFloat(price) || 0,
       currency,
       category,
       cycle,
@@ -253,19 +281,21 @@ export function SubForm({
         </AnimatePresence>
       </motion.div>
 
-      {/* ── Name ── */}
+      {/* ── Name + Autocomplete ── */}
       <motion.div
         custom={fieldIndex++}
         variants={fieldVariants}
         initial="hidden"
         animate="visible"
+        className="relative"
       >
         <FieldLabel text="Название" error={errors.name} />
         <input
           type="text"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => handleNameChange(e.target.value)}
           placeholder="Netflix, Spotify, ChatGPT..."
+          autoComplete="off"
           className={cn(
             'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
             'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -274,6 +304,42 @@ export function SubForm({
               : 'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
           )}
         />
+
+        {/* Suggestions dropdown */}
+        <AnimatePresence>
+          {suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 right-0 top-full mt-1 z-20 bg-surface-3 border border-border-subtle rounded-xl overflow-hidden shadow-lg"
+            >
+              {suggestions.map((svc) => (
+                <motion.button
+                  key={svc.name}
+                  type="button"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => applyService(svc)}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left active:bg-surface-4 transition-colors border-b border-border-subtle last:border-b-0"
+                >
+                  <span
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+                    style={{ backgroundColor: `${svc.color}20` }}
+                  >
+                    {svc.emoji}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{svc.name}</p>
+                  </div>
+                  <span className="text-xs text-text-muted shrink-0">
+                    {svc.defaultPrice}{CURRENCY_SYMBOLS[svc.defaultCurrency] || svc.defaultCurrency}
+                  </span>
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* ── Price + Currency ── */}
@@ -283,14 +349,14 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Стоимость" error={errors.price} />
+        <FieldLabel text={cycle === 'trial' ? 'Цена после триала' : 'Стоимость'} error={errors.price} />
         <div className="flex gap-2">
           <input
             type="number"
             inputMode="decimal"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            placeholder="0"
+            placeholder={cycle === 'trial' ? '0 (бесплатно)' : '0'}
             className={cn(
               'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
               'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -332,7 +398,7 @@ export function SubForm({
         animate="visible"
       >
         <FieldLabel text="Период оплаты" />
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-5 gap-1.5">
           {CYCLES.map((c) => (
             <motion.button
               key={c}
@@ -462,7 +528,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Дата следующего платежа" error={errors.nextPaymentDate} />
+        <FieldLabel text={cycle === 'trial' ? 'Дата окончания триала' : 'Дата следующего платежа'} error={errors.nextPaymentDate} />
         <input
           type="date"
           value={nextPaymentDate}

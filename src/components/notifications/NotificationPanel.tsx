@@ -52,6 +52,7 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
   subscriptions.filter((s) => s.isActive).forEach((sub) => {
     const daysUntil = getDaysUntilPayment(sub.nextPaymentDate);
     const price = formatPrice(sub.price, sub.currency);
+    const isTrial = sub.cycle === 'trial';
     // Stable ID: subId-type-nextPaymentDate
     const dateKey = sub.nextPaymentDate;
 
@@ -59,9 +60,13 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       items.push({
         id: `${sub.id}-overdue-${dateKey}`,
         type: 'danger',
-        icon: '🔴',
-        title: `${sub.name} — платёж просрочен`,
-        subtitle: `Дата была ${formatDate(sub.nextPaymentDate)}`,
+        icon: isTrial ? '⏳' : '🔴',
+        title: isTrial
+          ? `${sub.name} — триал истёк`
+          : `${sub.name} — платёж просрочен`,
+        subtitle: isTrial
+          ? (sub.price > 0 ? `Далее ${price}` : 'Отмените, если не нужна')
+          : `Дата была ${formatDate(sub.nextPaymentDate)}`,
         time: `${Math.abs(daysUntil)} дн. назад`,
         daysUntil,
       });
@@ -69,9 +74,13 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       items.push({
         id: `${sub.id}-today-${dateKey}`,
         type: 'danger',
-        icon: '⚡',
-        title: `${sub.name} — платёж сегодня!`,
-        subtitle: price,
+        icon: isTrial ? '⏳' : '⚡',
+        title: isTrial
+          ? `${sub.name} — триал заканчивается!`
+          : `${sub.name} — платёж сегодня!`,
+        subtitle: isTrial
+          ? (sub.price > 0 ? `Далее ${price}` : 'Последний день')
+          : price,
         time: 'Сегодня',
         daysUntil,
       });
@@ -79,9 +88,13 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       items.push({
         id: `${sub.id}-soon-${dateKey}`,
         type: 'warning',
-        icon: '⏰',
-        title: `${sub.name} — через ${daysUntil} дн.`,
-        subtitle: price,
+        icon: isTrial ? '⏳' : '⏰',
+        title: isTrial
+          ? `${sub.name} — триал через ${daysUntil} дн.`
+          : `${sub.name} — через ${daysUntil} дн.`,
+        subtitle: isTrial
+          ? (sub.price > 0 ? `Далее ${price}` : 'Не забудьте отменить')
+          : price,
         time: formatDate(sub.nextPaymentDate),
         daysUntil,
       });
@@ -89,9 +102,13 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
       items.push({
         id: `${sub.id}-week-${dateKey}`,
         type: 'info',
-        icon: '📅',
-        title: `${sub.name} — через ${daysUntil} дн.`,
-        subtitle: price,
+        icon: isTrial ? '⏳' : '📅',
+        title: isTrial
+          ? `${sub.name} — триал через ${daysUntil} дн.`
+          : `${sub.name} — через ${daysUntil} дн.`,
+        subtitle: isTrial
+          ? (sub.price > 0 ? `Далее ${price}` : `До ${formatDate(sub.nextPaymentDate)}`)
+          : price,
         time: formatDate(sub.nextPaymentDate),
         daysUntil,
       });

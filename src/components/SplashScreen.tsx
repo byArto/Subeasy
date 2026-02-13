@@ -71,7 +71,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               />
               <img
-                src="/icons/icon-512x512.png"
+                src="/icons/splash-logo.png"
                 alt="SubEasy"
                 width={120}
                 height={120}
@@ -89,7 +89,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
             >
-              SubEasy
+              SUBEASY
             </motion.h1>
 
             {/* Subtitle */}

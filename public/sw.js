@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
 
-  const title = data.title || 'SubEasy';
+  const title = data.title || 'SUBEASY';
   const options = {
     body: data.body || 'У вас скоро платёж!',
     icon: '/icons/icon-192x192.png',

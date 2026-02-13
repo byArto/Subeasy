@@ -480,7 +480,7 @@ export function SettingsPage({
         <SectionHeader title="О приложении" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-2">
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
-            SUBEASY
+            SubEasy
           </h2>
           <p className="text-xs text-text-muted">Версия 1.4.0</p>
           <p className="text-xs text-text-secondary mt-1">Трекер подписок — всё под контролем</p>

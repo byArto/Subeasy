@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'SUBEASY',
-    short_name: 'SUBEASY',
+    name: 'SubEasy',
+    short_name: 'SubEasy',
     description: 'Трекер подписок — всё под контролем',
     start_url: '/',
     display: 'standalone',

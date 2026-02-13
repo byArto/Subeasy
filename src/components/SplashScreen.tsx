@@ -71,7 +71,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               />
               <img
-                src="/icons/splash-logo.png"
+                src="/icons/icon-512x512.png"
                 alt="SubEasy"
                 width={120}
                 height={120}

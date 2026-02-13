@@ -72,7 +72,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               />
               <img
                 src="/icons/splash-logo.png"
-                alt="NeonSub"
+                alt="SubEasy"
                 width={120}
                 height={120}
                 className="relative z-10 rounded-3xl"
@@ -89,7 +89,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
             >
-              NeonSub
+              SubEasy
             </motion.h1>
 
             {/* Subtitle */}

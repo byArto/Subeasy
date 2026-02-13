@@ -1,10 +1,10 @@
-# NeonSub — Project Rules
+# SubEasy — Project Rules
 
 ## Overview
-NeonSub — PWA subscription & recurring payment tracker. Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Framer Motion. Data in localStorage, deployed on Vercel. Target device — iPhone, iOS 16.4+, PWA standalone.
+SubEasy — PWA subscription & recurring payment tracker. Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Framer Motion. Data in localStorage, deployed on Vercel. Target device — iPhone, iOS 16.4+, PWA standalone.
 
 ## Version
-Current: 1.3.0
+Current: 1.4.0
 
 ## Design
 - Dark cyberpunk: black (#0A0A0F) + neon green (#00FF41, #39FF14)

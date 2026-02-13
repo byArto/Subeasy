@@ -11,12 +11,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'NeonSub — Трекер подписок',
-  description: 'Персональный трекер подписок с неоновым дизайном',
+  title: 'SubEasy — Трекер подписок',
+  description: 'Трекер подписок — всё под контролем',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'NeonSub',
+    title: 'SubEasy',
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -46,7 +46,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="NeonSub" />
+        <meta name="apple-mobile-web-app-title" content="SubEasy" />
         <meta name="theme-color" content="#00FF41" />
         <meta name="format-detection" content="telephone=no" />
       </head>

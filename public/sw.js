@@ -1,5 +1,5 @@
-// NeonSub Service Worker v2 — cache-first + push notifications
-const CACHE_NAME = 'neonsub-v2';
+// SubEasy Service Worker v2 — cache-first + push notifications
+const CACHE_NAME = 'subeasy-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -66,7 +66,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
 
-  const title = data.title || 'NeonSub';
+  const title = data.title || 'SubEasy';
   const options = {
     body: data.body || 'У вас скоро платёж!',
     icon: '/icons/icon-192x192.png',

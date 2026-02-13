@@ -1,6 +1,6 @@
 {
-  "name": "neonsub",
-  "version": "1.3.0",
+  "name": "subeasy",
+  "version": "1.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",

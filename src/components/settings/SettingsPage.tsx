@@ -89,13 +89,13 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.3.0',
+      version: '1.4.0',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `neonsub-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `subeasy-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -480,10 +480,10 @@ export function SettingsPage({
         <SectionHeader title="О приложении" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-2">
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
-            NeonSub
+            SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.3.0</p>
-          <p className="text-xs text-text-secondary mt-1">Сделано для личного использования</p>
+          <p className="text-xs text-text-muted">Версия 1.4.0</p>
+          <p className="text-xs text-text-secondary mt-1">Трекер подписок — всё под контролем</p>
         </div>
       </motion.div>
     </div>

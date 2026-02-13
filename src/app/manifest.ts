@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'NeonSub',
-    short_name: 'NeonSub',
-    description: 'Персональный трекер подписок',
+    name: 'SubEasy',
+    short_name: 'SubEasy',
+    description: 'Трекер подписок — всё под контролем',
     start_url: '/',
     display: 'standalone',
     background_color: '#0A0A0F',

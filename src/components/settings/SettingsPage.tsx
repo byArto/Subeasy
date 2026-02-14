@@ -479,16 +479,15 @@ export function SettingsPage({
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="О приложении" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-3">
-          {/* App icon */}
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+          {/* App logo */}
+          <img
+            src="/icons/icon-192x192.png"
+            alt="SubEasy"
+            className="w-16 h-16 rounded-2xl"
             style={{
-              background: 'linear-gradient(135deg, rgba(0,255,65,0.15), rgba(0,255,65,0.05))',
-              boxShadow: '0 0 24px rgba(0,255,65,0.1), inset 0 0 0 1px rgba(0,255,65,0.2)',
+              boxShadow: '0 0 24px rgba(0,255,65,0.15)',
             }}
-          >
-            💎
-          </div>
+          />
 
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy

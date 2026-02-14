@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Category } from '@/lib/types';
 import { useLocalStorage } from './useLocalStorage';
 import { DEFAULT_CATEGORIES } from '@/lib/constants';
@@ -11,6 +11,19 @@ export function useCategories() {
     'neonsub-categories',
     DEFAULT_CATEGORIES
   );
+
+  // Migration: rename VPN/Безопасность → VPN/Proxy
+  const migrated = useRef(false);
+  useEffect(() => {
+    if (migrated.current) return;
+    migrated.current = true;
+    const vpnCat = categories.find((c) => c.id === '8' && c.name === 'VPN/Безопасность');
+    if (vpnCat) {
+      setCategories((prev) =>
+        prev.map((c) => (c.id === '8' && c.name === 'VPN/Безопасность' ? { ...c, name: 'VPN/Proxy' } : c))
+      );
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const addCategory = useCallback(
     (cat: Omit<Category, 'id'>) => {

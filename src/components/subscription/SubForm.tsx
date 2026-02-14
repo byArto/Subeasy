@@ -6,6 +6,7 @@ import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 
 /* ── Constants ── */
@@ -333,7 +334,7 @@ export function SubForm({
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
                     style={{ backgroundColor: `${svc.color}20` }}
                   >
-                    {svc.emoji}
+                    <ServiceLogo name={svc.name} emoji={svc.emoji} size={20} />
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-text-primary truncate">{svc.name}</p>

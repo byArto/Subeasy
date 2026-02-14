@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Subscription, BillingCycle } from '@/lib/types';
 import { Badge } from '@/components/ui';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 
@@ -101,7 +102,7 @@ export function SubCard({
             boxShadow: `inset 0 0 0 1px ${sub.color}30`,
           }}
         >
-          {sub.icon}
+          <ServiceLogo name={sub.name} emoji={sub.icon} size={24} />
         </div>
 
         {/* Center — name + next payment */}

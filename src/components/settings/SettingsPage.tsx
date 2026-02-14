@@ -66,6 +66,7 @@ export function SettingsPage({
   const [newCatEmoji, setNewCatEmoji] = useState('📦');
 
   const [confirmClear, setConfirmClear] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   let sectionIdx = 0;
@@ -89,7 +90,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.4.3',
+      version: '1.4.4',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -332,96 +333,132 @@ export function SettingsPage({
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="Категории" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
-          <AnimatePresence initial={false}>
-            {categories.map((cat, i) => (
-              <CategoryRow
-                key={cat.id}
-                category={cat}
-                isLast={i === categories.length - 1 && !showNewCat}
-                isEditing={editingCatId === cat.id}
-                editName={editCatName}
-                editEmoji={editCatEmoji}
-                onEditNameChange={setEditCatName}
-                onEditEmojiChange={setEditCatEmoji}
-                onStartEdit={() => startEditCategory(cat)}
-                onSaveEdit={saveEditCategory}
-                onCancelEdit={() => setEditingCatId(null)}
-                onDelete={() => deleteCategory(cat.id)}
-              />
-            ))}
-          </AnimatePresence>
+          {/* Collapsible header */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setCategoriesOpen((p) => !p)}
+            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-text-primary font-medium">Все категории</span>
+              <span className="text-xs text-text-muted">{categories.length}</span>
+            </div>
+            <motion.svg
+              animate={{ rotate: categoriesOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
 
-          {/* Add new category */}
-          <AnimatePresence>
-            {showNewCat && (
+          {/* Expandable content */}
+          <AnimatePresence initial={false}>
+            {categoriesOpen && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden border-t border-border-subtle"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
               >
-                <div className="flex items-center gap-2.5 px-4 py-3">
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => {
-                      const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟', '🎪', '🛒'];
-                      const idx = emojis.indexOf(newCatEmoji);
-                      setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
-                    }}
-                    className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-lg"
-                  >
-                    {newCatEmoji}
-                  </motion.button>
-                  <input
-                    type="text"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="Название"
-                    autoFocus
-                    className={cn(
-                      'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-border-subtle',
-                      'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                      'focus:border-neon/40'
+                <div className="border-t border-border-subtle">
+                  <AnimatePresence initial={false}>
+                    {categories.map((cat, i) => (
+                      <CategoryRow
+                        key={cat.id}
+                        category={cat}
+                        isLast={i === categories.length - 1 && !showNewCat}
+                        isEditing={editingCatId === cat.id}
+                        editName={editCatName}
+                        editEmoji={editCatEmoji}
+                        onEditNameChange={setEditCatName}
+                        onEditEmojiChange={setEditCatEmoji}
+                        onStartEdit={() => startEditCategory(cat)}
+                        onSaveEdit={saveEditCategory}
+                        onCancelEdit={() => setEditingCatId(null)}
+                        onDelete={() => deleteCategory(cat.id)}
+                      />
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Add new category */}
+                  <AnimatePresence>
+                    {showNewCat && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden border-t border-border-subtle"
+                      >
+                        <div className="flex items-center gap-2.5 px-4 py-3">
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.85 }}
+                            onClick={() => {
+                              const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟', '🎪', '🛒'];
+                              const idx = emojis.indexOf(newCatEmoji);
+                              setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
+                            }}
+                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-lg"
+                          >
+                            {newCatEmoji}
+                          </motion.button>
+                          <input
+                            type="text"
+                            value={newCatName}
+                            onChange={(e) => setNewCatName(e.target.value)}
+                            placeholder="Название"
+                            autoFocus
+                            className={cn(
+                              'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-border-subtle',
+                              'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
+                              'focus:border-neon/40'
+                            )}
+                          />
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleAddCategory}
+                            disabled={!newCatName.trim()}
+                            className={cn(
+                              'w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold',
+                              newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
+                            )}
+                          >
+                            ✓
+                          </motion.button>
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => { setShowNewCat(false); setNewCatName(''); }}
+                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-sm text-text-muted"
+                          >
+                            ✕
+                          </motion.button>
+                        </div>
+                      </motion.div>
                     )}
-                  />
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.9 }}
-                    onClick={handleAddCategory}
-                    disabled={!newCatName.trim()}
-                    className={cn(
-                      'w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold',
-                      newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
-                    )}
-                  >
-                    ✓
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowNewCat(false); setNewCatName(''); }}
-                    className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-sm text-text-muted"
-                  >
-                    ✕
-                  </motion.button>
+                  </AnimatePresence>
+
+                  {/* Add button */}
+                  {!showNewCat && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowNewCat(true)}
+                      className="w-full flex items-center gap-2.5 px-4 py-3.5 border-t border-border-subtle text-neon active:bg-neon/5 transition-colors"
+                    >
+                      <span className="w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center text-neon text-sm font-bold">+</span>
+                      <span className="text-sm font-medium">Добавить категорию</span>
+                    </motion.button>
+                  )}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Add button */}
-          {!showNewCat && (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setShowNewCat(true)}
-              className="w-full flex items-center gap-2.5 px-4 py-3.5 border-t border-border-subtle text-neon active:bg-neon/5 transition-colors"
-            >
-              <span className="w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center text-neon text-sm font-bold">+</span>
-              <span className="text-sm font-medium">Добавить категорию</span>
-            </motion.button>
-          )}
         </div>
       </motion.div>
 
@@ -492,7 +529,7 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.4.3</p>
+          <p className="text-xs text-text-muted">Версия 1.4.4</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             Твой личный трекер подписок
           </p>

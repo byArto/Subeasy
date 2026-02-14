@@ -22,6 +22,7 @@ import { ru } from 'date-fns/locale';
 import { Subscription, AppSettings, Currency } from '@/lib/types';
 import { convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { soundEngine } from '@/lib/sounds';
 
 /* ── Props ── */
@@ -521,7 +522,7 @@ function DayDetails({
               onClick={() => onSubTap?.(sub)}
               className="w-full flex items-center gap-3 text-left active:bg-surface-3 rounded-lg transition-colors -mx-1 px-1 py-0.5"
             >
-              <span className="text-lg">{sub.icon}</span>
+              <span className="text-lg"><ServiceLogo name={sub.name} emoji={sub.icon} size={22} /></span>
               <span className="flex-1 text-sm text-text-primary font-medium truncate">{sub.name}</span>
               <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
                 {Math.round(priceInCurrency(sub, settings)).toLocaleString('ru-RU')} {symbol}
@@ -625,7 +626,7 @@ function MonthSchedule({
                       onClick={() => onSubTap?.(sub)}
                       className="w-full flex items-center gap-2.5 bg-surface-2 rounded-xl border border-border-subtle px-3 py-2.5 text-left active:bg-surface-3 transition-colors"
                     >
-                      <span className="text-base shrink-0">{sub.icon}</span>
+                      <span className="text-base shrink-0"><ServiceLogo name={sub.name} emoji={sub.icon} size={20} /></span>
                       <span className="flex-1 text-sm text-text-primary font-medium truncate">{sub.name}</span>
                       <div className="text-right shrink-0">
                         <span className="text-sm font-semibold text-text-primary tabular-nums">

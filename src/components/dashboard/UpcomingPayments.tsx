@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Subscription, DisplayCurrency } from '@/lib/types';
 import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 
 interface UpcomingPaymentsProps {
   subscriptions: Subscription[]; // already filtered & sorted by getUpcomingPayments
@@ -72,7 +73,9 @@ export function UpcomingPayments({
               />
 
               {/* Icon + Name */}
-              <span className="text-sm shrink-0">{sub.icon}</span>
+              <span className="text-sm shrink-0">
+                <ServiceLogo name={sub.name} emoji={sub.icon} size={18} />
+              </span>
               <span className="flex-1 text-sm text-text-primary font-medium truncate">
                 {sub.name}
               </span>

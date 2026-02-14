@@ -6,6 +6,7 @@ import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { cn, getDaysUntilPayment, convertCurrency } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 
 /* ── Types ── */
 
@@ -311,7 +312,7 @@ export function SubDetail({
             boxShadow: `0 0 24px ${sub.color}15`,
           }}
         >
-          {sub.icon}
+          <ServiceLogo name={sub.name} emoji={sub.icon} size={36} />
         </div>
 
         {/* Name */}

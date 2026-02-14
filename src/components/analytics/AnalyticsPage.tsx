@@ -18,6 +18,7 @@ import {
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 
 /* ── Props ── */
 
@@ -358,7 +359,7 @@ function InsightsBadges({
                   background: `linear-gradient(135deg, ${mostExpensive.sub.color}30, ${mostExpensive.sub.color}10)`,
                 }}
               >
-                {mostExpensive.sub.icon}
+                <ServiceLogo name={mostExpensive.sub.name} emoji={mostExpensive.sub.icon} size={24} />
               </div>
 
               <p className="text-sm font-semibold text-text-primary truncate">
@@ -402,7 +403,7 @@ function InsightsBadges({
                   background: `linear-gradient(135deg, ${longest.sub.color}30, ${longest.sub.color}10)`,
                 }}
               >
-                {longest.sub.icon}
+                <ServiceLogo name={longest.sub.name} emoji={longest.sub.icon} size={24} />
               </div>
 
               <p className="text-sm font-semibold text-text-primary truncate">
@@ -1045,7 +1046,7 @@ function TopExpensive({
             >
               <div className="flex items-center gap-3 mb-2.5">
                 <span className="text-lg">{MEDALS[i]}</span>
-                <span className="text-lg">{sub.icon}</span>
+                <span className="text-lg"><ServiceLogo name={sub.name} emoji={sub.icon} size={22} /></span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-text-primary truncate">{sub.name}</p>
                   {isYearly && (

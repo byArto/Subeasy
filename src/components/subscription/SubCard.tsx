@@ -10,6 +10,7 @@ interface SubCardProps {
   subscription: Subscription;
   index?: number;
   onTap?: (sub: Subscription) => void;
+  insightBadge?: 'expensive' | 'longest' | null;
   className?: string;
 }
 
@@ -58,6 +59,7 @@ export function SubCard({
   subscription: sub,
   index = 0,
   onTap,
+  insightBadge,
   className,
 }: SubCardProps) {
   const status = getPaymentStatus(sub);
@@ -101,6 +103,16 @@ export function SubCard({
           <span className="text-sm font-semibold text-text-primary truncate">
             {sub.name}
           </span>
+          {insightBadge === 'expensive' && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-warning/10 border border-warning/20 text-[9px] font-bold text-warning uppercase tracking-wide leading-none">
+              👑
+            </span>
+          )}
+          {insightBadge === 'longest' && (
+            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-neon/10 border border-neon/20 text-[9px] font-bold text-neon uppercase tracking-wide leading-none">
+              ⏳
+            </span>
+          )}
           <Badge variant={status.variant} pulse={status.pulse}>
             {status.label}
           </Badge>

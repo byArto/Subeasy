@@ -23,7 +23,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   RUB: '₽',
   USD: '$',
-  EUR: '€',
 };
 
 export const CYCLE_LABELS: Record<string, string> = {
@@ -37,6 +36,6 @@ export const CYCLE_LABELS: Record<string, string> = {
 export const PAYMENT_METHODS = [
   'Карта',
   'Крипто',
-  'PayPal',
+  'СБП',
   'Другое',
 ];

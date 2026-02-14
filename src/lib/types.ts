@@ -1,4 +1,4 @@
-export type Currency = 'RUB' | 'USD' | 'EUR';
+export type Currency = 'RUB' | 'USD';
 export type DisplayCurrency = 'RUB' | 'USD';
 export type BillingCycle = 'monthly' | 'yearly' | 'weekly' | 'one-time' | 'trial';
 
@@ -15,6 +15,7 @@ export interface Subscription {
   notes: string;
   color: string; // hex цвет для карточки
   icon: string; // emoji
+  managementUrl: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

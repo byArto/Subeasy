@@ -22,18 +22,18 @@ const COLOR_PALETTE = [
   '#AF52DE', '#FF2D55', '#D4A574', '#8E8E93',
 ];
 
-const CURRENCIES: Currency[] = ['RUB', 'USD', 'EUR'];
+const CURRENCIES: Currency[] = ['RUB', 'USD'];
 const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time', 'trial'];
 
 /* ── Payment method encoding ── */
 
-type PaymentType = 'card' | 'crypto' | 'paypal' | 'other';
+type PaymentType = 'card' | 'crypto' | 'sbp' | 'other';
 type CardType = 'physical' | 'virtual';
 
 const PAYMENT_TYPES: { type: PaymentType; label: string }[] = [
   { type: 'card', label: 'Карта' },
   { type: 'crypto', label: 'Крипто' },
-  { type: 'paypal', label: 'PayPal' },
+  { type: 'sbp', label: 'СБП' },
   { type: 'other', label: 'Другое' },
 ];
 
@@ -48,13 +48,14 @@ function parsePaymentMethod(raw: string): { type: PaymentType; cardType: CardTyp
     return { type: 'card', cardType: 'physical', detail: '' };
   }
   if (raw.startsWith('crypto:')) return { type: 'crypto', cardType: 'physical', detail: raw.substring(7) };
-  if (raw.startsWith('paypal:')) return { type: 'paypal', cardType: 'physical', detail: raw.substring(7) };
+  if (raw.startsWith('sbp:')) return { type: 'sbp', cardType: 'physical', detail: raw.substring(4) };
+  if (raw.startsWith('paypal:')) return { type: 'sbp', cardType: 'physical', detail: raw.substring(7) }; // migrate paypal → sbp
   if (raw.startsWith('other:')) return { type: 'other', cardType: 'physical', detail: raw.substring(6) };
 
   // Legacy values
   if (raw === 'Карта' || raw === 'Apple Pay' || raw === 'Google Pay') return { type: 'card', cardType: 'physical', detail: '' };
   if (raw === 'Крипто') return { type: 'crypto', cardType: 'physical', detail: '' };
-  if (raw === 'PayPal') return { type: 'paypal', cardType: 'physical', detail: '' };
+  if (raw === 'PayPal' || raw === 'СБП') return { type: 'sbp', cardType: 'physical', detail: '' };
   return { type: 'other', cardType: 'physical', detail: raw === 'Другое' ? '' : raw };
 }
 
@@ -63,7 +64,7 @@ function encodePaymentMethod(type: PaymentType, cardType: CardType, detail: stri
   switch (type) {
     case 'card': return `card:${cardType}:${d}`;
     case 'crypto': return `crypto:${d}`;
-    case 'paypal': return `paypal:${d}`;
+    case 'sbp': return `sbp:${d}`;
     case 'other': return `other:${d}`;
   }
 }
@@ -123,6 +124,10 @@ export function SubForm({
   const [paymentType, setPaymentType] = useState<PaymentType>(initialParsed.type);
   const [cardType, setCardType] = useState<CardType>(initialParsed.cardType);
   const [paymentDetail, setPaymentDetail] = useState(initialParsed.detail);
+  const [startDate, setStartDate] = useState(
+    initialData?.startDate || new Date().toISOString().split('T')[0]
+  );
+  const [managementUrl, setManagementUrl] = useState(initialData?.managementUrl || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
   const [color, setColor] = useState(initialData?.color || '#007AFF');
 
@@ -194,8 +199,9 @@ export function SubForm({
       category,
       cycle,
       nextPaymentDate,
-      startDate: initialData?.startDate || new Date().toISOString().split('T')[0],
+      startDate,
       paymentMethod: encodePaymentMethod(paymentType, cardType, paymentDetail),
+      managementUrl: managementUrl.trim(),
       notes: notes.trim(),
       color,
       icon,
@@ -398,7 +404,7 @@ export function SubForm({
         animate="visible"
       >
         <FieldLabel text="Период оплаты" />
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {CYCLES.map((c) => (
             <motion.button
               key={c}
@@ -406,7 +412,7 @@ export function SubForm({
               whileTap={{ scale: 0.93 }}
               onClick={() => setCycle(c)}
               className={cn(
-                'min-h-[40px] px-2 rounded-xl text-xs font-semibold transition-colors',
+                'min-h-[36px] px-3 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap',
                 cycle === c
                   ? 'bg-neon text-surface'
                   : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
@@ -544,6 +550,48 @@ export function SubForm({
         />
       </motion.div>
 
+      {/* ── Start Date ── */}
+      <motion.div
+        custom={fieldIndex++}
+        variants={fieldVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <FieldLabel text="Дата начала подписки" />
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className={cn(
+            'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+            'outline-none transition-all duration-200',
+            '[color-scheme:dark]',
+            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+          )}
+        />
+      </motion.div>
+
+      {/* ── Management URL ── */}
+      <motion.div
+        custom={fieldIndex++}
+        variants={fieldVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <FieldLabel text="Ссылка на управление" />
+        <input
+          type="url"
+          value={managementUrl}
+          onChange={(e) => setManagementUrl(e.target.value)}
+          placeholder="https://account.spotify.com/subscription"
+          className={cn(
+            'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+            'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+          )}
+        />
+      </motion.div>
+
       {/* ── Payment Method ── */}
       <motion.div
         custom={fieldIndex++}
@@ -655,9 +703,9 @@ export function SubForm({
             </motion.div>
           )}
 
-          {paymentType === 'paypal' && (
+          {paymentType === 'sbp' && (
             <motion.div
-              key="paypal-fields"
+              key="sbp-fields"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -669,7 +717,7 @@ export function SubForm({
                   type="text"
                   value={paymentDetail}
                   onChange={(e) => setPaymentDetail(e.target.value)}
-                  placeholder="Email или заметка"
+                  placeholder="Банк или номер телефона"
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',

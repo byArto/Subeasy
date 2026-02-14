@@ -103,9 +103,13 @@ function formatPaymentMethod(raw: string): React.ReactNode {
     const detail = raw.substring(7).trim();
     return detail ? <span>🪙 {detail}</span> : <span>🪙 Криптовалюта</span>;
   }
+  if (raw.startsWith('sbp:')) {
+    const detail = raw.substring(4).trim();
+    return detail ? <span>⚡ СБП · {detail}</span> : <span>⚡ СБП</span>;
+  }
   if (raw.startsWith('paypal:')) {
     const detail = raw.substring(7).trim();
-    return detail ? <span>PayPal · {detail}</span> : <span>PayPal</span>;
+    return detail ? <span>⚡ СБП · {detail}</span> : <span>⚡ СБП</span>;
   }
   if (raw.startsWith('other:')) {
     const detail = raw.substring(6).trim();
@@ -266,6 +270,22 @@ export function SubDetail({
             </span>
           ),
         }]),
+    ...(sub.managementUrl
+      ? [{
+          label: 'Управление',
+          value: (
+            <a
+              href={sub.managementUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neon underline underline-offset-2 break-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Открыть ↗
+            </a>
+          ),
+        }]
+      : []),
     {
       label: 'Заметки',
       value: sub.notes || '—',

@@ -29,6 +29,7 @@ import { soundEngine } from '@/lib/sounds';
 interface CalendarPageProps {
   subscriptions: Subscription[];
   settings: AppSettings;
+  onSubTap?: (sub: Subscription) => void;
 }
 
 /* ── Helpers ── */
@@ -125,7 +126,7 @@ const WEEKDAY_SHORT_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'
 
 /* ── Component ── */
 
-export function CalendarPage({ subscriptions, settings }: CalendarPageProps) {
+export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPageProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [direction, setDirection] = useState(0);
@@ -217,6 +218,7 @@ export function CalendarPage({ subscriptions, settings }: CalendarPageProps) {
               subs={payments.get(selectedDay.getDate()) || []}
               settings={settings}
               symbol={symbol}
+              onSubTap={onSubTap}
             />
           </motion.div>
         )}
@@ -229,6 +231,7 @@ export function CalendarPage({ subscriptions, settings }: CalendarPageProps) {
         payments={payments}
         settings={settings}
         symbol={symbol}
+        onSubTap={onSubTap}
       />
     </div>
   );
@@ -403,11 +406,13 @@ function DayDetails({
   subs,
   settings,
   symbol,
+  onSubTap,
 }: {
   date: Date;
   subs: Subscription[];
   settings: AppSettings;
   symbol: string;
+  onSubTap?: (sub: Subscription) => void;
 }) {
   const isPast = isBefore(date, new Date(new Date().setHours(0, 0, 0, 0)));
   const dateStr = format(date, 'd MMMM yyyy', { locale: ru });
@@ -423,7 +428,11 @@ function DayDetails({
       ) : (
         <div className="space-y-2.5">
           {subs.map((sub) => (
-            <div key={sub.id} className="flex items-center gap-3">
+            <button
+              key={sub.id}
+              onClick={() => onSubTap?.(sub)}
+              className="w-full flex items-center gap-3 text-left active:bg-surface-3 rounded-lg transition-colors -mx-1 px-1 py-0.5"
+            >
               <span className="text-lg">{sub.icon}</span>
               <span className="flex-1 text-sm text-text-primary font-medium truncate">{sub.name}</span>
               <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
@@ -437,7 +446,7 @@ function DayDetails({
               )}>
                 {isPast ? 'Оплачено' : 'Ожидает'}
               </span>
-            </div>
+            </button>
           ))}
 
           {/* Total */}
@@ -463,12 +472,14 @@ function MonthSchedule({
   payments,
   settings,
   symbol,
+  onSubTap,
 }: {
   year: number;
   month: number;
   payments: PaymentMap;
   settings: AppSettings;
   symbol: string;
+  onSubTap?: (sub: Subscription) => void;
 }) {
   // Sort payment days
   const sortedDays = Array.from(payments.entries())
@@ -521,9 +532,10 @@ function MonthSchedule({
                 {/* Payment cards */}
                 <div className="flex-1 space-y-1.5 min-w-0">
                   {subs.map((sub) => (
-                    <div
+                    <button
                       key={sub.id}
-                      className="flex items-center gap-2.5 bg-surface-2 rounded-xl border border-border-subtle px-3 py-2.5"
+                      onClick={() => onSubTap?.(sub)}
+                      className="w-full flex items-center gap-2.5 bg-surface-2 rounded-xl border border-border-subtle px-3 py-2.5 text-left active:bg-surface-3 transition-colors"
                     >
                       <span className="text-base shrink-0">{sub.icon}</span>
                       <span className="flex-1 text-sm text-text-primary font-medium truncate">{sub.name}</span>
@@ -535,7 +547,7 @@ function MonthSchedule({
                           <p className="text-[10px] text-text-muted">Оплачено</p>
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </motion.div>

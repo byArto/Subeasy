@@ -9,7 +9,7 @@ export interface ServiceTemplate {
   emoji: string;
   categoryId: string;
   defaultPrice: number;
-  defaultCurrency: 'RUB' | 'USD' | 'EUR';
+  defaultCurrency: 'RUB' | 'USD';
   color: string;
   cycle: 'monthly' | 'yearly';
 }
@@ -95,7 +95,7 @@ export const SERVICE_CATALOG: ServiceTemplate[] = [
   { name: 'ExpressVPN', emoji: '🔒', categoryId: '8', defaultPrice: 13, defaultCurrency: 'USD', color: '#DA3940', cycle: 'monthly' },
   { name: 'Surfshark', emoji: '🦈', categoryId: '8', defaultPrice: 13, defaultCurrency: 'USD', color: '#178BF1', cycle: 'monthly' },
   { name: 'Kaspersky', emoji: '🛡️', categoryId: '8', defaultPrice: 999, defaultCurrency: 'RUB', color: '#006D5C', cycle: 'yearly' },
-  { name: 'Mullvad VPN', emoji: '🔒', categoryId: '8', defaultPrice: 5, defaultCurrency: 'EUR', color: '#294D73', cycle: 'monthly' },
+  { name: 'Mullvad VPN', emoji: '🔒', categoryId: '8', defaultPrice: 5, defaultCurrency: 'USD', color: '#294D73', cycle: 'monthly' },
 
   // ── Другое / Подписки ──
   { name: 'Яндекс Плюс', emoji: '⭐', categoryId: '9', defaultPrice: 399, defaultCurrency: 'RUB', color: '#FC3F1D', cycle: 'monthly' },

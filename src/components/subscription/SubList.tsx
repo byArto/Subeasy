@@ -44,6 +44,8 @@ interface SubListProps {
   activeCategory: string | null;
   onSubTap?: (sub: Subscription) => void;
   onAddTap?: () => void;
+  mostExpensiveId?: string | null;
+  longestId?: string | null;
   className?: string;
 }
 
@@ -52,6 +54,8 @@ export function SubList({
   activeCategory,
   onSubTap,
   onAddTap,
+  mostExpensiveId,
+  longestId,
   className,
 }: SubListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -175,6 +179,13 @@ export function SubList({
             subscription={sub}
             index={i}
             onTap={onSubTap}
+            insightBadge={
+              sub.id === mostExpensiveId
+                ? 'expensive'
+                : sub.id === longestId
+                  ? 'longest'
+                  : null
+            }
           />
         ))}
       </AnimatePresence>

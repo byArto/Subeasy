@@ -9,6 +9,7 @@ interface UpcomingPaymentsProps {
   subscriptions: Subscription[]; // already filtered & sorted by getUpcomingPayments
   currency: DisplayCurrency;
   maxItems?: number;
+  onSubTap?: (sub: Subscription) => void;
   className?: string;
 }
 
@@ -29,6 +30,7 @@ export function UpcomingPayments({
   subscriptions,
   currency: _currency,
   maxItems = 5,
+  onSubTap,
   className,
 }: UpcomingPaymentsProps) {
   const items = subscriptions.slice(0, maxItems);
@@ -52,12 +54,14 @@ export function UpcomingPayments({
           const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
 
           return (
-            <motion.div
+            <motion.button
               key={sub.id}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 30 }}
-              className="flex items-center gap-3 py-2.5 px-1"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSubTap?.(sub)}
+              className="w-full flex items-center gap-3 py-2.5 px-1 text-left active:bg-surface-2 rounded-lg transition-colors"
             >
               {/* Color dot */}
               <span
@@ -88,7 +92,7 @@ export function UpcomingPayments({
                 {Math.round(sub.price).toLocaleString('ru-RU')}
                 <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
               </span>
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>

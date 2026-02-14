@@ -22,13 +22,11 @@ export function convertCurrency(
   const toUsd: Record<Currency, (n: number) => number> = {
     USD: (n) => n,
     RUB: (n) => n / exchangeRate,
-    EUR: (n) => n / (exchangeRate * 0.92), // примерный курс EUR/USD
   };
 
   const fromUsd: Record<Currency, (n: number) => number> = {
     USD: (n) => n,
     RUB: (n) => n * exchangeRate,
-    EUR: (n) => n * exchangeRate * 0.92,
   };
 
   const usdAmount = toUsd[from](amount);

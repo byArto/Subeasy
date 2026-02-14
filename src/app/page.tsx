@@ -17,7 +17,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { Subscription } from '@/lib/types';
+import { Subscription, Currency } from '@/lib/types';
+import { getMonthlyPrice, convertCurrency } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
@@ -194,12 +195,14 @@ export default function Home() {
                 subscriptions={subscriptions}
                 categories={categories}
                 settings={settings}
+                onSubTap={openDetail}
               />
             )}
             {activeTab === 'calendar' && (
               <CalendarPage
                 subscriptions={subscriptions}
                 settings={settings}
+                onSubTap={openDetail}
               />
             )}
             {activeTab === 'settings' && (
@@ -361,6 +364,41 @@ function HomeTab({
   const active = useMemo(() => getActiveSubscriptions(), [getActiveSubscriptions]);
   const upcoming = useMemo(() => getUpcomingPayments(7), [getUpcomingPayments]);
 
+  // Insight IDs for badges
+  const mostExpensiveId = useMemo(() => {
+    if (active.length < 2) return null;
+    let bestId: string | null = null;
+    let bestMonthly = 0;
+    for (const s of active) {
+      const monthly = convertCurrency(
+        getMonthlyPrice(s),
+        s.currency as Currency,
+        displayCurrency as Currency,
+        exchangeRate,
+      );
+      if (monthly > bestMonthly) {
+        bestMonthly = monthly;
+        bestId = s.id;
+      }
+    }
+    return bestId;
+  }, [active, displayCurrency, exchangeRate]);
+
+  const longestId = useMemo(() => {
+    const recurring = active.filter((s) => s.cycle !== 'one-time' && s.cycle !== 'trial');
+    if (recurring.length < 2) return null;
+    let bestId: string | null = null;
+    let oldest = Infinity;
+    for (const s of recurring) {
+      const t = new Date(s.startDate).getTime();
+      if (t < oldest) {
+        oldest = t;
+        bestId = s.id;
+      }
+    }
+    return bestId === mostExpensiveId ? null : bestId; // avoid double badge
+  }, [active, mostExpensiveId]);
+
   const hasSubscriptions = subscriptions.length > 0;
 
   return (
@@ -381,6 +419,7 @@ function HomeTab({
         <UpcomingPayments
           subscriptions={upcoming}
           currency={displayCurrency}
+          onSubTap={onSubTap}
         />
       )}
 
@@ -400,6 +439,8 @@ function HomeTab({
         activeCategory={activeCategory}
         onSubTap={onSubTap}
         onAddTap={onAddTap}
+        mostExpensiveId={mostExpensiveId}
+        longestId={longestId}
       />
     </div>
   );

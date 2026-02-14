@@ -13,6 +13,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  ReferenceLine,
 } from 'recharts';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ interface AnalyticsPageProps {
   subscriptions: Subscription[];
   categories: Category[];
   settings: AppSettings;
+  onSubTap?: (sub: Subscription) => void;
 }
 
 /* ── Stagger ── */
@@ -75,9 +77,27 @@ function getMonthlyTotal(
     }, 0);
 }
 
+/** Days since a date */
+function daysSince(dateStr: string): number {
+  const start = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** Format duration in human-readable form */
+function formatDuration(days: number): string {
+  if (days < 30) return `${days} дн.`;
+  const months = Math.floor(days / 30.44);
+  if (months < 12) return `${months} мес.`;
+  const years = Math.floor(months / 12);
+  const remMonths = months % 12;
+  if (remMonths === 0) return `${years} г.`;
+  return `${years} г. ${remMonths} мес.`;
+}
+
 /* ── Component ── */
 
-export function AnalyticsPage({ subscriptions, categories, settings }: AnalyticsPageProps) {
+export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }: AnalyticsPageProps) {
   const { displayCurrency, exchangeRate } = settings;
   const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
   const altCurrency = displayCurrency === 'RUB' ? 'USD' : 'RUB';
@@ -119,7 +139,38 @@ export function AnalyticsPage({ subscriptions, categories, settings }: Analytics
       </motion.div>
 
       <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <InsightsBadges
+          active={active}
+          subscriptions={subscriptions}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
+          symbol={symbol}
+          onSubTap={onSubTap}
+        />
+      </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <ForecastSection
+          subscriptions={subscriptions}
+          active={active}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
+          symbol={symbol}
+          monthlyTotal={monthlyTotal}
+        />
+      </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
         <MonthComparison
+          subscriptions={subscriptions}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
+          symbol={symbol}
+        />
+      </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SpendingTimeline
           subscriptions={subscriptions}
           displayCurrency={displayCurrency}
           exchangeRate={exchangeRate}
@@ -145,15 +196,7 @@ export function AnalyticsPage({ subscriptions, categories, settings }: Analytics
           exchangeRate={exchangeRate}
           symbol={symbol}
           monthlyTotal={monthlyTotal}
-        />
-      </motion.div>
-
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SpendingTimeline
-          subscriptions={subscriptions}
-          displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
-          symbol={symbol}
+          onSubTap={onSubTap}
         />
       </motion.div>
     </div>
@@ -231,7 +274,287 @@ function PeriodTotal({
 }
 
 /* ═══════════════════════════════════════
-   СЕКЦИЯ 2: Сравнение с прошлым месяцем
+   СЕКЦИЯ 2: Insights Badges
+   "Самая дорогая" + "Самая долгая"
+   ═══════════════════════════════════════ */
+
+function InsightsBadges({
+  active,
+  subscriptions,
+  displayCurrency,
+  exchangeRate,
+  symbol,
+  onSubTap,
+}: {
+  active: Subscription[];
+  subscriptions: Subscription[];
+  displayCurrency: string;
+  exchangeRate: number;
+  symbol: string;
+  onSubTap?: (sub: Subscription) => void;
+}) {
+  const mostExpensive = useMemo(() => {
+    if (active.length === 0) return null;
+    let best: Subscription | null = null;
+    let bestMonthly = 0;
+    for (const s of active) {
+      const m = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      if (m > bestMonthly) {
+        bestMonthly = m;
+        best = s;
+      }
+    }
+    return best ? { sub: best, monthly: bestMonthly } : null;
+  }, [active, displayCurrency, exchangeRate]);
+
+  const longest = useMemo(() => {
+    const allActive = subscriptions.filter((s) => s.isActive && s.cycle !== 'one-time' && s.cycle !== 'trial');
+    if (allActive.length === 0) return null;
+    let best: Subscription | null = null;
+    let bestDays = 0;
+    for (const s of allActive) {
+      const d = daysSince(s.startDate);
+      if (d > bestDays) {
+        bestDays = d;
+        best = s;
+      }
+    }
+    return best ? { sub: best, days: bestDays } : null;
+  }, [subscriptions]);
+
+  if (!mostExpensive && !longest) return null;
+
+  return (
+    <div>
+      <SectionHeader title="Инсайты" />
+      <div className="grid grid-cols-2 gap-3">
+        {/* Most Expensive */}
+        {mostExpensive && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onSubTap?.(mostExpensive.sub)}
+            className="relative bg-surface-2 rounded-2xl border border-border-subtle p-4 overflow-hidden text-left active:bg-surface-3 transition-colors"
+          >
+            {/* Glow accent */}
+            <div
+              className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
+              style={{ backgroundColor: mostExpensive.sub.color }}
+            />
+
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="text-xs">👑</span>
+                <span className="text-[10px] font-bold text-warning uppercase tracking-wider">
+                  Дорогая
+                </span>
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2.5"
+                style={{
+                  background: `linear-gradient(135deg, ${mostExpensive.sub.color}30, ${mostExpensive.sub.color}10)`,
+                }}
+              >
+                {mostExpensive.sub.icon}
+              </div>
+
+              <p className="text-sm font-semibold text-text-primary truncate">
+                {mostExpensive.sub.name}
+              </p>
+              <p className="text-lg font-bold text-text-primary tabular-nums mt-1">
+                {formatAmount(Math.round(mostExpensive.monthly))}
+                <span className="text-xs text-text-muted ml-0.5">{symbol}/мес</span>
+              </p>
+            </div>
+          </motion.button>
+        )}
+
+        {/* Longest */}
+        {longest && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.05, type: 'spring', stiffness: 300, damping: 30 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onSubTap?.(longest.sub)}
+            className="relative bg-surface-2 rounded-2xl border border-border-subtle p-4 overflow-hidden text-left active:bg-surface-3 transition-colors"
+          >
+            {/* Glow accent */}
+            <div
+              className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
+              style={{ backgroundColor: longest.sub.color }}
+            />
+
+            <div className="relative">
+              <div className="flex items-center gap-1.5 mb-3">
+                <span className="text-xs">⏳</span>
+                <span className="text-[10px] font-bold text-neon uppercase tracking-wider">
+                  Долгая
+                </span>
+              </div>
+
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2.5"
+                style={{
+                  background: `linear-gradient(135deg, ${longest.sub.color}30, ${longest.sub.color}10)`,
+                }}
+              >
+                {longest.sub.icon}
+              </div>
+
+              <p className="text-sm font-semibold text-text-primary truncate">
+                {longest.sub.name}
+              </p>
+              <p className="text-lg font-bold text-text-primary tabular-nums mt-1">
+                {formatDuration(longest.days)}
+              </p>
+            </div>
+          </motion.button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   СЕКЦИЯ 3: Прогноз на следующий месяц
+   ═══════════════════════════════════════ */
+
+function ForecastSection({
+  subscriptions,
+  active,
+  displayCurrency,
+  exchangeRate,
+  symbol,
+  monthlyTotal,
+}: {
+  subscriptions: Subscription[];
+  active: Subscription[];
+  displayCurrency: string;
+  exchangeRate: number;
+  symbol: string;
+  monthlyTotal: number;
+}) {
+  const forecast = useMemo(() => {
+    const now = new Date();
+    const nextMonth = now.getMonth() + 1;
+    const nextYear = nextMonth > 11 ? now.getFullYear() + 1 : now.getFullYear();
+    const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
+
+    // Base forecast: current active subs that will still be active next month
+    const baseForecast = getMonthlyTotal(subscriptions, nextYear, nextMonthNorm, exchangeRate, displayCurrency);
+
+    // Trials converting next month — their price will kick in
+    const trialConversions = subscriptions.filter((s) => {
+      if (s.cycle !== 'trial' || !s.isActive) return false;
+      const endDate = new Date(s.nextPaymentDate);
+      return endDate.getMonth() === nextMonthNorm && endDate.getFullYear() === nextYear;
+    });
+
+    const trialExtra = trialConversions.reduce((sum, s) => {
+      return sum + convertCurrency(s.price, s.currency as Currency, displayCurrency as Currency, exchangeRate);
+    }, 0);
+
+    const totalForecast = baseForecast + trialExtra;
+    const diff = totalForecast - monthlyTotal;
+    const pct = monthlyTotal > 0 ? Math.round((diff / monthlyTotal) * 100) : 0;
+
+    return {
+      total: totalForecast,
+      diff,
+      pct,
+      trialCount: trialConversions.length,
+      nextMonthLabel: MONTH_NAMES_SHORT[nextMonthNorm],
+    };
+  }, [subscriptions, active, displayCurrency, exchangeRate, monthlyTotal]);
+
+  return (
+    <div>
+      <SectionHeader title="Прогноз" />
+      <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-[11px] text-text-muted mb-0.5">
+              Ожидаемые расходы · {forecast.nextMonthLabel}
+            </p>
+            <p className="text-2xl font-display font-bold text-text-primary tabular-nums">
+              {formatAmount(Math.round(forecast.total))}
+              <span className="text-sm text-text-muted ml-1">{symbol}</span>
+            </p>
+          </div>
+
+          {/* Change indicator */}
+          <div className={cn(
+            'flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold',
+            forecast.diff > 0
+              ? 'bg-danger/10 text-danger'
+              : forecast.diff < 0
+                ? 'bg-neon/10 text-neon'
+                : 'bg-surface-4 text-text-muted',
+          )}>
+            <span>
+              {forecast.diff > 0 ? '↑' : forecast.diff < 0 ? '↓' : '='}
+            </span>
+            <span className="tabular-nums">
+              {forecast.diff > 0 ? '+' : ''}{forecast.pct}%
+            </span>
+          </div>
+        </div>
+
+        {/* Forecast bar comparing current vs next */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-text-muted w-14 shrink-0">Сейчас</span>
+            <div className="flex-1 h-2 rounded-full bg-surface-4 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+                className="h-full rounded-full bg-neon/50"
+              />
+            </div>
+            <span className="text-[11px] text-text-muted tabular-nums w-16 text-right shrink-0">
+              {formatAmount(Math.round(monthlyTotal))} {symbol}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] text-text-muted w-14 shrink-0">{forecast.nextMonthLabel}</span>
+            <div className="flex-1 h-2 rounded-full bg-surface-4 overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{
+                  width: monthlyTotal > 0
+                    ? `${Math.min((forecast.total / monthlyTotal) * 100, 100)}%`
+                    : '100%',
+                }}
+                transition={{ delay: 0.15, duration: 0.6, ease: 'easeOut' }}
+                className="h-full rounded-full"
+                style={{
+                  backgroundColor: forecast.diff > 0 ? '#FF4444' : '#00FF41',
+                }}
+              />
+            </div>
+            <span className="text-[11px] text-text-primary font-medium tabular-nums w-16 text-right shrink-0">
+              {formatAmount(Math.round(forecast.total))} {symbol}
+            </span>
+          </div>
+        </div>
+
+        {forecast.trialCount > 0 && (
+          <p className="text-[11px] text-warning mt-3">
+            {forecast.trialCount} {forecast.trialCount === 1 ? 'триал закончится' : 'триала закончатся'} в {forecast.nextMonthLabel.toLowerCase()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   СЕКЦИЯ 4: Сравнение с прошлым месяцем
    ═══════════════════════════════════════ */
 
 function MonthComparison({
@@ -312,7 +635,197 @@ function MonthComparison({
 }
 
 /* ═══════════════════════════════════════
-   СЕКЦИЯ 3: Круговая диаграмма
+   СЕКЦИЯ 5: Тренд-график (12 месяцев)
+   ═══════════════════════════════════════ */
+
+interface MonthPoint {
+  label: string;
+  total: number;
+  forecast?: number;
+}
+
+function SpendingTimeline({
+  subscriptions,
+  displayCurrency,
+  exchangeRate,
+  symbol,
+}: {
+  subscriptions: Subscription[];
+  displayCurrency: string;
+  exchangeRate: number;
+  symbol: string;
+}) {
+  const { data, growth, avgTotal } = useMemo(() => {
+    const now = new Date();
+    const points: MonthPoint[] = [];
+    const monthsBack = 12;
+
+    for (let i = monthsBack - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
+
+      points.push({
+        label: MONTH_NAMES_SHORT[d.getMonth()],
+        total: Math.round(total),
+      });
+    }
+
+    // Add next month forecast
+    const nextD = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const forecastTotal = getMonthlyTotal(subscriptions, nextD.getFullYear(), nextD.getMonth(), exchangeRate, displayCurrency);
+    points.push({
+      label: MONTH_NAMES_SHORT[nextD.getMonth()],
+      total: 0,
+      forecast: Math.round(forecastTotal),
+    });
+
+    // Calculate growth: compare last 3 months average vs 3 months before that
+    const withData = points.filter((p) => p.total > 0);
+    let growthPct = 0;
+    if (withData.length >= 4) {
+      const recent = withData.slice(-3);
+      const older = withData.slice(-6, -3);
+      if (older.length > 0) {
+        const recentAvg = recent.reduce((s, p) => s + p.total, 0) / recent.length;
+        const olderAvg = older.reduce((s, p) => s + p.total, 0) / older.length;
+        if (olderAvg > 0) growthPct = Math.round(((recentAvg - olderAvg) / olderAvg) * 100);
+      }
+    }
+
+    // Average
+    const totals = points.filter((p) => p.total > 0);
+    const avg = totals.length > 0 ? totals.reduce((s, p) => s + p.total, 0) / totals.length : 0;
+
+    return { data: points, growth: growthPct, avgTotal: Math.round(avg) };
+  }, [subscriptions, displayCurrency, exchangeRate]);
+
+  const hasAnyData = data.some((p) => p.total > 0);
+  const monthsWithData = data.filter((p) => p.total > 0).length;
+
+  if (!hasAnyData) {
+    return (
+      <div>
+        <SectionHeader title="Динамика расходов" />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6">
+          <p className="text-center text-xs text-text-muted">
+            Добавьте подписки для аналитики
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2 pl-1 pr-1">
+        <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">
+          Динамика расходов
+        </h3>
+        {growth !== 0 && (
+          <div className={cn(
+            'flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold',
+            growth > 0 ? 'bg-danger/10 text-danger' : 'bg-neon/10 text-neon',
+          )}>
+            <span>{growth > 0 ? '↑' : '↓'}</span>
+            <span className="tabular-nums">{growth > 0 ? '+' : ''}{growth}%</span>
+            <span className="text-text-muted font-medium">тренд</span>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 pr-1">
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
+            <defs>
+              <linearGradient id="neonGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00FF41" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="#00FF41" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#FFB800" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="#FFB800" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.03)"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval={1}
+            />
+            <YAxis
+              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              width={45}
+            />
+            <Tooltip content={<NeonTooltip symbol={symbol} />} />
+            {avgTotal > 0 && (
+              <ReferenceLine
+                y={avgTotal}
+                stroke="rgba(255,255,255,0.1)"
+                strokeDasharray="4 4"
+                label={{
+                  value: `ср. ${formatAmount(avgTotal)}`,
+                  fill: 'rgba(255,255,255,0.2)',
+                  fontSize: 10,
+                  position: 'insideTopRight',
+                }}
+              />
+            )}
+            <Area
+              type="monotone"
+              dataKey="total"
+              stroke="#00FF41"
+              strokeWidth={2}
+              fill="url(#neonGrad)"
+              dot={{ fill: '#00FF41', r: 2.5, strokeWidth: 0 }}
+              activeDot={{ fill: '#00FF41', r: 5, strokeWidth: 0, style: { filter: 'drop-shadow(0 0 6px rgba(0,255,65,0.6))' } }}
+              connectNulls={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="forecast"
+              stroke="#FFB800"
+              strokeWidth={2}
+              strokeDasharray="4 4"
+              fill="url(#forecastGrad)"
+              dot={{ fill: '#FFB800', r: 3, strokeWidth: 0 }}
+              activeDot={{ fill: '#FFB800', r: 5, strokeWidth: 0 }}
+              connectNulls={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+
+        {/* Legend */}
+        <div className="flex items-center justify-center gap-4 mt-2">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 rounded-full bg-neon" />
+            <span className="text-[10px] text-text-muted">Факт</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-0.5 rounded-full bg-warning opacity-60" style={{ borderTop: '1px dashed #FFB800' }} />
+            <span className="text-[10px] text-text-muted">Прогноз</span>
+          </div>
+        </div>
+
+        {monthsWithData < 2 && (
+          <p className="text-center text-[11px] text-text-muted mt-2">
+            Копим историю... Данные за {monthsWithData} мес.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   СЕКЦИЯ 6: Круговая диаграмма
    ═══════════════════════════════════════ */
 
 interface CategoryData {
@@ -423,7 +936,7 @@ function CategoryBreakdown({
 }
 
 /* ═══════════════════════════════════════
-   СЕКЦИЯ 4: Топ-3 самых дорогих
+   СЕКЦИЯ 7: Топ-3 самых дорогих
    ═══════════════════════════════════════ */
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -434,12 +947,14 @@ function TopExpensive({
   exchangeRate,
   symbol,
   monthlyTotal,
+  onSubTap,
 }: {
   active: Subscription[];
   displayCurrency: string;
   exchangeRate: number;
   symbol: string;
   monthlyTotal: number;
+  onSubTap?: (sub: Subscription) => void;
 }) {
   const top3 = useMemo(() => {
     return active
@@ -462,12 +977,14 @@ function TopExpensive({
           const isYearly = sub.cycle === 'yearly';
 
           return (
-            <motion.div
+            <motion.button
               key={sub.id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1, type: 'spring', stiffness: 300, damping: 30 }}
-              className="bg-surface-2 rounded-2xl border border-border-subtle p-4"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onSubTap?.(sub)}
+              className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left active:bg-surface-3 transition-colors"
             >
               <div className="flex items-center gap-3 mb-2.5">
                 <span className="text-lg">{MEDALS[i]}</span>
@@ -496,7 +1013,7 @@ function TopExpensive({
                   }}
                 />
               </div>
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>
@@ -504,120 +1021,29 @@ function TopExpensive({
   );
 }
 
-/* ═══════════════════════════════════════
-   СЕКЦИЯ 5: График расходов по месяцам
-   ═══════════════════════════════════════ */
-
-interface MonthPoint {
-  label: string;
-  total: number;
-}
-
-function SpendingTimeline({
-  subscriptions,
-  displayCurrency,
-  exchangeRate,
-  symbol,
-}: {
-  subscriptions: Subscription[];
-  displayCurrency: string;
-  exchangeRate: number;
-  symbol: string;
-}) {
-  const data = useMemo(() => {
-    const now = new Date();
-    const points: MonthPoint[] = [];
-    const monthsBack = 6;
-
-    for (let i = monthsBack - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
-
-      points.push({
-        label: MONTH_NAMES_SHORT[d.getMonth()],
-        total: Math.round(total),
-      });
-    }
-
-    return points;
-  }, [subscriptions, displayCurrency, exchangeRate]);
-
-  const hasAnyData = data.some((p) => p.total > 0);
-  const monthsWithData = data.filter((p) => p.total > 0).length;
-
-  if (!hasAnyData) {
-    return (
-      <div>
-        <SectionHeader title="Динамика расходов" />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6">
-          <p className="text-center text-xs text-text-muted">
-            Добавьте подписки для аналитики
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <SectionHeader title="Динамика расходов" />
-      <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 pr-1">
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
-            <defs>
-              <linearGradient id="neonGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00FF41" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#00FF41" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.03)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="label"
-              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              width={45}
-            />
-            <Tooltip content={<NeonTooltip symbol={symbol} />} />
-            <Area
-              type="monotone"
-              dataKey="total"
-              stroke="#00FF41"
-              strokeWidth={2}
-              fill="url(#neonGrad)"
-              dot={{ fill: '#00FF41', r: 3, strokeWidth: 0 }}
-              activeDot={{ fill: '#00FF41', r: 5, strokeWidth: 0, style: { filter: 'drop-shadow(0 0 6px rgba(0,255,65,0.6))' } }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-        {monthsWithData < 2 && (
-          <p className="text-center text-[11px] text-text-muted mt-2">
-            Копим историю... Данные за {monthsWithData} мес.
-          </p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ── Custom Tooltip ── */
 
-function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: Array<{ value: number }>; symbol: string }) {
+function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: Array<{ value: number; dataKey?: string }>; symbol: string }) {
   if (!active || !payload?.length) return null;
+
+  const item = payload.find((p) => p.value > 0);
+  if (!item) return null;
+
+  const isForecast = item.dataKey === 'forecast';
+
   return (
-    <div className="bg-surface-3 border border-neon/30 rounded-lg px-3 py-1.5 shadow-neon">
+    <div className={cn(
+      'border rounded-lg px-3 py-1.5',
+      isForecast
+        ? 'bg-surface-3 border-warning/30'
+        : 'bg-surface-3 border-neon/30 shadow-neon',
+    )}>
       <span className="text-sm font-semibold text-text-primary tabular-nums">
-        {formatAmount(payload[0].value)} {symbol}
+        {isForecast ? '~' : ''}{formatAmount(item.value)} {symbol}
       </span>
+      {isForecast && (
+        <span className="text-[10px] text-warning ml-1">прогноз</span>
+      )}
     </div>
   );
 }

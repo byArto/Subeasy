@@ -29,5 +29,6 @@ export function useSound() {
     playSuccess: useCallback(() => soundEngine.success(), []),
     playDelete: useCallback(() => soundEngine.remove(), []),
     playTabSwitch: useCallback(() => soundEngine.tabSwitch(), []),
+    playPaid: useCallback(() => soundEngine.paid(), []),
   };
 }

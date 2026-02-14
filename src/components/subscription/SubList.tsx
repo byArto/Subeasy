@@ -44,6 +44,7 @@ interface SubListProps {
   subscriptions: Subscription[];
   activeCategory: string | null;
   onSubTap?: (sub: Subscription) => void;
+  onMarkPaid?: (sub: Subscription) => void;
   onAddTap?: () => void;
   mostExpensiveId?: string | null;
   longestId?: string | null;
@@ -54,6 +55,7 @@ export function SubList({
   subscriptions,
   activeCategory,
   onSubTap,
+  onMarkPaid,
   onAddTap,
   mostExpensiveId,
   longestId,
@@ -181,6 +183,7 @@ export function SubList({
             subscription={sub}
             index={i}
             onTap={onSubTap}
+            onMarkPaid={onMarkPaid}
             insightBadge={
               sub.id === mostExpensiveId
                 ? 'expensive'

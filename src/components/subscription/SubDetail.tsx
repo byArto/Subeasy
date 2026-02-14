@@ -16,6 +16,7 @@ interface SubDetailProps {
   onClose: () => void;
   onEdit: () => void;
   onToggleActive: () => void;
+  onMarkPaid?: () => void;
   onDelete: () => void;
 }
 
@@ -186,6 +187,7 @@ export function SubDetail({
   onClose: _onClose,
   onEdit,
   onToggleActive,
+  onMarkPaid,
   onDelete,
 }: SubDetailProps) {
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
@@ -393,13 +395,24 @@ export function SubDetail({
 
       {/* ── Actions ── */}
       <div className="space-y-2.5 pt-1">
-        <motion.div custom={0} variants={btnVariants} initial="hidden" animate="visible">
+        {/* Mark Paid — only for overdue recurring subs */}
+        {onMarkPaid && sub.isActive && days < 0 && sub.cycle !== 'one-time' && (
+          <motion.div custom={0} variants={btnVariants} initial="hidden" animate="visible">
+            <Button fullWidth variant="primary" size="lg" onClick={onMarkPaid}>
+              <span className="flex items-center justify-center gap-2">
+                ✓ Оплачено
+              </span>
+            </Button>
+          </motion.div>
+        )}
+
+        <motion.div custom={onMarkPaid && days < 0 ? 1 : 0} variants={btnVariants} initial="hidden" animate="visible">
           <Button fullWidth variant="secondary" size="lg" onClick={onEdit}>
             Редактировать
           </Button>
         </motion.div>
 
-        <motion.div custom={1} variants={btnVariants} initial="hidden" animate="visible">
+        <motion.div custom={onMarkPaid && days < 0 ? 2 : 1} variants={btnVariants} initial="hidden" animate="visible">
           <Button
             fullWidth
             variant={sub.isActive ? 'secondary' : 'primary'}
@@ -410,7 +423,7 @@ export function SubDetail({
           </Button>
         </motion.div>
 
-        <motion.div custom={2} variants={btnVariants} initial="hidden" animate="visible">
+        <motion.div custom={onMarkPaid && days < 0 ? 3 : 2} variants={btnVariants} initial="hidden" animate="visible">
           {!confirmDelete ? (
             <Button fullWidth variant="ghost" size="md" onClick={() => setConfirmDelete(true)}>
               <span className="text-danger">Удалить</span>

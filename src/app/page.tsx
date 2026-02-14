@@ -18,7 +18,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Subscription, Currency } from '@/lib/types';
-import { getMonthlyPrice, convertCurrency } from '@/lib/utils';
+import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
@@ -89,7 +89,7 @@ export default function Home() {
   const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
   const { settings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
 
-  const { playSuccess, playDelete } = useSound();
+  const { playSuccess, playDelete, playPaid } = useSound();
 
   // Auto exchange rate from CBR
   const {
@@ -141,6 +141,12 @@ export default function Home() {
   const closeDetail = useCallback(() => setSelectedSubId(null), []);
   const closeEdit = useCallback(() => setEditingSubId(null), []);
 
+  const handleMarkPaid = useCallback((sub: Subscription) => {
+    const nextDate = getNextPaymentDate(sub.nextPaymentDate, sub.cycle);
+    updateSubscription(sub.id, { nextPaymentDate: nextDate });
+    playPaid();
+  }, [updateSubscription, playPaid]);
+
   // Memoized subscription lookups for modals
   const selectedSub = useMemo(
     () => (selectedSubId ? subscriptions.find((s) => s.id === selectedSubId) : undefined),
@@ -188,6 +194,7 @@ export default function Home() {
                 getUpcomingPayments={getUpcomingPayments}
                 onAddTap={openAdd}
                 onSubTap={openDetail}
+                onMarkPaid={handleMarkPaid}
               />
             )}
             {activeTab === 'analytics' && (
@@ -286,6 +293,7 @@ export default function Home() {
               setEditingSubId(selectedSubId);
               setSelectedSubId(null);
             }}
+            onMarkPaid={() => handleMarkPaid(selectedSub)}
             onToggleActive={() => {
               updateSubscription(selectedSub.id, { isActive: !selectedSub.isActive });
             }}
@@ -339,6 +347,7 @@ function HomeTab({
   getUpcomingPayments,
   onAddTap,
   onSubTap,
+  onMarkPaid,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -349,6 +358,7 @@ function HomeTab({
   getUpcomingPayments: (days: number) => Subscription[];
   onAddTap: () => void;
   onSubTap: (sub: Subscription) => void;
+  onMarkPaid: (sub: Subscription) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -438,6 +448,7 @@ function HomeTab({
         subscriptions={subscriptions}
         activeCategory={activeCategory}
         onSubTap={onSubTap}
+        onMarkPaid={onMarkPaid}
         onAddTap={onAddTap}
         mostExpensiveId={mostExpensiveId}
         longestId={longestId}

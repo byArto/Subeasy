@@ -89,7 +89,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.4.2',
+      version: '1.4.3',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -492,7 +492,7 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.4.2</p>
+          <p className="text-xs text-text-muted">Версия 1.4.3</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             Твой личный трекер подписок
           </p>

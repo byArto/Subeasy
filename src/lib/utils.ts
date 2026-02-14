@@ -61,6 +61,39 @@ export function isPaymentSoon(nextPaymentDate: string, daysBefore: number): bool
   return days >= 0 && days <= daysBefore;
 }
 
+export function getNextPaymentDate(current: string, cycle: string): string {
+  const d = new Date(current);
+  switch (cycle) {
+    case 'weekly':
+      d.setDate(d.getDate() + 7);
+      break;
+    case 'monthly':
+      d.setMonth(d.getMonth() + 1);
+      break;
+    case 'yearly':
+      d.setFullYear(d.getFullYear() + 1);
+      break;
+  }
+  // If the new date is still in the past, keep advancing
+  const now = new Date();
+  while (d.getTime() < now.getTime()) {
+    switch (cycle) {
+      case 'weekly':
+        d.setDate(d.getDate() + 7);
+        break;
+      case 'monthly':
+        d.setMonth(d.getMonth() + 1);
+        break;
+      case 'yearly':
+        d.setFullYear(d.getFullYear() + 1);
+        break;
+      default:
+        return d.toISOString().split('T')[0];
+    }
+  }
+  return d.toISOString().split('T')[0];
+}
+
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }

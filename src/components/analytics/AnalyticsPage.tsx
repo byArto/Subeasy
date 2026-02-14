@@ -635,10 +635,21 @@ function MonthComparison({
 }
 
 /* ═══════════════════════════════════════
-   СЕКЦИЯ 5: Тренд-график (12 месяцев)
+   СЕКЦИЯ 5: Тренд-график (с переключателем)
    ═══════════════════════════════════════ */
 
-interface MonthPoint {
+type TimelineRange = '7d' | '30d' | '3m' | '12m';
+const TIMELINE_RANGES: { value: TimelineRange; label: string }[] = [
+  { value: '7d', label: '7 дн' },
+  { value: '30d', label: '30 дн' },
+  { value: '3m', label: 'Кварт.' },
+  { value: '12m', label: 'Год' },
+];
+
+/** How many months back for each range */
+const RANGE_MONTHS: Record<TimelineRange, number> = { '7d': 1, '30d': 1, '3m': 3, '12m': 12 };
+
+interface TimelinePoint {
   label: string;
   total: number;
   forecast?: number;
@@ -655,34 +666,56 @@ function SpendingTimeline({
   exchangeRate: number;
   symbol: string;
 }) {
+  const [range, setRange] = useState<TimelineRange>('12m');
+
   const { data, growth, avgTotal } = useMemo(() => {
     const now = new Date();
-    const points: MonthPoint[] = [];
-    const monthsBack = 12;
+    const points: TimelinePoint[] = [];
+    const monthsBack = RANGE_MONTHS[range];
 
-    for (let i = monthsBack - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
+    if (range === '7d' || range === '30d') {
+      // Daily granularity for 7d / 30d
+      const daysBack = range === '7d' ? 7 : 30;
+      for (let i = daysBack - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        // Approximate: use the monthly total for the month this day falls in
+        const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
+        // Scale to daily cost
+        const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        const dailyCost = total / daysInMonth;
 
+        points.push({
+          label: `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, '0')}`,
+          total: Math.round(dailyCost),
+        });
+      }
+    } else {
+      // Monthly granularity for 3m / 12m
+      for (let i = monthsBack - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
+
+        points.push({
+          label: MONTH_NAMES_SHORT[d.getMonth()],
+          total: Math.round(total),
+        });
+      }
+
+      // Add next month forecast
+      const nextD = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      const forecastTotal = getMonthlyTotal(subscriptions, nextD.getFullYear(), nextD.getMonth(), exchangeRate, displayCurrency);
       points.push({
-        label: MONTH_NAMES_SHORT[d.getMonth()],
-        total: Math.round(total),
+        label: MONTH_NAMES_SHORT[nextD.getMonth()],
+        total: 0,
+        forecast: Math.round(forecastTotal),
       });
     }
-
-    // Add next month forecast
-    const nextD = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const forecastTotal = getMonthlyTotal(subscriptions, nextD.getFullYear(), nextD.getMonth(), exchangeRate, displayCurrency);
-    points.push({
-      label: MONTH_NAMES_SHORT[nextD.getMonth()],
-      total: 0,
-      forecast: Math.round(forecastTotal),
-    });
 
     // Calculate growth: compare last 3 months average vs 3 months before that
     const withData = points.filter((p) => p.total > 0);
     let growthPct = 0;
-    if (withData.length >= 4) {
+    if (range === '12m' && withData.length >= 4) {
       const recent = withData.slice(-3);
       const older = withData.slice(-6, -3);
       if (older.length > 0) {
@@ -697,7 +730,7 @@ function SpendingTimeline({
     const avg = totals.length > 0 ? totals.reduce((s, p) => s + p.total, 0) / totals.length : 0;
 
     return { data: points, growth: growthPct, avgTotal: Math.round(avg) };
-  }, [subscriptions, displayCurrency, exchangeRate]);
+  }, [subscriptions, displayCurrency, exchangeRate, range]);
 
   const hasAnyData = data.some((p) => p.total > 0);
   const monthsWithData = data.filter((p) => p.total > 0).length;
@@ -733,6 +766,30 @@ function SpendingTimeline({
         )}
       </div>
 
+      {/* Range switcher */}
+      <div className="flex gap-1 bg-surface-3 rounded-xl p-1 mb-3">
+        {TIMELINE_RANGES.map((r) => (
+          <motion.button
+            key={r.value}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setRange(r.value)}
+            className={cn(
+              'relative flex-1 py-1.5 rounded-lg text-[11px] font-semibold transition-colors',
+              range === r.value ? 'text-surface' : 'text-text-secondary',
+            )}
+          >
+            {range === r.value && (
+              <motion.span
+                layoutId="timeline-pill"
+                className="absolute inset-0 rounded-lg bg-neon"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative">{r.label}</span>
+          </motion.button>
+        ))}
+      </div>
+
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 pr-1">
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
@@ -756,7 +813,7 @@ function SpendingTimeline({
               tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
               axisLine={false}
               tickLine={false}
-              interval={1}
+              interval={range === '30d' ? 4 : range === '7d' ? 0 : 1}
             />
             <YAxis
               tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}

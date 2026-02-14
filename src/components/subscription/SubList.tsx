@@ -6,6 +6,7 @@ import { Subscription } from '@/lib/types';
 import { SubCard } from './SubCard';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { FunnelIcon } from '@heroicons/react/24/outline';
 
 /* ── Sort types ── */
 
@@ -127,12 +128,13 @@ export function SubList({
           whileTap={{ scale: 0.9 }}
           onClick={() => setShowSort((p) => !p)}
           className={cn(
-            'text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
+            'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
             showSort
               ? 'text-neon bg-neon/10'
               : 'text-text-muted active:text-text-secondary'
           )}
         >
+          <FunnelIcon className="w-3.5 h-3.5" />
           {SORT_OPTIONS.find((o) => o.value === sortBy)?.label || 'Сорт.'}
         </motion.button>
       </div>

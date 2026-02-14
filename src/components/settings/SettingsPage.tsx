@@ -89,7 +89,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.4.0',
+      version: '1.4.2',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -478,12 +478,25 @@ export function SettingsPage({
       {/* ── 6. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="О приложении" />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-2">
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-3">
+          {/* App icon */}
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0,255,65,0.15), rgba(0,255,65,0.05))',
+              boxShadow: '0 0 24px rgba(0,255,65,0.1), inset 0 0 0 1px rgba(0,255,65,0.2)',
+            }}
+          >
+            💎
+          </div>
+
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.4.0</p>
-          <p className="text-xs text-text-secondary mt-1">Трекер подписок — всё под контролем</p>
+          <p className="text-xs text-text-muted">Версия 1.4.2</p>
+          <p className="text-xs text-text-secondary text-center leading-relaxed">
+            Твой личный трекер подписок
+          </p>
         </div>
       </motion.div>
     </div>

@@ -130,6 +130,7 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [direction, setDirection] = useState(0);
+  const [showYearPicker, setShowYearPicker] = useState(false);
 
   const symbol = CURRENCY_SYMBOLS[settings.displayCurrency] || settings.displayCurrency;
 
@@ -163,6 +164,23 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
     soundEngine.tap();
   }, []);
 
+  const handleTitleTap = useCallback(() => {
+    setShowYearPicker((p) => !p);
+    soundEngine.tap();
+  }, []);
+
+  const pickMonth = useCallback((monthIdx: number) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), monthIdx, 1));
+    setSelectedDay(null);
+    setShowYearPicker(false);
+    soundEngine.tap();
+  }, [currentMonth]);
+
+  const pickYear = useCallback((yr: number) => {
+    setCurrentMonth(new Date(yr, currentMonth.getMonth(), 1));
+    soundEngine.tap();
+  }, [currentMonth]);
+
   if (subscriptions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center pt-32 px-5 gap-3">
@@ -181,8 +199,78 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
         month={month}
         onPrev={goPrev}
         onNext={goNext}
-        onTitleTap={goToday}
+        onTitleTap={handleTitleTap}
       />
+
+      {/* Year/Month picker */}
+      <AnimatePresence>
+        {showYearPicker && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-3">
+              {/* Year row */}
+              <div className="flex items-center justify-center gap-4">
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => pickYear(year - 1)}
+                  className="text-text-muted active:text-neon transition-colors px-2 py-1"
+                >
+                  ‹
+                </motion.button>
+                <span className="text-sm font-bold text-text-primary tabular-nums w-12 text-center">
+                  {year}
+                </span>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => pickYear(year + 1)}
+                  className="text-text-muted active:text-neon transition-colors px-2 py-1"
+                >
+                  ›
+                </motion.button>
+              </div>
+
+              {/* Month grid */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {MONTH_NAMES_RU.map((name, i) => {
+                  const isCurrentMonth = i === month;
+                  const isNow = i === new Date().getMonth() && year === new Date().getFullYear();
+                  return (
+                    <motion.button
+                      key={i}
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => pickMonth(i)}
+                      className={cn(
+                        'py-2 rounded-xl text-xs font-semibold transition-colors',
+                        isCurrentMonth
+                          ? 'bg-neon text-surface'
+                          : isNow
+                            ? 'bg-neon/10 text-neon border border-neon/20'
+                            : 'text-text-secondary active:bg-surface-4',
+                      )}
+                    >
+                      {name.substring(0, 3)}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              {/* Today button */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => { goToday(); setShowYearPicker(false); }}
+                className="w-full py-2 rounded-xl text-xs font-semibold text-neon bg-neon/5 border border-neon/20 active:bg-neon/10 transition-colors"
+              >
+                Сегодня
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Section 2: Calendar grid */}
       <AnimatePresence mode="wait" initial={false}>

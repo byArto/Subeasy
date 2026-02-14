@@ -8,7 +8,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: '5', name: 'Игры', emoji: '🎮', color: '#AF52DE' },
   { id: '6', name: 'Обучение', emoji: '📚', color: '#FF9500' },
   { id: '7', name: 'AI', emoji: '🤖', color: '#D4A574' },
-  { id: '8', name: 'VPN/Безопасность', emoji: '🔒', color: '#34C759' },
+  { id: '8', name: 'VPN/Proxy', emoji: '🔒', color: '#34C759' },
   { id: '9', name: 'Другое', emoji: '📦', color: '#8E8E93' },
 ];
 

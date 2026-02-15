@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStandaloneMode } from '@/hooks/useStandaloneMode';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui';
 
 type Platform = 'ios' | 'android' | 'desktop';
@@ -16,9 +15,10 @@ function detectPlatform(): Platform {
   return 'desktop';
 }
 
+const SESSION_KEY = 'neonsub-a2hs-dismissed';
+
 export function PWAInstallPrompt() {
   const isInstalled = useStandaloneMode();
-  const [dismissed, setDismissed] = useLocalStorage('neonsub-a2hs-dismissed', false);
   const [show, setShow] = useState(false);
   const [platform, setPlatform] = useState<Platform>('desktop');
 
@@ -26,16 +26,19 @@ export function PWAInstallPrompt() {
     const p = detectPlatform();
     setPlatform(p);
 
-    // Only show on mobile, not installed, not dismissed
+    // Only show on mobile, not installed, not dismissed this session
+    const dismissed = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === 'true';
     if (p === 'desktop' || isInstalled || dismissed) return;
 
     const timer = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(timer);
-  }, [isInstalled, dismissed]);
+  }, [isInstalled]);
 
   function handleDismiss() {
     setShow(false);
-    setDismissed(true);
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(SESSION_KEY, 'true');
+    }
   }
 
   if (platform === 'desktop') return null;

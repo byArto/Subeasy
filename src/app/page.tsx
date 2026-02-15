@@ -9,7 +9,6 @@ import { Modal } from '@/components/ui';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
 import { CategoryFilter } from '@/components/dashboard/CategoryFilter';
 import { UpcomingPayments } from '@/components/dashboard/UpcomingPayments';
-import { LogoMarquee } from '@/components/dashboard/LogoMarquee';
 import { SubList } from '@/components/subscription/SubList';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
 import { useCategories } from '@/hooks/useCategories';
@@ -424,9 +423,6 @@ function HomeTab({
           currency={displayCurrency}
         />
       )}
-
-      {/* Logo marquee */}
-      {hasSubscriptions && <LogoMarquee />}
 
       {/* Upcoming */}
       {upcoming.length > 0 && (

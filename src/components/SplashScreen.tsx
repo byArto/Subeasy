@@ -2,12 +2,62 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SERVICE_CATALOG } from '@/lib/services';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
+
+/* ── Split services into 3 rows ── */
+const ROW_1 = SERVICE_CATALOG.filter((_, i) => i % 3 === 0);
+const ROW_2 = SERVICE_CATALOG.filter((_, i) => i % 3 === 1);
+const ROW_3 = SERVICE_CATALOG.filter((_, i) => i % 3 === 2);
+
+function MarqueePill({ name, emoji, color }: { name: string; emoji: string; color: string }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.06] shrink-0"
+      style={{ background: `${color}10` }}
+    >
+      <ServiceLogo name={name} emoji={emoji} size={20} />
+      <span className="text-xs text-white/40 whitespace-nowrap font-medium">
+        {name}
+      </span>
+    </div>
+  );
+}
+
+function MarqueeRow({
+  items,
+  direction,
+  speed = 35,
+}: {
+  items: typeof SERVICE_CATALOG;
+  direction: 'left' | 'right';
+  speed?: number;
+}) {
+  return (
+    <div className="overflow-hidden">
+      <div
+        className="flex gap-3 w-max"
+        style={{
+          animation: `marquee-${direction} ${speed}s linear infinite`,
+          willChange: 'transform',
+        }}
+      >
+        {items.map((svc, i) => (
+          <MarqueePill key={`a-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} />
+        ))}
+        {items.map((svc, i) => (
+          <MarqueePill key={`b-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), 2000);
+    const timer = setTimeout(() => setVisible(false), 2400);
     return () => clearTimeout(timer);
   }, []);
 
@@ -17,15 +67,42 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         <motion.div
           key="splash"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.1 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
+          exit={{ opacity: 0, scale: 1.05 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
           style={{
             background: 'radial-gradient(circle at center, #0a1a0f 0%, #0A0A0F 70%)',
           }}
         >
-          {/* Radial glow behind logo */}
-          <div className="absolute inset-0 overflow-hidden">
+          {/* ── Background marquee rows ── */}
+          <div className="absolute inset-0 flex flex-col justify-center gap-3 pointer-events-none">
+            {/* Top area — fades in */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="space-y-3"
+              style={{
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
+              }}
+            >
+              <MarqueeRow items={ROW_1} direction="left" speed={40} />
+              <MarqueeRow items={ROW_2} direction="right" speed={35} />
+              <MarqueeRow items={ROW_3} direction="left" speed={45} />
+            </motion.div>
+          </div>
+
+          {/* ── Dark vignette overlay on top of marquee ── */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 60% 50% at center, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.85) 60%, rgba(10,10,15,0.97) 100%)',
+            }}
+          />
+
+          {/* ── Radial neon glow behind logo ── */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <motion.div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full"
               style={{
@@ -43,11 +120,11 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             />
           </div>
 
-          {/* Logo + text */}
+          {/* ── Logo + text (on top of everything) ── */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring' as const, stiffness: 200, damping: 20, delay: 0.1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
             className="relative z-10 flex flex-col items-center gap-5"
           >
             {/* Logo image with glow */}
@@ -103,9 +180,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             </motion.p>
           </motion.div>
 
-          {/* Scanning line effect */}
+          {/* ── Scanning line effect ── */}
           <motion.div
-            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon/30 to-transparent"
+            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-neon/30 to-transparent z-20"
             initial={{ top: '30%' }}
             animate={{ top: '70%' }}
             transition={{ duration: 1.5, repeat: Infinity, repeatType: 'reverse', ease: 'easeInOut' }}

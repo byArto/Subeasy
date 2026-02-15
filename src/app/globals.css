@@ -178,9 +178,6 @@ body {
   color: #F0F0F5;
   font-family: 'Manrope', sans-serif;
   -webkit-touch-callout: none;
-  /* iOS PWA: make body a flex container so children can fill full screen */
-  display: flex;
-  flex-direction: column;
 }
 
 /* ── App shell container ── */

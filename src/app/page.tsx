@@ -164,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <div className="app-container h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="app-container fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
         title={tabTitles[activeTab]}
         collapsed={headerCollapsed}

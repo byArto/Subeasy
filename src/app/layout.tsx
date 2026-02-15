@@ -32,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        <link rel="preconnect" href="https://xmmseorpelrppnrlcxai.supabase.co" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

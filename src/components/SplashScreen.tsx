@@ -57,7 +57,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => setVisible(false), 2400);
+    const timer = setTimeout(() => setVisible(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 

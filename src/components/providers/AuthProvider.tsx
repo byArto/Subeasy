@@ -27,19 +27,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
+    // Don't block UI for users who skipped auth
+    if (skipAuth) {
+      setLoading(false);
+    }
+
+    // Safety timeout — never block UI for more than 3s even if Supabase is slow
+    const timeout = setTimeout(() => setLoading(false), 3000);
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes (will catch session even if getSession was slow)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = useCallback(async (email: string, password: string) => {
     const supabase = createClient();

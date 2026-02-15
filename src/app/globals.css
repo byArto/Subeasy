@@ -299,32 +299,6 @@ button, a, [role="button"] {
   z-index: 1;
 }
 
-/* ═══════════════════════════════════════════════
-   iOS PWA STANDALONE FIX
-   Bottom gap below TabBar in standalone mode.
-   The JS hook adds .ios-standalone to <html> and
-   sets --app-height CSS variable.
-   ═══════════════════════════════════════════════ */
-
-/* Use JS-measured height when available (standalone mode) */
-html.ios-standalone .app-container {
-  height: var(--app-height, 100vh);
-  max-height: var(--app-height, 100vh);
-}
-
-/* Fill bottom gap with opaque background in standalone */
-html.ios-standalone body::after {
-  content: '';
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 49;
-  height: 50px;
-  background: #111118; /* surface-2 — matches TabBar area */
-  pointer-events: none;
-}
-
 /* ── Gradient border card ── */
 .gradient-border {
   position: relative;

@@ -23,7 +23,7 @@ import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
-import { useIOSViewportFix } from '@/hooks/useIOSViewportFix';
+
 
 /* ── Lazy-loaded heavy components ── */
 const SubForm = dynamic(() =>
@@ -67,9 +67,6 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-
-  // iOS PWA standalone viewport fix
-  useIOSViewportFix();
 
   // Track scroll position for header collapse
   useEffect(() => {

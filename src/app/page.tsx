@@ -21,6 +21,7 @@ import { Subscription, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
 
 /* ── Lazy-loaded heavy components ── */
@@ -332,6 +333,9 @@ export default function Home() {
           />
         )}
       </Modal>
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

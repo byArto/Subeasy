@@ -130,7 +130,7 @@ export function TabBar({
       {/* Opaque safe-area fill — prevents transparent gap on iOS PWA */}
       <div
         className="bg-surface-2"
-        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}
       />
     </div>
   );

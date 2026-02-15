@@ -14,7 +14,7 @@ export function useSound() {
   const enabled = useSyncExternalStore(
     subscribe,
     () => soundEngine.isEnabled(),
-    () => true
+    () => false
   );
 
   const setEnabled = useCallback((val: boolean) => {

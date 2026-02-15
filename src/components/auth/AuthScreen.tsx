@@ -13,13 +13,11 @@ export function AuthScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setSuccess(null);
 
     if (!email.trim() || !password.trim()) {
       setError('Заполните все поля');
@@ -43,11 +41,8 @@ export function AuthScreen() {
       if (err) setError(err);
     } else {
       const { error: err } = await signUp(email.trim(), password);
-      if (err) {
-        setError(err);
-      } else {
-        setSuccess('Аккаунт создан! Проверьте почту для подтверждения.');
-      }
+      if (err) setError(err);
+      // If no error, signUp auto-logs in (email confirmation disabled)
     }
 
     setLoading(false);
@@ -82,7 +77,7 @@ export function AuthScreen() {
         {(['login', 'register'] as Mode[]).map((m) => (
           <button
             key={m}
-            onClick={() => { setMode(m); setError(null); setSuccess(null); }}
+            onClick={() => { setMode(m); setError(null); }}
             className={`flex-1 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
               mode === m
                 ? 'bg-surface-3 text-neon shadow-sm'
@@ -160,16 +155,6 @@ export function AuthScreen() {
               className="text-danger text-xs font-medium px-1"
             >
               {error}
-            </motion.p>
-          )}
-          {success && (
-            <motion.p
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="text-neon text-xs font-medium px-1"
-            >
-              {success}
             </motion.p>
           )}
         </AnimatePresence>

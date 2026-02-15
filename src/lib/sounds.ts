@@ -2,7 +2,7 @@ const STORAGE_KEY = 'neonsub-sounds-enabled';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
-  private enabled: boolean = true;
+  private enabled: boolean = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -10,6 +10,7 @@ class SoundEngine {
       if (stored !== null) {
         this.enabled = stored === 'true';
       }
+      // Default is false (off) — no localStorage entry means sounds disabled
     }
   }
 

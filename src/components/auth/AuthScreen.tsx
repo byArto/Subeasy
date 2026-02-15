@@ -180,6 +180,9 @@ export function AuthScreen() {
       >
         Продолжить без входа
       </button>
+      <p className="mt-2 text-[10px] text-text-muted/60 text-center max-w-[260px]">
+        Без аккаунта данные хранятся только на этом устройстве
+      </p>
     </div>
   );
 }

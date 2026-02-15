@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { AuthProvider } from '@/components/providers/AuthProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -51,9 +52,11 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">
-        <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-          {children}
-        </div>
+        <AuthProvider>
+          <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+            {children}
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

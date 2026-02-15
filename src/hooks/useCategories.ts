@@ -58,6 +58,7 @@ export function useCategories() {
 
   return {
     categories,
+    setCategories,
     addCategory,
     updateCategory,
     deleteCategory,

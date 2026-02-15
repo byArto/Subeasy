@@ -6,6 +6,7 @@ import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { requestNotificationPermission } from '@/lib/notifications';
 import { useSound } from '@/hooks/useSound';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -56,7 +57,9 @@ export function SettingsPage({
   rateIsLoading,
   onRefreshRate,
 }: SettingsPageProps) {
+  const { user, signOut, setSkipAuth } = useAuth();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
+  const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatEmoji, setEditCatEmoji] = useState('');
@@ -512,7 +515,80 @@ export function SettingsPage({
         />
       </motion.div>
 
-      {/* ── 6. О приложении ── */}
+      {/* ── 6. Аккаунт ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title="Аккаунт" />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          {user ? (
+            <>
+              <div className="px-4 py-3.5 border-b border-border-subtle">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-neon/15 flex items-center justify-center">
+                    <span className="text-neon text-sm font-bold">
+                      {user.email?.[0]?.toUpperCase() ?? '?'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-text-primary font-medium truncate">{user.email}</p>
+                    <p className="text-[11px] text-text-muted">Данные синхронизируются</p>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon" />
+                </div>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {!confirmLogout ? (
+                  <motion.button
+                    key="logout-btn"
+                    type="button"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setConfirmLogout(true)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                  >
+                    <span className="text-sm text-danger font-medium">Выйти из аккаунта</span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="logout-confirm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-4 py-3.5 space-y-2.5"
+                  >
+                    <p className="text-xs text-text-secondary">
+                      Данные останутся на сервере. Вы сможете войти снова.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
+                        Отмена
+                      </Button>
+                      <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
+                        Выйти
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSkipAuth(false)}
+              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-neon/5 transition-colors"
+            >
+              <div>
+                <span className="text-sm text-neon font-medium">Войти в аккаунт</span>
+                <p className="text-[11px] text-text-muted mt-0.5">Синхронизация между устройствами</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* ── 7. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title="О приложении" />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-3">
@@ -529,7 +605,7 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.4.4</p>
+          <p className="text-xs text-text-muted">Версия 1.5.0</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             Твой личный трекер подписок
           </p>

@@ -101,6 +101,7 @@ export function useSubscriptions() {
 
   return {
     subscriptions,
+    setSubscriptions,
     addSubscription,
     updateSubscription,
     deleteSubscription,

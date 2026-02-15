@@ -17,6 +17,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useSync } from '@/hooks/useSync';
 import { Subscription, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
@@ -44,6 +46,10 @@ const AnalyticsPage = dynamic(() =>
 );
 const CalendarPage = dynamic(() =>
   import('@/components/calendar/CalendarPage').then((m) => ({ default: m.CalendarPage })),
+  { ssr: false }
+);
+const AuthScreen = dynamic(() =>
+  import('@/components/auth/AuthScreen').then((m) => ({ default: m.AuthScreen })),
   { ssr: false }
 );
 
@@ -77,9 +83,13 @@ export default function Home() {
     return () => el.removeEventListener('scroll', onScroll);
   }, [splashDone]);
 
+  // Auth
+  const { user, loading: authLoading, skipAuth } = useAuth();
+
   // Shared hooks
   const {
     subscriptions,
+    setSubscriptions,
     addSubscription,
     updateSubscription,
     deleteSubscription,
@@ -88,8 +98,15 @@ export default function Home() {
     getActiveSubscriptions,
     getUpcomingPayments,
   } = useSubscriptions();
-  const { categories, addCategory, updateCategory, deleteCategory } = useCategories();
-  const { settings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
+  const { categories, setCategories, addCategory, updateCategory, deleteCategory } = useCategories();
+  const { settings, setSettings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
+
+  // Sync with Supabase
+  useSync(user, subscriptions, categories, settings, {
+    setSubscriptions,
+    setCategories,
+    setSettings,
+  });
 
   const { playSuccess, playDelete, playPaid } = useSound();
 
@@ -162,6 +179,11 @@ export default function Home() {
   // Splash screen
   if (!splashDone) {
     return <SplashScreen onComplete={() => setSplashDone(true)} />;
+  }
+
+  // Auth gate — show login if not authenticated and not skipped
+  if (!authLoading && !user && !skipAuth) {
+    return <AuthScreen />;
   }
 
   return (

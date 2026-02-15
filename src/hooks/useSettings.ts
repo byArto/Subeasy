@@ -34,6 +34,7 @@ export function useSettings() {
 
   return {
     settings,
+    setSettings,
     updateSettings,
     toggleCurrency,
     setExchangeRate,

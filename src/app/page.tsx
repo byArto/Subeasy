@@ -63,6 +63,13 @@ const tabTitles: Record<TabId, string> = {
 };
 
 export default function Home() {
+  // Remove inline HTML splash as soon as React mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as unknown as { __removeSplash?: () => void }).__removeSplash) {
+      (window as unknown as { __removeSplash: () => void }).__removeSplash();
+    }
+  }, []);
+
   const [splashDone, setSplashDone] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showAddModal, setShowAddModal] = useState(false);

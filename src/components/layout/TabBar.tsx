@@ -73,12 +73,9 @@ export function TabBar({
 
       {/* Tab bar */}
       <nav
-        className={cn(
-          'glass-bg border-t border-border-subtle',
-          'pb-[max(8px,env(safe-area-inset-bottom))]'
-        )}
+        className="glass-bg border-t border-border-subtle"
       >
-        <div className="flex items-start justify-around px-2 pt-2 pb-1">
+        <div className="flex items-start justify-around px-2 pt-2 pb-2">
           {tabs.map((tab, index) => {
             const isActive = activeTab === tab.id;
             const Icon = isActive ? tab.iconSolid : tab.iconOutline;
@@ -129,6 +126,12 @@ export function TabBar({
           })}
         </div>
       </nav>
+
+      {/* Opaque safe-area fill — prevents transparent gap on iOS PWA */}
+      <div
+        className="bg-surface-2"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
+      />
     </div>
   );
 }

@@ -36,11 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const timeout = setTimeout(() => setLoading(false), 3000);
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       clearTimeout(timeout);
       setUser(session?.user ?? null);
       setLoading(false);
-    });
+    })();
 
     // Listen for auth changes (will catch session even if getSession was slow)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

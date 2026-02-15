@@ -27,9 +27,13 @@ export function useNotifications(
   const [isSupported] = useState(checkSupport);
   const [permission, setPermission] = useState<Permission>(getInitialPermission);
 
-  // Register service worker on mount
+  // Register service worker — deferred to not block initial render
   useEffect(() => {
-    registerServiceWorker();
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(() => registerServiceWorker());
+    } else {
+      setTimeout(() => registerServiceWorker(), 2000);
+    }
   }, []);
 
   // Request permission (requires user interaction)

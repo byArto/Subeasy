@@ -39,9 +39,16 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Non-blocking font load via preload */}
         <link
+          rel="preload"
           href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
-          rel="stylesheet"
+          as="style"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap';document.head.appendChild(l)`,
+          }}
         />
         <link rel="icon" href="/icons/favicon.ico" sizes="any" />
         <link rel="icon" href="/icons/favicon-32x32.png" type="image/png" sizes="32x32" />

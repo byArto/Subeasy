@@ -7,6 +7,7 @@ import { cn, getDaysUntilPayment, convertCurrency } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Types ── */
 
@@ -23,17 +24,20 @@ interface SubDetailProps {
 
 /* ── Helpers ── */
 
-const CYCLE_SUFFIX: Record<string, string> = {
-  monthly: '/мес',
-  yearly: '/год',
-  weekly: '/нед',
+type TFunc = (key: string, vars?: Record<string, string | number>) => string;
+
+const CYCLE_SUFFIX_KEY: Record<string, string> = {
+  monthly: 'cycle.monthly',
+  yearly: 'cycle.yearly',
+  weekly: 'cycle.weekly',
   'one-time': '',
   trial: '',
 };
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, lang: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function getTotalSpent(sub: Subscription): number {
@@ -65,57 +69,57 @@ function getTotalSpent(sub: Subscription): number {
   return Math.max(1, payments) * sub.price;
 }
 
-function getStatusBadge(sub: Subscription) {
+function getStatusBadge(sub: Subscription, t: TFunc) {
   if (!sub.isActive) {
-    return { variant: 'neutral' as const, label: 'Приостановлена', pulse: false };
+    return { variant: 'neutral' as const, label: t('status.paused'), pulse: false };
   }
   const days = getDaysUntilPayment(sub.nextPaymentDate);
 
   if (sub.cycle === 'trial') {
-    if (days < 0) return { variant: 'danger' as const, label: 'Триал истёк', pulse: true };
-    if (days === 0) return { variant: 'danger' as const, label: 'Последний день!', pulse: true };
-    if (days <= 3) return { variant: 'warning' as const, label: `Осталось ${days} дн.`, pulse: false };
-    return { variant: 'success' as const, label: `Осталось ${days} дн.`, pulse: false };
+    if (days < 0) return { variant: 'danger' as const, label: t('status.trial.expired'), pulse: true };
+    if (days === 0) return { variant: 'danger' as const, label: t('status.trial.lastDay'), pulse: true };
+    if (days <= 3) return { variant: 'warning' as const, label: t('status.trial.daysLeft', { days }), pulse: false };
+    return { variant: 'success' as const, label: t('status.trial.daysLeft', { days }), pulse: false };
   }
 
-  if (days < 0) return { variant: 'danger' as const, label: 'Просрочена', pulse: true };
-  if (days === 0) return { variant: 'danger' as const, label: 'Сегодня', pulse: true };
-  if (days === 1) return { variant: 'warning' as const, label: 'Завтра', pulse: false };
-  if (days <= 3) return { variant: 'warning' as const, label: `Через ${days} дн.`, pulse: false };
-  return { variant: 'success' as const, label: 'Активна', pulse: false };
+  if (days < 0) return { variant: 'danger' as const, label: t('status.overdue'), pulse: true };
+  if (days === 0) return { variant: 'danger' as const, label: t('status.today'), pulse: true };
+  if (days === 1) return { variant: 'warning' as const, label: t('status.tomorrow'), pulse: false };
+  if (days <= 3) return { variant: 'warning' as const, label: t('status.days', { days }), pulse: false };
+  return { variant: 'success' as const, label: t('status.active'), pulse: false };
 }
 
 /* ── Payment method display ── */
 
-function formatPaymentMethod(raw: string): React.ReactNode {
+function formatPaymentMethod(raw: string, t: TFunc): React.ReactNode {
   if (raw.startsWith('card:')) {
     const rest = raw.substring(5);
     const idx = rest.indexOf(':');
     const ct = idx >= 0 ? rest.substring(0, idx) : 'physical';
     const name = idx >= 0 ? rest.substring(idx + 1).trim() : '';
-    const typeLabel = ct === 'virtual' ? 'Виртуальная' : 'Физическая';
+    const typeLabel = ct === 'virtual' ? t('detail.virtual') : t('detail.physical');
     return (
       <span className="flex flex-col items-end gap-0.5">
-        <span>💳 {typeLabel} карта</span>
+        <span>💳 {typeLabel} {t('detail.card')}</span>
         {name && <span className="text-text-muted text-xs">{name}</span>}
       </span>
     );
   }
   if (raw.startsWith('crypto:')) {
     const detail = raw.substring(7).trim();
-    return detail ? <span>🪙 {detail}</span> : <span>🪙 Криптовалюта</span>;
+    return detail ? <span>🪙 {detail}</span> : <span>🪙 {t('detail.crypto')}</span>;
   }
   if (raw.startsWith('sbp:')) {
     const detail = raw.substring(4).trim();
-    return detail ? <span>⚡ СБП · {detail}</span> : <span>⚡ СБП</span>;
+    return detail ? <span>⚡ {t('detail.sbp')} · {detail}</span> : <span>⚡ {t('detail.sbp')}</span>;
   }
   if (raw.startsWith('paypal:')) {
     const detail = raw.substring(7).trim();
-    return detail ? <span>⚡ СБП · {detail}</span> : <span>⚡ СБП</span>;
+    return detail ? <span>⚡ {t('detail.sbp')} · {detail}</span> : <span>⚡ {t('detail.sbp')}</span>;
   }
   if (raw.startsWith('other:')) {
     const detail = raw.substring(6).trim();
-    return <span>{detail || 'Другое'}</span>;
+    return <span>{detail || t('detail.other')}</span>;
   }
   // Legacy string values
   return <span>{raw || '—'}</span>;
@@ -191,9 +195,10 @@ export function SubDetail({
   onMarkPaid,
   onDelete,
 }: SubDetailProps) {
+  const { t, lang } = useLanguage();
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
   const days = getDaysUntilPayment(sub.nextPaymentDate);
-  const status = getStatusBadge(sub);
+  const status = getStatusBadge(sub, t);
   const totalSpent = getTotalSpent(sub);
   const animatedPrice = useCountUp(Math.round(sub.price));
 
@@ -209,64 +214,66 @@ export function SubDetail({
   const isTrial = sub.cycle === 'trial';
   const costPerDay = getCostPerDay(sub);
 
+  const cycleSuffix = CYCLE_SUFFIX_KEY[sub.cycle] ? t(CYCLE_SUFFIX_KEY[sub.cycle]) : '';
+
   const rows: { label: string; value: React.ReactNode }[] = [
     {
-      label: isTrial ? 'Цена после триала' : 'Стоимость',
+      label: isTrial ? t('detail.costAfterTrial') : t('detail.cost'),
       value: isTrial
         ? (sub.price > 0
             ? `${sub.price.toLocaleString('ru-RU')} ${symbol}`
-            : 'Бесплатно → отмена')
-        : `${sub.price.toLocaleString('ru-RU')} ${symbol} ${CYCLE_SUFFIX[sub.cycle] || ''}`,
+            : t('detail.freeCancel'))
+        : `${sub.price.toLocaleString('ru-RU')} ${symbol} ${cycleSuffix}`,
     },
     ...(costPerDay !== null
       ? [{
-          label: 'В день',
+          label: t('detail.perDay'),
           value: `${costPerDay < 1 ? costPerDay.toFixed(2) : costPerDay.toFixed(1)} ${symbol}`,
         }]
       : []),
     {
-      label: 'Метод оплаты',
-      value: formatPaymentMethod(sub.paymentMethod),
+      label: t('detail.paymentMethod'),
+      value: formatPaymentMethod(sub.paymentMethod, t),
     },
     {
-      label: isTrial ? 'Начало триала' : 'Дата начала',
-      value: formatDate(sub.startDate),
+      label: isTrial ? t('detail.trialStart') : t('detail.startDate'),
+      value: formatDate(sub.startDate, lang),
     },
     {
-      label: isTrial ? 'Окончание триала' : 'Следующий платёж',
+      label: isTrial ? t('detail.trialEnd') : t('detail.nextPayment'),
       value: (
         <span className="flex items-center gap-2">
-          {formatDate(sub.nextPaymentDate)}
+          {formatDate(sub.nextPaymentDate, lang)}
           {sub.isActive && (
             <Badge
               variant={days <= 1 ? 'danger' : days <= 7 ? 'warning' : 'neutral'}
             >
               {isTrial
                 ? (days < 0
-                    ? 'истёк'
+                    ? t('detail.expired')
                     : days === 0
-                      ? 'последний день'
-                      : `${days} дн.`)
+                      ? t('detail.lastDay')
+                      : t('detail.daysLeft', { days }))
                 : (days < 0
-                    ? 'просрочен'
+                    ? t('detail.overdue')
                     : days === 0
-                      ? 'сегодня'
+                      ? t('detail.today')
                       : days === 1
-                        ? 'завтра'
-                        : `${days} дн.`)}
+                        ? t('detail.tomorrow')
+                        : t('detail.daysLeft', { days }))}
             </Badge>
           )}
         </span>
       ),
     },
     {
-      label: 'Цикл',
-      value: isTrial ? 'Пробный период' : (CYCLE_LABELS[sub.cycle] || sub.cycle),
+      label: t('detail.cycle'),
+      value: isTrial ? t('detail.trialPeriod') : (CYCLE_LABELS[sub.cycle] || sub.cycle),
     },
     ...(isTrial
       ? []
       : [{
-          label: 'Всего потрачено',
+          label: t('detail.totalSpent'),
           value: (
             <span className="text-neon">
               {`≈ ${Math.round(totalSpent).toLocaleString('ru-RU')} ${symbol}`}
@@ -275,7 +282,7 @@ export function SubDetail({
         }]),
     ...(sub.managementUrl
       ? [{
-          label: 'Управление',
+          label: t('detail.management'),
           value: (
             <a
               href={sub.managementUrl}
@@ -284,13 +291,13 @@ export function SubDetail({
               className="text-neon underline underline-offset-2 break-all"
               onClick={(e) => e.stopPropagation()}
             >
-              Открыть ↗
+              {t('detail.openLink')}
             </a>
           ),
         }]
       : []),
     {
-      label: 'Заметки',
+      label: t('detail.notes'),
       value: sub.notes || '—',
     },
   ];
@@ -346,10 +353,10 @@ export function SubDetail({
               FREE
             </p>
             <p className="text-text-muted text-sm mt-1.5">
-              пробный период
+              {t('detail.trialPeriodLabel')}
               {sub.price > 0 && (
                 <>
-                  {' · далее '}
+                  {` · ${t('detail.further')} `}
                   <span className="text-text-secondary">
                     {sub.price.toLocaleString('ru-RU')} {symbol}
                   </span>
@@ -364,7 +371,7 @@ export function SubDetail({
               <span className="text-xl font-bold ml-1">{symbol}</span>
             </p>
             <p className="text-text-muted text-sm mt-1.5">
-              {CYCLE_SUFFIX[sub.cycle] ? CYCLE_LABELS[sub.cycle]?.toLowerCase() : 'разовый платёж'}
+              {CYCLE_SUFFIX_KEY[sub.cycle] ? CYCLE_LABELS[sub.cycle]?.toLowerCase() : t('detail.oneTimePayment')}
               {' · '}
               <span className="text-text-secondary">
                 ≈ {altPrice.toLocaleString('ru-RU')} {altSymbol}
@@ -401,7 +408,7 @@ export function SubDetail({
           <motion.div custom={0} variants={btnVariants} initial="hidden" animate="visible">
             <Button fullWidth variant="primary" size="lg" onClick={onMarkPaid}>
               <span className="flex items-center justify-center gap-2">
-                ✓ Оплачено
+                {t('payment.markPaid')}
               </span>
             </Button>
           </motion.div>
@@ -409,7 +416,7 @@ export function SubDetail({
 
         <motion.div custom={onMarkPaid && days < 0 ? 1 : 0} variants={btnVariants} initial="hidden" animate="visible">
           <Button fullWidth variant="secondary" size="lg" onClick={onEdit}>
-            Редактировать
+            {t('detail.edit')}
           </Button>
         </motion.div>
 
@@ -420,22 +427,22 @@ export function SubDetail({
             size="md"
             onClick={onToggleActive}
           >
-            {sub.isActive ? 'Приостановить' : 'Возобновить'}
+            {sub.isActive ? t('detail.pause') : t('detail.resume')}
           </Button>
         </motion.div>
 
         <motion.div custom={onMarkPaid && days < 0 ? 3 : 2} variants={btnVariants} initial="hidden" animate="visible">
           {!confirmDelete ? (
             <Button fullWidth variant="ghost" size="md" onClick={() => setConfirmDelete(true)}>
-              <span className="text-danger">Удалить</span>
+              <span className="text-danger">{t('detail.delete')}</span>
             </Button>
           ) : (
             <div className="flex gap-2">
               <Button fullWidth variant="secondary" size="md" onClick={() => setConfirmDelete(false)}>
-                Отмена
+                {t('detail.cancel')}
               </Button>
               <Button fullWidth variant="danger" size="md" onClick={onDelete}>
-                Да, удалить
+                {t('detail.confirmDelete')}
               </Button>
             </div>
           )}

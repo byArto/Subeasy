@@ -8,17 +8,18 @@ import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 import { getLogoUrl } from '@/lib/services';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Sort types ── */
 
 type SortOption = 'date' | 'price-desc' | 'price-asc' | 'name' | 'added';
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: 'date', label: 'По дате' },
-  { value: 'price-desc', label: 'Цена ↓' },
-  { value: 'price-asc', label: 'Цена ↑' },
-  { value: 'name', label: 'Имя' },
-  { value: 'added', label: 'Новые' },
+const SORT_OPTION_KEYS: { value: SortOption; labelKey: string }[] = [
+  { value: 'date', labelKey: 'list.sort.date' },
+  { value: 'price-desc', labelKey: 'list.sort.priceDesc' },
+  { value: 'price-asc', labelKey: 'list.sort.priceAsc' },
+  { value: 'name', labelKey: 'list.sort.name' },
+  { value: 'added', labelKey: 'list.sort.added' },
 ];
 
 function sortSubscriptions(subs: Subscription[], sort: SortOption): Subscription[] {
@@ -66,6 +67,7 @@ export function SubList({
   notifyDaysBefore = 7,
   className,
 }: SubListProps) {
+  const { t } = useLanguage();
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [showSort, setShowSort] = useState(false);
   const [hidePaused, setHidePaused] = useState(false);
@@ -102,18 +104,20 @@ export function SubList({
       >
         <span className="text-3xl">🔍</span>
         <p className="text-text-muted text-sm">
-          Нет подписок в этой категории
+          {t('list.noCategory')}
         </p>
       </motion.div>
     );
   }
+
+  const currentSortLabel = SORT_OPTION_KEYS.find((o) => o.value === sortBy);
 
   return (
     <div className={cn('space-y-2.5', className)}>
       {/* Section header with sort */}
       <div className="flex items-center gap-3">
         <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-          Подписки
+          {t('list.title')}
         </h3>
         <div className="flex-1 h-px bg-border-subtle" />
         <span className="text-xs text-text-muted mr-1">{sorted.length}</span>
@@ -128,7 +132,7 @@ export function SubList({
                 : 'text-text-muted active:text-text-secondary'
             )}
           >
-            {hidePaused ? `+${pausedCount} скрыто` : 'Скрыть паузу'}
+            {hidePaused ? t('list.showPaused', { count: pausedCount }) : t('list.hidePaused')}
           </motion.button>
         )}
         <motion.button
@@ -142,7 +146,7 @@ export function SubList({
           )}
         >
           <FunnelIcon className="w-3.5 h-3.5" />
-          {SORT_OPTIONS.find((o) => o.value === sortBy)?.label || 'Сорт.'}
+          {currentSortLabel ? t(currentSortLabel.labelKey) : t('list.sort.label')}
         </motion.button>
       </div>
 
@@ -157,7 +161,7 @@ export function SubList({
             className="overflow-hidden"
           >
             <div className="flex flex-wrap gap-1.5 pb-1">
-              {SORT_OPTIONS.map((opt) => (
+              {SORT_OPTION_KEYS.map((opt) => (
                 <motion.button
                   key={opt.value}
                   whileTap={{ scale: 0.93 }}
@@ -172,7 +176,7 @@ export function SubList({
                       : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
                   )}
                 >
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </motion.button>
               ))}
             </div>
@@ -231,6 +235,7 @@ function ServiceIcon({ domain, emoji, name }: { domain: string; emoji: string; n
 }
 
 function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
+  const { t } = useLanguage();
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -259,10 +264,10 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
         className="text-center space-y-2"
       >
         <p className="font-display font-bold text-lg text-text-primary">
-          Начните отслеживать
+          {t('empty.title')}
         </p>
         <p className="text-text-muted text-sm max-w-[260px] leading-relaxed">
-          Добавьте подписки, чтобы видеть расходы, получать напоминания и контролировать бюджет
+          {t('empty.subtitle')}
         </p>
       </motion.div>
 
@@ -274,7 +279,7 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
         className="w-full"
       >
         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest text-center mb-3">
-          Популярные сервисы
+          {t('empty.popularServices')}
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {QUICK_START_SERVICES.map((svc, i) => (
@@ -307,7 +312,7 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
           transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 30 }}
         >
           <Button variant="primary" size="lg" onClick={onAddTap}>
-            Добавить подписку
+            {t('empty.addButton')}
           </Button>
         </motion.div>
       )}

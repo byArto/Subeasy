@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { requestNotificationPermission } from '@/lib/notifications';
 import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -59,6 +60,7 @@ export function SettingsPage({
 }: SettingsPageProps) {
   const { user, signOut, setSkipAuth } = useAuth();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
+  const { lang, setLang, t } = useLanguage();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
@@ -93,7 +95,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.4.4',
+      version: '1.5.1',
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -127,7 +129,7 @@ export function SettingsPage({
         }
         window.location.reload();
       } catch {
-        alert('Ошибка: неверный формат файла');
+        alert(t('settings.data.importError'));
       }
     };
     reader.readAsText(file);
@@ -163,13 +165,28 @@ export function SettingsPage({
 
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
+
+      {/* ── 0. Язык / Language ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.language.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm text-text-primary font-medium">{t('settings.language.label')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.language.hint')}</p>
+            </div>
+            <LangSwitch value={lang} onToggle={(l) => setLang(l)} />
+          </div>
+        </div>
+      </motion.div>
+
       {/* ── 1. Валюта ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Валюта отображения" />
+        <SectionHeader title={t('settings.currency.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-4">
           {/* Currency toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text-primary font-medium">Основная валюта</span>
+            <span className="text-sm text-text-primary font-medium">{t('settings.currency.main')}</span>
             <CurrencySwitch value={settings.displayCurrency} onToggle={toggleCurrency} />
           </div>
 
@@ -189,10 +206,10 @@ export function SettingsPage({
               </div>
               <p className="text-[11px] text-text-muted mt-0.5">
                 {settings.useManualRate
-                  ? 'Ручной курс'
+                  ? t('settings.currency.manualRate')
                   : rateLastUpdated
-                    ? `ЦБ РФ · ${formatRateDate(rateLastUpdated)}`
-                    : 'ЦБ РФ · загрузка...'}
+                    ? `${t('settings.currency.cbrf')} · ${formatRateDate(rateLastUpdated, lang)}`
+                    : `${t('settings.currency.cbrf')} · ${t('settings.currency.loading')}`}
               </p>
             </div>
 
@@ -223,8 +240,8 @@ export function SettingsPage({
           {/* Manual rate toggle */}
           <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
             <div>
-              <span className="text-sm text-text-primary font-medium">Свой курс</span>
-              <p className="text-[11px] text-text-muted mt-0.5">Не обновлять автоматически</p>
+              <span className="text-sm text-text-primary font-medium">{t('settings.currency.customRate')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.currency.customRateHint')}</p>
             </div>
             <NeonToggle
               value={settings.useManualRate}
@@ -242,7 +259,7 @@ export function SettingsPage({
                 className="overflow-hidden"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-text-secondary">Курс USD/RUB</span>
+                  <span className="text-sm text-text-secondary">{t('settings.currency.usdRub')}</span>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -268,11 +285,11 @@ export function SettingsPage({
 
       {/* ── 2. Уведомления ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Уведомления" />
+        <SectionHeader title={t('settings.notifications.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-4">
           {/* Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text-primary font-medium">Включить уведомления</span>
+            <span className="text-sm text-text-primary font-medium">{t('settings.notifications.enable')}</span>
             <NeonToggle
               value={settings.notificationsEnabled}
               onToggle={handleToggleNotifications}
@@ -287,7 +304,7 @@ export function SettingsPage({
               exit={{ opacity: 0, height: 0 }}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm text-text-primary font-medium">Напоминать за</span>
+                <span className="text-sm text-text-primary font-medium">{t('settings.notifications.remindBefore')}</span>
                 <div className="flex gap-1">
                   {NOTIFY_OPTIONS.map((d) => (
                     <motion.button
@@ -302,13 +319,13 @@ export function SettingsPage({
                           : 'bg-surface-3 text-text-secondary active:bg-surface-4'
                       )}
                     >
-                      {d}д
+                      {d}{t('settings.notifications.daySuffix')}
                     </motion.button>
                   ))}
                 </div>
               </div>
               <p className="text-[11px] text-text-muted mt-2 pl-0.5">
-                Вы получите push-уведомление перед каждым платежом
+                {t('settings.notifications.hint')}
               </p>
             </motion.div>
           )}
@@ -317,12 +334,12 @@ export function SettingsPage({
 
       {/* ── 3. Звуки ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Звуки" />
+        <SectionHeader title={t('settings.sounds.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-text-primary font-medium">Звуковые эффекты</span>
-              <p className="text-[11px] text-text-muted mt-0.5">Тактильные звуки при нажатиях</p>
+              <span className="text-sm text-text-primary font-medium">{t('settings.sounds.effects')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.sounds.hint')}</p>
             </div>
             <NeonToggle
               value={soundEnabled}
@@ -334,7 +351,7 @@ export function SettingsPage({
 
       {/* ── 4. Категории ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Категории" />
+        <SectionHeader title={t('settings.categories.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
           {/* Collapsible header */}
           <motion.button
@@ -344,7 +361,7 @@ export function SettingsPage({
             className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <span className="text-sm text-text-primary font-medium">Все категории</span>
+              <span className="text-sm text-text-primary font-medium">{t('settings.categories.all')}</span>
               <span className="text-xs text-text-muted">{categories.length}</span>
             </div>
             <motion.svg
@@ -383,6 +400,8 @@ export function SettingsPage({
                         onSaveEdit={saveEditCategory}
                         onCancelEdit={() => setEditingCatId(null)}
                         onDelete={() => deleteCategory(cat.id)}
+                        deleteLabelText={t('settings.categories.delete')}
+                        namePlaceholder={t('settings.categories.namePlaceholder')}
                       />
                     ))}
                   </AnimatePresence>
@@ -413,7 +432,7 @@ export function SettingsPage({
                             type="text"
                             value={newCatName}
                             onChange={(e) => setNewCatName(e.target.value)}
-                            placeholder="Название"
+                            placeholder={t('settings.categories.namePlaceholder')}
                             autoFocus
                             className={cn(
                               'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-border-subtle',
@@ -455,7 +474,7 @@ export function SettingsPage({
                       className="w-full flex items-center gap-2.5 px-4 py-3.5 border-t border-border-subtle text-neon active:bg-neon/5 transition-colors"
                     >
                       <span className="w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center text-neon text-sm font-bold">+</span>
-                      <span className="text-sm font-medium">Добавить категорию</span>
+                      <span className="text-sm font-medium">{t('settings.categories.add')}</span>
                     </motion.button>
                   )}
                 </div>
@@ -467,10 +486,10 @@ export function SettingsPage({
 
       {/* ── 5. Данные ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Данные" />
+        <SectionHeader title={t('settings.data.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
-          <SettingsRow label="Экспорт данных" hint="Сохранить JSON-файл" onTap={handleExport} />
-          <SettingsRow label="Импорт данных" hint="Загрузить из файла" onTap={handleImport} isLast={false} />
+          <SettingsRow label={t('settings.data.export')} hint={t('settings.data.exportHint')} onTap={handleExport} />
+          <SettingsRow label={t('settings.data.import')} hint={t('settings.data.importHint')} onTap={handleImport} isLast={false} />
 
           {/* Clear data */}
           <AnimatePresence mode="wait">
@@ -482,8 +501,8 @@ export function SettingsPage({
                 onClick={() => setConfirmClear(true)}
                 className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
               >
-                <span className="text-sm text-danger font-medium">Очистить все данные</span>
-                <span className="text-xs text-text-muted">{subscriptions.length} подписок</span>
+                <span className="text-sm text-danger font-medium">{t('settings.data.clearAll')}</span>
+                <span className="text-xs text-text-muted">{subscriptions.length} {t('settings.data.subscriptionsCount')}</span>
               </motion.button>
             ) : (
               <motion.div
@@ -492,13 +511,13 @@ export function SettingsPage({
                 animate={{ opacity: 1 }}
                 className="px-4 py-3.5 space-y-2.5"
               >
-                <p className="text-xs text-danger font-medium">Все подписки и настройки будут удалены. Это действие нельзя отменить.</p>
+                <p className="text-xs text-danger font-medium">{t('settings.data.clearConfirmText')}</p>
                 <div className="flex gap-2">
                   <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmClear(false)}>
-                    Отмена
+                    {t('common.cancel')}
                   </Button>
                   <Button fullWidth variant="danger" size="sm" onClick={handleClearAll}>
-                    Удалить всё
+                    {t('settings.data.deleteAll')}
                   </Button>
                 </div>
               </motion.div>
@@ -517,7 +536,7 @@ export function SettingsPage({
 
       {/* ── 6. Аккаунт ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="Аккаунт" />
+        <SectionHeader title={t('settings.account.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
           {user ? (
             <>
@@ -530,7 +549,7 @@ export function SettingsPage({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-text-primary font-medium truncate">{user.email}</p>
-                    <p className="text-[11px] text-text-muted">Данные синхронизируются</p>
+                    <p className="text-[11px] text-text-muted">{t('settings.account.synced')}</p>
                   </div>
                   <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon" />
                 </div>
@@ -545,7 +564,7 @@ export function SettingsPage({
                     onClick={() => setConfirmLogout(true)}
                     className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
                   >
-                    <span className="text-sm text-danger font-medium">Выйти из аккаунта</span>
+                    <span className="text-sm text-danger font-medium">{t('settings.account.logout')}</span>
                   </motion.button>
                 ) : (
                   <motion.div
@@ -555,14 +574,14 @@ export function SettingsPage({
                     className="px-4 py-3.5 space-y-2.5"
                   >
                     <p className="text-xs text-text-secondary">
-                      Данные останутся на сервере. Вы сможете войти снова.
+                      {t('settings.account.logoutConfirmText')}
                     </p>
                     <div className="flex gap-2">
                       <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
-                        Отмена
+                        {t('common.cancel')}
                       </Button>
                       <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
-                        Выйти
+                        {t('settings.account.logoutConfirm')}
                       </Button>
                     </div>
                   </motion.div>
@@ -577,8 +596,8 @@ export function SettingsPage({
               className="w-full flex items-center justify-between px-4 py-3.5 active:bg-neon/5 transition-colors"
             >
               <div>
-                <span className="text-sm text-neon font-medium">Войти в аккаунт</span>
-                <p className="text-[11px] text-text-muted mt-0.5">Синхронизация между устройствами</p>
+                <span className="text-sm text-neon font-medium">{t('settings.account.login')}</span>
+                <p className="text-[11px] text-text-muted mt-0.5">{t('settings.account.loginHint')}</p>
               </div>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
                 <path d="m9 18 6-6-6-6" />
@@ -590,7 +609,7 @@ export function SettingsPage({
 
       {/* ── 7. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title="О приложении" />
+        <SectionHeader title={t('settings.about.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-3">
           {/* App logo */}
           <img
@@ -605,9 +624,9 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">Версия 1.5.0</p>
+          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.5.1</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
-            Твой личный трекер подписок
+            {t('settings.about.description')}
           </p>
         </div>
       </motion.div>
@@ -682,15 +701,65 @@ function NeonToggle({ value, onToggle }: { value: boolean; onToggle: () => void 
 
 /* ── Format rate date ── */
 
-function formatRateDate(iso: string): string {
+function formatRateDate(iso: string, lang: string): string {
   const d = new Date(iso);
   const now = new Date();
   const isToday =
     d.getDate() === now.getDate() &&
     d.getMonth() === now.getMonth() &&
     d.getFullYear() === now.getFullYear();
-  if (isToday) return `сегодня, ${d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+  if (isToday) {
+    const timeStr = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    return lang === 'en' ? `today, ${timeStr}` : `сегодня, ${timeStr}`;
+  }
+  return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+}
+
+/* ── Language Switch ── */
+
+import { Lang } from '@/lib/translations';
+
+function LangSwitch({
+  value,
+  onToggle,
+}: {
+  value: Lang;
+  onToggle: (l: Lang) => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.95 }}
+      onClick={() => onToggle(value === 'ru' ? 'en' : 'ru')}
+      className="relative flex items-center w-[100px] h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1"
+    >
+      {/* Animated background */}
+      <motion.span
+        animate={{ x: value === 'ru' ? 0 : 46 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        className="absolute w-[46px] h-[32px] rounded-lg bg-neon"
+        style={{ boxShadow: '0 0 12px rgba(0, 255, 65, 0.3)' }}
+      />
+
+      <span
+        className={cn(
+          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
+          value === 'ru' ? 'text-surface' : 'text-text-secondary'
+        )}
+      >
+        RU
+      </span>
+      <span
+        className={cn(
+          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
+          value === 'en' ? 'text-surface' : 'text-text-secondary'
+        )}
+      >
+        EN
+      </span>
+    </motion.button>
+  );
 }
 
 /* ── Currency Switch ── */
@@ -751,6 +820,8 @@ function CategoryRow({
   onSaveEdit,
   onCancelEdit,
   onDelete,
+  deleteLabelText,
+  namePlaceholder,
 }: {
   category: Category;
   isLast: boolean;
@@ -763,6 +834,8 @@ function CategoryRow({
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onDelete: () => void;
+  deleteLabelText: string;
+  namePlaceholder: string;
 }) {
   const x = useMotionValue(0);
   const deleteOpacity = useTransform(x, [-100, -60], [1, 0]);
@@ -833,7 +906,7 @@ function CategoryRow({
         style={{ opacity: deleteOpacity, scale: deleteScale }}
         className="absolute inset-y-0 right-0 w-20 flex items-center justify-center bg-danger/10"
       >
-        <span className="text-danger text-xs font-semibold">Удалить</span>
+        <span className="text-danger text-xs font-semibold">{deleteLabelText}</span>
       </motion.div>
 
       {/* Draggable row */}

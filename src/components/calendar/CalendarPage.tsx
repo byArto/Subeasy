@@ -18,12 +18,13 @@ import {
   getDay,
   addWeeks,
 } from 'date-fns';
-import { ru } from 'date-fns/locale';
+import { ru, enUS } from 'date-fns/locale';
 import { Subscription, AppSettings, Currency } from '@/lib/types';
 import { convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { soundEngine } from '@/lib/sounds';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Props ── */
 
@@ -32,6 +33,24 @@ interface CalendarPageProps {
   settings: AppSettings;
   onSubTap?: (sub: Subscription) => void;
 }
+
+/* ── Translation keys ── */
+
+const MONTH_FULL_KEYS = [
+  'month.full.jan', 'month.full.feb', 'month.full.mar', 'month.full.apr',
+  'month.full.may', 'month.full.jun', 'month.full.jul', 'month.full.aug',
+  'month.full.sep', 'month.full.oct', 'month.full.nov', 'month.full.dec',
+];
+
+// Mon–Sun order (for weekday header row, weekStartsOn=1)
+const WEEKDAY_KEYS = [
+  'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat', 'day.sun',
+];
+
+// Indexed by getDay() result: 0=Sun, 1=Mon ... 6=Sat
+const WEEKDAY_SHORT_KEYS = [
+  'day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat',
+];
 
 /* ── Helpers ── */
 
@@ -67,13 +86,10 @@ function getPaymentDatesInMonth(sub: Subscription, year: number, month: number):
   }
 
   if (sub.cycle === 'weekly') {
-    // Walk from nextPaymentDate forward/backward to find all Wednesdays (or whatever day) in this month
     let cursor = new Date(next);
-    // Rewind to before monthStart
     while (isBefore(monthStart, cursor)) {
       cursor = addWeeks(cursor, -1);
     }
-    // Walk forward
     while (cursor <= monthEnd) {
       if (cursor >= monthStart && cursor <= monthEnd) {
         dates.push(new Date(cursor));
@@ -109,25 +125,19 @@ function getUrgencyColor(date: Date): string {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const diff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (diff <= 2) return '#FF453A'; // red
-  if (diff <= 7) return '#FFD60A'; // yellow
-  return '#00FF41'; // green
+  if (diff <= 2) return '#FF453A';
+  if (diff <= 7) return '#FFD60A';
+  return '#00FF41';
 }
 
 function priceInCurrency(sub: Subscription, settings: AppSettings): number {
   return convertCurrency(sub.price, sub.currency as Currency, settings.displayCurrency as Currency, settings.exchangeRate);
 }
 
-const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const MONTH_NAMES_RU = [
-  'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-  'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
-];
-const WEEKDAY_SHORT_RU = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-
 /* ── Component ── */
 
 export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPageProps) {
+  const { t } = useLanguage();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [direction, setDirection] = useState(0);
@@ -186,8 +196,8 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
     return (
       <div className="flex flex-col items-center justify-center pt-32 px-5 gap-3">
         <span className="text-5xl">📅</span>
-        <p className="text-text-secondary text-sm font-medium">Календарь</p>
-        <p className="text-text-muted text-xs">Добавьте подписки чтобы увидеть календарь платежей</p>
+        <p className="text-text-secondary text-sm font-medium">{t('nav.calendar')}</p>
+        <p className="text-text-muted text-xs">{t('calendar.empty')}</p>
       </div>
     );
   }
@@ -237,7 +247,7 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
 
               {/* Month grid */}
               <div className="grid grid-cols-4 gap-1.5">
-                {MONTH_NAMES_RU.map((name, i) => {
+                {MONTH_FULL_KEYS.map((key, i) => {
                   const isCurrentMonth = i === month;
                   const isNow = i === new Date().getMonth() && year === new Date().getFullYear();
                   return (
@@ -254,7 +264,7 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
                             : 'text-text-secondary active:bg-surface-4',
                       )}
                     >
-                      {name.substring(0, 3)}
+                      {t(key).substring(0, 3)}
                     </motion.button>
                   );
                 })}
@@ -266,7 +276,7 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
                 onClick={() => { goToday(); setShowYearPicker(false); }}
                 className="w-full py-2 rounded-xl text-xs font-semibold text-neon bg-neon/5 border border-neon/20 active:bg-neon/10 transition-colors"
               >
-                Сегодня
+                {t('calendar.today')}
               </motion.button>
             </div>
           </motion.div>
@@ -343,6 +353,8 @@ function MonthNavigation({
   onNext: () => void;
   onTitleTap: () => void;
 }) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex items-center justify-between">
       <motion.button
@@ -362,7 +374,7 @@ function MonthNavigation({
         onClick={onTitleTap}
         className="text-base font-display font-bold text-text-primary active:text-neon transition-colors"
       >
-        {MONTH_NAMES_RU[month]} {year}
+        {t(MONTH_FULL_KEYS[month])} {year}
       </motion.button>
 
       <motion.button
@@ -396,11 +408,11 @@ function CalendarGrid({
   selectedDay: Date | null;
   onSelectDay: (d: Date) => void;
 }) {
+  const { t } = useLanguage();
   const monthDate = new Date(year, month, 1);
   const mStart = startOfMonth(monthDate);
   const mEnd = endOfMonth(monthDate);
 
-  // Build calendar grid: start from Monday
   const calStart = startOfWeek(mStart, { weekStartsOn: 1 });
   const calEnd = endOfWeek(mEnd, { weekStartsOn: 1 });
   const days = eachDayOfInterval({ start: calStart, end: calEnd });
@@ -409,9 +421,9 @@ function CalendarGrid({
     <div className="bg-surface-2 rounded-2xl border border-border-subtle p-3">
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
-        {WEEKDAY_LABELS.map((d) => (
-          <div key={d} className="text-center text-[11px] font-semibold text-text-muted uppercase tracking-wider py-1.5">
-            {d}
+        {WEEKDAY_KEYS.map((key) => (
+          <div key={key} className="text-center text-[11px] font-semibold text-text-muted uppercase tracking-wider py-1.5">
+            {t(key)}
           </div>
         ))}
       </div>
@@ -503,8 +515,9 @@ function DayDetails({
   symbol: string;
   onSubTap?: (sub: Subscription) => void;
 }) {
+  const { t, lang } = useLanguage();
   const isPast = isBefore(date, new Date(new Date().setHours(0, 0, 0, 0)));
-  const dateStr = format(date, 'd MMMM yyyy', { locale: ru });
+  const dateStr = format(date, 'd MMMM yyyy', { locale: lang === 'en' ? enUS : ru });
 
   const total = subs.reduce((sum, s) => sum + priceInCurrency(s, settings), 0);
 
@@ -513,7 +526,7 @@ function DayDetails({
       <h3 className="text-sm font-bold text-text-primary mb-3 capitalize">{dateStr}</h3>
 
       {subs.length === 0 ? (
-        <p className="text-xs text-text-muted py-2">Нет платежей в этот день</p>
+        <p className="text-xs text-text-muted py-2">{t('calendar.noPayments')}</p>
       ) : (
         <div className="space-y-2.5">
           {subs.map((sub) => (
@@ -533,14 +546,14 @@ function DayDetails({
                   ? 'bg-neon/10 text-neon'
                   : 'bg-yellow-500/10 text-yellow-400',
               )}>
-                {isPast ? 'Оплачено' : 'Ожидает'}
+                {isPast ? t('calendar.paid') : t('calendar.pending')}
               </span>
             </button>
           ))}
 
           {/* Total */}
           <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-border-subtle">
-            <span className="text-xs text-text-muted">Итого</span>
+            <span className="text-xs text-text-muted">{t('calendar.total')}</span>
             <span className="text-sm font-bold text-neon tabular-nums">
               {Math.round(total).toLocaleString('ru-RU')} {symbol}
             </span>
@@ -570,7 +583,8 @@ function MonthSchedule({
   symbol: string;
   onSubTap?: (sub: Subscription) => void;
 }) {
-  // Sort payment days
+  const { t } = useLanguage();
+
   const sortedDays = Array.from(payments.entries())
     .sort(([a], [b]) => a - b);
 
@@ -583,10 +597,12 @@ function MonthSchedule({
     return sum + subs.reduce((s, sub) => s + priceInCurrency(sub, settings), 0);
   }, 0);
 
+  const monthName = t(MONTH_FULL_KEYS[month]).toLowerCase();
+
   return (
     <div>
       <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-3 pl-1">
-        Расписание на {MONTH_NAMES_RU[month].toLowerCase()}
+        {t('calendar.schedule', { month: monthName })}
       </h3>
 
       <div className="relative">
@@ -597,7 +613,7 @@ function MonthSchedule({
           {sortedDays.map(([day, subs], i) => {
             const date = new Date(year, month, day);
             const isPast = isBefore(date, today);
-            const dayOfWeek = WEEKDAY_SHORT_RU[getDay(date)];
+            const dayOfWeek = t(WEEKDAY_SHORT_KEYS[getDay(date)]);
             const urgencyColor = getUrgencyColor(date);
 
             return (
@@ -633,7 +649,7 @@ function MonthSchedule({
                           {Math.round(priceInCurrency(sub, settings)).toLocaleString('ru-RU')} {symbol}
                         </span>
                         {isPast && (
-                          <p className="text-[10px] text-text-muted">Оплачено</p>
+                          <p className="text-[10px] text-text-muted">{t('calendar.paid')}</p>
                         )}
                       </div>
                     </button>
@@ -648,7 +664,7 @@ function MonthSchedule({
       {/* Month total */}
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 mt-3 flex items-center justify-between">
         <span className="text-sm text-text-secondary font-medium">
-          Всего в {MONTH_NAMES_RU[month].toLowerCase()}
+          {t('calendar.monthTotal', { month: monthName })}
         </span>
         <span className="text-base font-bold text-neon tabular-nums">
           {Math.round(monthTotal).toLocaleString('ru-RU')} {symbol}

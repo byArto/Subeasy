@@ -19,6 +19,7 @@ import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Props ── */
 
@@ -43,10 +44,15 @@ const sectionVariants = {
 /* ── Helpers ── */
 
 type Period = 'month' | 'quarter' | 'year';
-const PERIOD_LABELS: Record<Period, string> = { month: 'Месяц', quarter: 'Квартал', year: 'Год' };
 const PERIOD_MULTIPLIER: Record<Period, number> = { month: 1, quarter: 3, year: 12 };
 
-const MONTH_NAMES_SHORT = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+const MONTH_SHORT_KEYS = [
+  'month.jan', 'month.feb', 'month.mar', 'month.apr',
+  'month.may', 'month.jun', 'month.jul', 'month.aug',
+  'month.sep', 'month.oct', 'month.nov', 'month.dec',
+];
+
+type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 
 function getMonthlyInCurrency(sub: Subscription, currency: string, rate: number): number {
   const monthly = getMonthlyPrice(sub);
@@ -86,19 +92,20 @@ function daysSince(dateStr: string): number {
 }
 
 /** Format duration in human-readable form */
-function formatDuration(days: number): string {
-  if (days < 30) return `${days} дн.`;
+function formatDuration(days: number, t: TFunc): string {
+  if (days < 30) return `${days} ${t('analytics.days')}`;
   const months = Math.floor(days / 30.44);
-  if (months < 12) return `${months} мес.`;
+  if (months < 12) return `${months} ${t('analytics.months')}`;
   const years = Math.floor(months / 12);
   const remMonths = months % 12;
-  if (remMonths === 0) return `${years} г.`;
-  return `${years} г. ${remMonths} мес.`;
+  if (remMonths === 0) return `${years} ${t('analytics.years')}`;
+  return `${years} ${t('analytics.years')} ${remMonths} ${t('analytics.months')}`;
 }
 
 /* ── Component ── */
 
 export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }: AnalyticsPageProps) {
+  const { t } = useLanguage();
   const { displayCurrency, exchangeRate } = settings;
   const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
   const altCurrency = displayCurrency === 'RUB' ? 'USD' : 'RUB';
@@ -120,8 +127,8 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }:
     return (
       <div className="flex flex-col items-center justify-center pt-32 px-5 gap-3">
         <span className="text-5xl">📊</span>
-        <p className="text-text-secondary text-sm font-medium">Аналитика</p>
-        <p className="text-text-muted text-xs">Добавьте подписки чтобы увидеть аналитику</p>
+        <p className="text-text-secondary text-sm font-medium">{t('nav.analytics')}</p>
+        <p className="text-text-muted text-xs">{t('analytics.empty')}</p>
       </div>
     );
   }
@@ -219,16 +226,23 @@ function PeriodTotal({
   symbol: string;
   altSymbol: string;
 }) {
+  const { t } = useLanguage();
   const [period, setPeriod] = useState<Period>('month');
   const multiplier = PERIOD_MULTIPLIER[period];
   const total = monthlyTotal * multiplier;
   const totalAlt = monthlyTotalAlt * multiplier;
 
+  const periodLabels: Record<Period, string> = {
+    month: t('analytics.period.month'),
+    quarter: t('analytics.period.quarter'),
+    year: t('analytics.period.year'),
+  };
+
   return (
     <div className="bg-surface-2 rounded-2xl border border-border-subtle p-5">
       {/* Period pills */}
       <div className="flex gap-1.5 bg-surface-3 rounded-xl p-1 mb-5">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map((p) => (
+        {(Object.keys(periodLabels) as Period[]).map((p) => (
           <motion.button
             key={p}
             whileTap={{ scale: 0.95 }}
@@ -245,7 +259,7 @@ function PeriodTotal({
                 transition={{ type: 'spring', stiffness: 500, damping: 35 }}
               />
             )}
-            <span className="relative">{PERIOD_LABELS[p]}</span>
+            <span className="relative">{periodLabels[p]}</span>
           </motion.button>
         ))}
       </div>
@@ -276,7 +290,6 @@ function PeriodTotal({
 
 /* ═══════════════════════════════════════
    СЕКЦИЯ 2: Insights Badges
-   "Самая дорогая" + "Самая долгая"
    ═══════════════════════════════════════ */
 
 function InsightsBadges({
@@ -294,6 +307,8 @@ function InsightsBadges({
   symbol: string;
   onSubTap?: (sub: Subscription) => void;
 }) {
+  const { t } = useLanguage();
+
   const mostExpensive = useMemo(() => {
     if (active.length === 0) return null;
     let best: Subscription | null = null;
@@ -327,7 +342,7 @@ function InsightsBadges({
 
   return (
     <div>
-      <SectionHeader title="Инсайты" />
+      <SectionHeader title={t('analytics.insights')} />
       <div className="grid grid-cols-2 gap-3">
         {/* Most Expensive */}
         {mostExpensive && (
@@ -339,7 +354,6 @@ function InsightsBadges({
             onClick={() => onSubTap?.(mostExpensive.sub)}
             className="relative bg-surface-2 rounded-2xl border border-border-subtle p-4 overflow-hidden text-left active:bg-surface-3 transition-colors"
           >
-            {/* Glow accent */}
             <div
               className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
               style={{ backgroundColor: mostExpensive.sub.color }}
@@ -349,7 +363,7 @@ function InsightsBadges({
               <div className="flex items-center gap-1.5 mb-3">
                 <span className="text-xs">👑</span>
                 <span className="text-[10px] font-bold text-warning uppercase tracking-wider">
-                  Дорогая
+                  {t('analytics.expensive')}
                 </span>
               </div>
 
@@ -367,7 +381,7 @@ function InsightsBadges({
               </p>
               <p className="text-lg font-bold text-text-primary tabular-nums mt-1">
                 {formatAmount(Math.round(mostExpensive.monthly))}
-                <span className="text-xs text-text-muted ml-0.5">{symbol}/мес</span>
+                <span className="text-xs text-text-muted ml-0.5">{symbol}{t('cycle.monthly')}</span>
               </p>
             </div>
           </motion.button>
@@ -383,7 +397,6 @@ function InsightsBadges({
             onClick={() => onSubTap?.(longest.sub)}
             className="relative bg-surface-2 rounded-2xl border border-border-subtle p-4 overflow-hidden text-left active:bg-surface-3 transition-colors"
           >
-            {/* Glow accent */}
             <div
               className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
               style={{ backgroundColor: longest.sub.color }}
@@ -393,7 +406,7 @@ function InsightsBadges({
               <div className="flex items-center gap-1.5 mb-3">
                 <span className="text-xs">⏳</span>
                 <span className="text-[10px] font-bold text-neon uppercase tracking-wider">
-                  Долгая
+                  {t('analytics.longest')}
                 </span>
               </div>
 
@@ -410,7 +423,7 @@ function InsightsBadges({
                 {longest.sub.name}
               </p>
               <p className="text-lg font-bold text-text-primary tabular-nums mt-1">
-                {formatDuration(longest.days)}
+                {formatDuration(longest.days, t)}
               </p>
             </div>
           </motion.button>
@@ -439,16 +452,16 @@ function ForecastSection({
   symbol: string;
   monthlyTotal: number;
 }) {
+  const { t } = useLanguage();
+
   const forecast = useMemo(() => {
     const now = new Date();
     const nextMonth = now.getMonth() + 1;
     const nextYear = nextMonth > 11 ? now.getFullYear() + 1 : now.getFullYear();
     const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
 
-    // Base forecast: current active subs that will still be active next month
     const baseForecast = getMonthlyTotal(subscriptions, nextYear, nextMonthNorm, exchangeRate, displayCurrency);
 
-    // Trials converting next month — their price will kick in
     const trialConversions = subscriptions.filter((s) => {
       if (s.cycle !== 'trial' || !s.isActive) return false;
       const endDate = new Date(s.nextPaymentDate);
@@ -468,18 +481,20 @@ function ForecastSection({
       diff,
       pct,
       trialCount: trialConversions.length,
-      nextMonthLabel: MONTH_NAMES_SHORT[nextMonthNorm],
+      nextMonthKey: MONTH_SHORT_KEYS[nextMonthNorm],
     };
   }, [subscriptions, active, displayCurrency, exchangeRate, monthlyTotal]);
 
+  const nextMonthLabel = t(forecast.nextMonthKey);
+
   return (
     <div>
-      <SectionHeader title="Прогноз" />
+      <SectionHeader title={t('analytics.forecast')} />
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] text-text-muted mb-0.5">
-              Ожидаемые расходы · {forecast.nextMonthLabel}
+              {t('analytics.forecastDesc', { month: nextMonthLabel })}
             </p>
             <p className="text-2xl font-display font-bold text-text-primary tabular-nums">
               {formatAmount(Math.round(forecast.total))}
@@ -508,7 +523,7 @@ function ForecastSection({
         {/* Forecast bar comparing current vs next */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-text-muted w-14 shrink-0">Сейчас</span>
+            <span className="text-[11px] text-text-muted w-14 shrink-0">{t('analytics.now')}</span>
             <div className="flex-1 h-2 rounded-full bg-surface-4 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
@@ -522,7 +537,7 @@ function ForecastSection({
             </span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] text-text-muted w-14 shrink-0">{forecast.nextMonthLabel}</span>
+            <span className="text-[11px] text-text-muted w-14 shrink-0">{nextMonthLabel}</span>
             <div className="flex-1 h-2 rounded-full bg-surface-4 overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
@@ -546,7 +561,10 @@ function ForecastSection({
 
         {forecast.trialCount > 0 && (
           <p className="text-[11px] text-warning mt-3">
-            {forecast.trialCount} {forecast.trialCount === 1 ? 'триал закончится' : 'триала закончатся'} в {forecast.nextMonthLabel.toLowerCase()}
+            {forecast.trialCount === 1
+              ? t('analytics.trialEnds', { count: forecast.trialCount })
+              : t('analytics.trialsEnd', { count: forecast.trialCount })}{' '}
+            {nextMonthLabel.toLowerCase()}
           </p>
         )}
       </div>
@@ -569,6 +587,7 @@ function MonthComparison({
   exchangeRate: number;
   symbol: string;
 }) {
+  const { t } = useLanguage();
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -586,12 +605,12 @@ function MonthComparison({
 
   return (
     <div>
-      <SectionHeader title="Сравнение" />
+      <SectionHeader title={t('analytics.comparison')} />
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
         <div className="flex items-center gap-3">
           {/* This month */}
           <div className="flex-1 text-center">
-            <p className="text-[11px] text-text-muted mb-1">Этот месяц</p>
+            <p className="text-[11px] text-text-muted mb-1">{t('analytics.thisMonth')}</p>
             <p className="text-sm font-bold text-text-primary tabular-nums">
               {formatAmount(Math.round(thisMonthTotal))} {symbol}
             </p>
@@ -618,7 +637,7 @@ function MonthComparison({
 
           {/* Previous month */}
           <div className="flex-1 text-center">
-            <p className="text-[11px] text-text-muted mb-1">Прошлый месяц</p>
+            <p className="text-[11px] text-text-muted mb-1">{t('analytics.lastMonth')}</p>
             <p className="text-sm font-bold text-text-secondary tabular-nums">
               {formatAmount(Math.round(lastMonthTotal))} {symbol}
             </p>
@@ -627,7 +646,7 @@ function MonthComparison({
 
         {isNewPeriod && (
           <p className="text-center text-[11px] text-text-muted mt-2">
-            Новый период отслеживания
+            {t('analytics.newPeriod')}
           </p>
         )}
       </div>
@@ -640,12 +659,6 @@ function MonthComparison({
    ═══════════════════════════════════════ */
 
 type TimelineRange = '7d' | '30d' | '3m' | '12m';
-const TIMELINE_RANGES: { value: TimelineRange; label: string }[] = [
-  { value: '7d', label: '7 дн' },
-  { value: '30d', label: '30 дн' },
-  { value: '3m', label: 'Кварт.' },
-  { value: '12m', label: 'Год' },
-];
 
 /** How many months back for each range */
 const RANGE_MONTHS: Record<TimelineRange, number> = { '7d': 1, '30d': 1, '3m': 3, '12m': 12 };
@@ -667,7 +680,15 @@ function SpendingTimeline({
   exchangeRate: number;
   symbol: string;
 }) {
+  const { t } = useLanguage();
   const [range, setRange] = useState<TimelineRange>('12m');
+
+  const timelineRanges: { value: TimelineRange; label: string }[] = [
+    { value: '7d', label: t('analytics.7d') },
+    { value: '30d', label: t('analytics.30d') },
+    { value: '3m', label: t('analytics.quarter') },
+    { value: '12m', label: t('analytics.year') },
+  ];
 
   const { data, growth, avgTotal } = useMemo(() => {
     const now = new Date();
@@ -675,14 +696,11 @@ function SpendingTimeline({
     const monthsBack = RANGE_MONTHS[range];
 
     if (range === '7d' || range === '30d') {
-      // Daily granularity for 7d / 30d
       const daysBack = range === '7d' ? 7 : 30;
       for (let i = daysBack - 1; i >= 0; i--) {
         const d = new Date(now);
         d.setDate(d.getDate() - i);
-        // Approximate: use the monthly total for the month this day falls in
         const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
-        // Scale to daily cost
         const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
         const dailyCost = total / daysInMonth;
 
@@ -692,13 +710,12 @@ function SpendingTimeline({
         });
       }
     } else {
-      // Monthly granularity for 3m / 12m
       for (let i = monthsBack - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const total = getMonthlyTotal(subscriptions, d.getFullYear(), d.getMonth(), exchangeRate, displayCurrency);
 
         points.push({
-          label: MONTH_NAMES_SHORT[d.getMonth()],
+          label: t(MONTH_SHORT_KEYS[d.getMonth()]),
           total: Math.round(total),
         });
       }
@@ -707,13 +724,13 @@ function SpendingTimeline({
       const nextD = new Date(now.getFullYear(), now.getMonth() + 1, 1);
       const forecastTotal = getMonthlyTotal(subscriptions, nextD.getFullYear(), nextD.getMonth(), exchangeRate, displayCurrency);
       points.push({
-        label: MONTH_NAMES_SHORT[nextD.getMonth()],
+        label: t(MONTH_SHORT_KEYS[nextD.getMonth()]),
         total: 0,
         forecast: Math.round(forecastTotal),
       });
     }
 
-    // Calculate growth: compare last 3 months average vs 3 months before that
+    // Calculate growth
     const withData = points.filter((p) => p.total > 0);
     let growthPct = 0;
     if (range === '12m' && withData.length >= 4) {
@@ -726,12 +743,11 @@ function SpendingTimeline({
       }
     }
 
-    // Average
     const totals = points.filter((p) => p.total > 0);
     const avg = totals.length > 0 ? totals.reduce((s, p) => s + p.total, 0) / totals.length : 0;
 
     return { data: points, growth: growthPct, avgTotal: Math.round(avg) };
-  }, [subscriptions, displayCurrency, exchangeRate, range]);
+  }, [subscriptions, displayCurrency, exchangeRate, range, t]);
 
   const hasAnyData = data.some((p) => p.total > 0);
   const monthsWithData = data.filter((p) => p.total > 0).length;
@@ -739,10 +755,10 @@ function SpendingTimeline({
   if (!hasAnyData) {
     return (
       <div>
-        <SectionHeader title="Динамика расходов" />
+        <SectionHeader title={t('analytics.dynamics')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6">
           <p className="text-center text-xs text-text-muted">
-            Добавьте подписки для аналитики
+            {t('analytics.noData')}
           </p>
         </div>
       </div>
@@ -753,7 +769,7 @@ function SpendingTimeline({
     <div>
       <div className="flex items-center justify-between mb-2 pl-1 pr-1">
         <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">
-          Динамика расходов
+          {t('analytics.dynamics')}
         </h3>
         {growth !== 0 && (
           <div className={cn(
@@ -762,14 +778,14 @@ function SpendingTimeline({
           )}>
             <span>{growth > 0 ? '↑' : '↓'}</span>
             <span className="tabular-nums">{growth > 0 ? '+' : ''}{growth}%</span>
-            <span className="text-text-muted font-medium">тренд</span>
+            <span className="text-text-muted font-medium">{t('analytics.trend')}</span>
           </div>
         )}
       </div>
 
       {/* Range switcher */}
       <div className="flex gap-1 bg-surface-3 rounded-xl p-1 mb-3">
-        {TIMELINE_RANGES.map((r) => (
+        {timelineRanges.map((r) => (
           <motion.button
             key={r.value}
             whileTap={{ scale: 0.95 }}
@@ -829,7 +845,7 @@ function SpendingTimeline({
                 stroke="rgba(255,255,255,0.1)"
                 strokeDasharray="4 4"
                 label={{
-                  value: `ср. ${formatAmount(avgTotal)}`,
+                  value: `${t('analytics.avg')} ${formatAmount(avgTotal)}`,
                   fill: 'rgba(255,255,255,0.2)',
                   fontSize: 10,
                   position: 'insideTopRight',
@@ -864,17 +880,17 @@ function SpendingTimeline({
         <div className="flex items-center justify-center gap-4 mt-2">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 rounded-full bg-neon" />
-            <span className="text-[10px] text-text-muted">Факт</span>
+            <span className="text-[10px] text-text-muted">{t('analytics.actual')}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 rounded-full bg-warning opacity-60" style={{ borderTop: '1px dashed #FFB800' }} />
-            <span className="text-[10px] text-text-muted">Прогноз</span>
+            <span className="text-[10px] text-text-muted">{t('analytics.forecastLabel')}</span>
           </div>
         </div>
 
         {monthsWithData < 2 && (
           <p className="text-center text-[11px] text-text-muted mt-2">
-            Копим историю... Данные за {monthsWithData} мес.
+            {t('analytics.historyBuilding', { months: monthsWithData })}
           </p>
         )}
       </div>
@@ -909,6 +925,8 @@ function CategoryBreakdown({
   symbol: string;
   monthlyTotal: number;
 }) {
+  const { t } = useLanguage();
+
   const data = useMemo(() => {
     const map = new Map<string, number>();
     for (const s of active) {
@@ -920,7 +938,7 @@ function CategoryBreakdown({
     for (const [catId, value] of map) {
       const cat = categories.find((c) => c.id === catId);
       result.push({
-        name: cat?.name || 'Другое',
+        name: cat?.name || t('analytics.other'),
         emoji: cat?.emoji || '📦',
         value: Math.round(value),
         color: cat?.color || '#8E8E93',
@@ -929,13 +947,13 @@ function CategoryBreakdown({
     }
 
     return result.sort((a, b) => b.value - a.value);
-  }, [active, categories, displayCurrency, exchangeRate, monthlyTotal]);
+  }, [active, categories, displayCurrency, exchangeRate, monthlyTotal, t]);
 
   if (data.length === 0) return null;
 
   return (
     <div>
-      <SectionHeader title="Расходы по категориям" />
+      <SectionHeader title={t('analytics.byCategory')} />
       <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
         {/* Pie chart */}
         <div className="flex justify-center mb-4">
@@ -964,7 +982,7 @@ function CategoryBreakdown({
               <span className="text-lg font-bold text-text-primary tabular-nums">
                 {formatAmount(Math.round(monthlyTotal))}
               </span>
-              <span className="text-[10px] text-text-muted">{symbol}/мес</span>
+              <span className="text-[10px] text-text-muted">{symbol}{t('cycle.monthly')}</span>
             </div>
           </div>
         </div>
@@ -1014,6 +1032,8 @@ function TopExpensive({
   monthlyTotal: number;
   onSubTap?: (sub: Subscription) => void;
 }) {
+  const { t } = useLanguage();
+
   const top3 = useMemo(() => {
     return active
       .map((s) => ({
@@ -1028,7 +1048,7 @@ function TopExpensive({
 
   return (
     <div>
-      <SectionHeader title="Самые дорогие" />
+      <SectionHeader title={t('analytics.mostExpensive')} />
       <div className="space-y-2.5">
         {top3.map(({ sub, monthly }, i) => {
           const pct = monthlyTotal > 0 ? (monthly / monthlyTotal) * 100 : 0;
@@ -1050,11 +1070,11 @@ function TopExpensive({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-text-primary truncate">{sub.name}</p>
                   {isYearly && (
-                    <p className="text-[10px] text-text-muted">(годовая)</p>
+                    <p className="text-[10px] text-text-muted">{t('analytics.yearly')}</p>
                   )}
                 </div>
                 <span className="text-sm font-bold text-text-primary tabular-nums shrink-0">
-                  {formatAmount(Math.round(monthly))} {symbol}/мес
+                  {formatAmount(Math.round(monthly))} {symbol}{t('cycle.monthly')}
                 </span>
               </div>
 
@@ -1082,6 +1102,7 @@ function TopExpensive({
 /* ── Custom Tooltip ── */
 
 function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: Array<{ value: number; dataKey?: string }>; symbol: string }) {
+  const { t } = useLanguage();
   if (!active || !payload?.length) return null;
 
   const item = payload.find((p) => p.value > 0);
@@ -1100,7 +1121,7 @@ function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: 
         {isForecast ? '~' : ''}{formatAmount(item.value)} {symbol}
       </span>
       {isForecast && (
-        <span className="text-[10px] text-warning ml-1">прогноз</span>
+        <span className="text-[10px] text-warning ml-1">{t('analytics.forecastTag')}</span>
       )}
     </div>
   );

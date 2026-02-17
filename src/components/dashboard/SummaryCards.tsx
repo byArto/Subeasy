@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DisplayCurrency } from '@/lib/types';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface SummaryCardsProps {
   totalMonthly: number;
@@ -23,6 +24,7 @@ export function SummaryCards({
   currency,
   className,
 }: SummaryCardsProps) {
+  const { t } = useLanguage();
   const [showYearly, setShowYearly] = useState(false);
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
 
@@ -47,7 +49,7 @@ export function SummaryCards({
         <div className="absolute top-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-neon/0 via-neon/60 to-neon/0" />
 
         <p className="text-text-muted text-xs font-medium">
-          {showYearly ? 'В год' : 'В месяц'}
+          {showYearly ? t('dashboard.perYear') : t('dashboard.perMonth')}
         </p>
 
         <p className="font-display font-extrabold text-[26px] leading-tight mt-1.5 text-neon neon-text">
@@ -57,8 +59,8 @@ export function SummaryCards({
 
         <p className="text-text-muted text-[10px] mt-1">
           {showYearly
-            ? `${Math.round(totalMonthly).toLocaleString('ru-RU')} ${symbol}/мес`
-            : `${Math.round(totalYearly).toLocaleString('ru-RU')} ${symbol}/год`}
+            ? `${Math.round(totalMonthly).toLocaleString('ru-RU')} ${symbol}${t('cycle.monthly')}`
+            : `${Math.round(totalYearly).toLocaleString('ru-RU')} ${symbol}${t('cycle.yearly')}`}
         </p>
       </motion.button>
 
@@ -75,7 +77,7 @@ export function SummaryCards({
         {/* Subtle accent line */}
         <div className="absolute top-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-surface-4/0 via-surface-4 to-surface-4/0" />
 
-        <p className="text-text-muted text-xs font-medium">Активные</p>
+        <p className="text-text-muted text-xs font-medium">{t('dashboard.active')}</p>
 
         <p className="font-display font-extrabold text-[26px] leading-tight mt-1.5 text-text-primary">
           {activeCount}
@@ -83,11 +85,11 @@ export function SummaryCards({
 
         {upcomingSoonCount > 0 ? (
           <p className="text-warning text-[10px] mt-1 font-medium">
-            {upcomingSoonCount} скоро оплата
+            {upcomingSoonCount} {t('dashboard.soonPayment')}
           </p>
         ) : (
           <p className="text-text-muted text-[10px] mt-1">
-            Всё под контролем
+            {t('dashboard.allGood')}
           </p>
         )}
       </motion.div>

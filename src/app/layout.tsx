@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -98,11 +99,13 @@ export default function RootLayout({
             __html: `window.__removeSplash=function(){var s=document.getElementById('pre-splash');if(s){s.style.opacity='0';setTimeout(function(){s.remove()},300)}}`,
           }}
         />
-        <AuthProvider>
-          <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-            {children}
-          </div>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+              {children}
+            </div>
+          </AuthProvider>
+        </LanguageProvider>
         <Analytics />
       </body>
     </html>

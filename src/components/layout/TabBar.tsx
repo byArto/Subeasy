@@ -16,21 +16,22 @@ import {
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { soundEngine } from '@/lib/sounds';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export type TabId = 'home' | 'analytics' | 'calendar' | 'settings';
 
 interface TabItem {
   id: TabId;
-  label: string;
+  labelKey: string;
   iconOutline: React.ComponentType<{ className?: string }>;
   iconSolid: React.ComponentType<{ className?: string }>;
 }
 
 const tabs: TabItem[] = [
-  { id: 'home', label: 'Главная', iconOutline: HomeOutline, iconSolid: HomeSolid },
-  { id: 'analytics', label: 'Аналитика', iconOutline: ChartOutline, iconSolid: ChartSolid },
-  { id: 'calendar', label: 'Календарь', iconOutline: CalendarOutline, iconSolid: CalendarSolid },
-  { id: 'settings', label: 'Настройки', iconOutline: CogOutline, iconSolid: CogSolid },
+  { id: 'home', labelKey: 'nav.home', iconOutline: HomeOutline, iconSolid: HomeSolid },
+  { id: 'analytics', labelKey: 'nav.analytics', iconOutline: ChartOutline, iconSolid: ChartSolid },
+  { id: 'calendar', labelKey: 'nav.calendar', iconOutline: CalendarOutline, iconSolid: CalendarSolid },
+  { id: 'settings', labelKey: 'nav.settings', iconOutline: CogOutline, iconSolid: CogSolid },
 ];
 
 interface TabBarProps {
@@ -46,6 +47,7 @@ export function TabBar({
   onFabTap,
   className,
 }: TabBarProps) {
+  const { t } = useLanguage();
   return (
     <div
       className={cn(
@@ -109,7 +111,7 @@ export function TabBar({
                       isActive ? 'text-neon' : 'text-text-muted'
                     )}
                   >
-                    {tab.label}
+                    {t(tab.labelKey)}
                   </span>
                 </motion.button>
               </div>

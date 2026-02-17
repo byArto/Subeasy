@@ -6,6 +6,7 @@ import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Subscription } from '@/lib/types';
 import { SubCard } from '@/components/subscription/SubCard';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface SearchPanelProps {
   open: boolean;
@@ -21,6 +22,7 @@ export function SearchPanel({
   onClose,
   onSelectSubscription,
 }: SearchPanelProps) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -83,7 +85,7 @@ export function SearchPanel({
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Найти подписку..."
+                  placeholder={t('search.placeholder')}
                   className={cn(
                     'w-full pl-10 pr-4 py-2.5 rounded-xl',
                     'bg-surface-3 text-text-primary text-sm',
@@ -99,7 +101,7 @@ export function SearchPanel({
                 onClick={onClose}
                 className="text-sm font-medium text-text-secondary px-2 py-2 shrink-0"
               >
-                Отмена
+                {t('search.cancel')}
               </motion.button>
             </div>
 
@@ -107,17 +109,17 @@ export function SearchPanel({
             <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-4 pb-4">
               {query.trim() === '' ? (
                 <p className="text-center text-xs text-text-muted py-6">
-                  Начните вводить для поиска
+                  {t('search.hint')}
                 </p>
               ) : results.length === 0 ? (
                 <div className="flex flex-col items-center py-8 gap-2">
                   <span className="text-2xl">🔍</span>
-                  <p className="text-sm text-text-muted">Ничего не найдено</p>
+                  <p className="text-sm text-text-muted">{t('search.notFound')}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <p className="text-[11px] text-text-muted uppercase tracking-wider mb-2 pl-1">
-                    Найдено: {results.length}
+                    {t('search.found', { count: results.length })}
                   </p>
                   <AnimatePresence mode="popLayout">
                     {results.map((sub, i) => (

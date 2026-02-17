@@ -8,6 +8,7 @@ import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Constants ── */
 
@@ -31,11 +32,11 @@ const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time', 'tria
 type PaymentType = 'card' | 'crypto' | 'sbp' | 'other';
 type CardType = 'physical' | 'virtual';
 
-const PAYMENT_TYPES: { type: PaymentType; label: string }[] = [
-  { type: 'card', label: 'Карта' },
-  { type: 'crypto', label: 'Крипто' },
-  { type: 'sbp', label: 'СБП' },
-  { type: 'other', label: 'Другое' },
+const PAYMENT_TYPE_KEYS: { type: PaymentType; labelKey: string }[] = [
+  { type: 'card', labelKey: 'payment.card' },
+  { type: 'crypto', labelKey: 'payment.crypto' },
+  { type: 'sbp', labelKey: 'payment.sbp' },
+  { type: 'other', labelKey: 'payment.other' },
 ];
 
 function parsePaymentMethod(raw: string): { type: PaymentType; cardType: CardType; detail: string } {
@@ -111,6 +112,8 @@ export function SubForm({
   onAddCategory,
   onClose,
 }: SubFormProps) {
+  const { t } = useLanguage();
+
   /* ── State ── */
   const [icon, setIcon] = useState(initialData?.icon || '📺');
   const [name, setName] = useState(initialData?.name || '');
@@ -168,14 +171,14 @@ export function SubForm({
   function validate(): boolean {
     const e: FormErrors = {};
 
-    if (!name.trim()) e.name = 'Укажите название';
+    if (!name.trim()) e.name = t('form.error.nameRequired');
     if (cycle === 'trial') {
-      if (price && parseFloat(price) < 0) e.price = 'Цена не может быть отрицательной';
+      if (price && parseFloat(price) < 0) e.price = t('form.error.priceNegative');
     } else {
-      if (!price || parseFloat(price) <= 0) e.price = 'Укажите цену';
+      if (!price || parseFloat(price) <= 0) e.price = t('form.error.priceRequired');
     }
-    if (!category) e.category = 'Выберите категорию';
-    if (!nextPaymentDate) e.nextPaymentDate = 'Укажите дату';
+    if (!category) e.category = t('form.error.categoryRequired');
+    if (!nextPaymentDate) e.nextPaymentDate = t('form.error.dateRequired');
 
     setErrors(e);
 
@@ -296,7 +299,7 @@ export function SubForm({
         animate="visible"
         className="relative"
       >
-        <FieldLabel text="Название" error={errors.name} />
+        <FieldLabel text={t('form.name')} error={errors.name} />
         <input
           type="text"
           value={name}
@@ -356,7 +359,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={cycle === 'trial' ? 'Цена после триала' : 'Стоимость'} error={errors.price} />
+        <FieldLabel text={cycle === 'trial' ? t('form.priceAfterTrial') : t('form.price')} error={errors.price} />
         <div className="flex gap-2">
           <input
             type="number"
@@ -404,7 +407,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Период оплаты" />
+        <FieldLabel text={t('form.billingCycle')} />
         <div className="flex flex-wrap gap-1.5">
           {CYCLES.map((c) => (
             <motion.button
@@ -432,7 +435,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Категория" error={errors.category} />
+        <FieldLabel text={t('form.category')} error={errors.category} />
         <div className="flex flex-wrap gap-1.5">
           {categories.map((cat) => (
             <motion.button
@@ -466,7 +469,7 @@ export function SubForm({
             )}
           >
             <span className="text-sm">+</span>
-            Новая
+            {t('form.newCategory')}
           </motion.button>
         </div>
 
@@ -499,7 +502,7 @@ export function SubForm({
                   type="text"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder="Название категории"
+                  placeholder={t('form.categoryNamePlaceholder')}
                   className={cn(
                     'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
                     'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
@@ -535,7 +538,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={cycle === 'trial' ? 'Дата окончания триала' : 'Дата следующего платежа'} error={errors.nextPaymentDate} />
+        <FieldLabel text={cycle === 'trial' ? t('form.trialEndDate') : t('form.nextPaymentDate')} error={errors.nextPaymentDate} />
         <input
           type="date"
           value={nextPaymentDate}
@@ -558,7 +561,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Дата начала подписки" />
+        <FieldLabel text={t('form.startDate')} />
         <input
           type="date"
           value={startDate}
@@ -579,7 +582,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Ссылка на управление" />
+        <FieldLabel text={t('form.managementUrl')} />
         <input
           type="url"
           value={managementUrl}
@@ -600,11 +603,11 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Способ оплаты" />
+        <FieldLabel text={t('form.paymentMethod')} />
 
         {/* Type pills */}
         <div className="flex flex-wrap gap-1.5">
-          {PAYMENT_TYPES.map((m) => (
+          {PAYMENT_TYPE_KEYS.map((m) => (
             <motion.button
               key={m.type}
               type="button"
@@ -623,7 +626,7 @@ export function SubForm({
                   : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
               )}
             >
-              {m.label}
+              {t(m.labelKey)}
             </motion.button>
           ))}
         </div>
@@ -643,8 +646,8 @@ export function SubForm({
                 {/* Physical / Virtual toggle */}
                 <div className="flex gap-1.5">
                   {([
-                    { value: 'physical' as const, label: '🏦 Физическая' },
-                    { value: 'virtual' as const, label: '📱 Виртуальная' },
+                    { value: 'physical' as const, label: t('form.physicalCard') },
+                    { value: 'virtual' as const, label: t('form.virtualCard') },
                   ]).map((ct) => (
                     <motion.button
                       key={ct.value}
@@ -668,7 +671,7 @@ export function SubForm({
                   type="text"
                   value={paymentDetail}
                   onChange={(e) => setPaymentDetail(e.target.value)}
-                  placeholder="Название карты (Tinkoff Black, Альфа...)"
+                  placeholder={t('form.cardName')}
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -693,7 +696,7 @@ export function SubForm({
                   type="text"
                   value={paymentDetail}
                   onChange={(e) => setPaymentDetail(e.target.value)}
-                  placeholder="Кошелёк / сеть (Bitcoin, USDT TRC-20...)"
+                  placeholder={t('form.cryptoWallet')}
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -718,7 +721,7 @@ export function SubForm({
                   type="text"
                   value={paymentDetail}
                   onChange={(e) => setPaymentDetail(e.target.value)}
-                  placeholder="Банк или номер телефона"
+                  placeholder={t('form.sbpBank')}
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -743,7 +746,7 @@ export function SubForm({
                   type="text"
                   value={paymentDetail}
                   onChange={(e) => setPaymentDetail(e.target.value)}
-                  placeholder="Способ оплаты..."
+                  placeholder={t('form.paymentMethodOther')}
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
@@ -763,7 +766,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Цвет карточки" />
+        <FieldLabel text={t('form.cardColor')} />
         <div className="flex flex-wrap gap-2">
           {COLOR_PALETTE.map((c) => (
             <motion.button
@@ -788,11 +791,11 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text="Заметки" />
+        <FieldLabel text={t('form.notes')} />
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Промокод, семейная подписка, условия..."
+          placeholder={t('form.notesPlaceholder')}
           rows={3}
           className={cn(
             'w-full px-3.5 py-3 rounded-xl bg-surface-2 border border-border-subtle',
@@ -812,7 +815,7 @@ export function SubForm({
         className="space-y-2.5 pt-2"
       >
         <Button fullWidth size="lg" onClick={handleSubmit}>
-          {mode === 'add' ? 'Добавить подписку' : 'Сохранить'}
+          {mode === 'add' ? t('form.add') : t('form.save')}
         </Button>
 
         {mode === 'edit' && onDelete && (
@@ -825,7 +828,7 @@ export function SubForm({
                   size="md"
                   onClick={() => setConfirmDelete(true)}
                 >
-                  Удалить подписку
+                  {t('form.deleteSubscription')}
                 </Button>
               </motion.div>
             ) : (
@@ -841,7 +844,7 @@ export function SubForm({
                   size="md"
                   onClick={() => setConfirmDelete(false)}
                 >
-                  Отмена
+                  {t('form.cancel')}
                 </Button>
                 <Button
                   fullWidth
@@ -849,7 +852,7 @@ export function SubForm({
                   size="md"
                   onClick={onDelete}
                 >
-                  Да, удалить
+                  {t('form.confirmDelete')}
                 </Button>
               </motion.div>
             )}
@@ -857,7 +860,7 @@ export function SubForm({
         )}
 
         <Button fullWidth variant="ghost" size="md" onClick={onClose}>
-          Отмена
+          {t('form.cancel')}
         </Button>
       </motion.div>
     </motion.div>

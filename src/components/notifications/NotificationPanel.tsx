@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Subscription } from '@/lib/types';
 import { getDaysUntilPayment, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { useLanguage } from '@/components/providers/LanguageProvider';
+import { Lang } from '@/lib/translations';
 
 /* ── Types ── */
 
@@ -30,8 +32,9 @@ interface NotificationPanelProps {
 
 /* ── Helpers ── */
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+function formatDate(dateStr: string, lang: Lang): string {
+  const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+  return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
 function formatPrice(price: number, currency: string): string {
@@ -47,18 +50,26 @@ const TYPE_BORDER: Record<string, string> = {
 
 /* ── Generate notifications from subscriptions ── */
 
-export function generateNotifications(subscriptions: Subscription[], notifyDaysBefore = 7): NotificationItem[] {
+type TFunc = (key: string, vars?: Record<string, string | number>) => string;
+
+export function generateNotifications(
+  subscriptions: Subscription[],
+  notifyDaysBefore = 7,
+  t: TFunc,
+  lang: Lang = 'ru',
+): NotificationItem[] {
   const items: NotificationItem[] = [];
 
   subscriptions.filter((s) => s.isActive).forEach((sub) => {
     const daysUntil = getDaysUntilPayment(sub.nextPaymentDate);
     const price = formatPrice(sub.price, sub.currency);
     const isTrial = sub.cycle === 'trial';
-    // Stable ID: subId-type-nextPaymentDate
     const dateKey = sub.nextPaymentDate;
 
     // Skip future payments outside the notification window
     if (daysUntil > notifyDaysBefore) return;
+
+    const dateFormatted = formatDate(sub.nextPaymentDate, lang);
 
     if (daysUntil < 0) {
       items.push({
@@ -66,12 +77,12 @@ export function generateNotifications(subscriptions: Subscription[], notifyDaysB
         type: 'danger',
         icon: isTrial ? '⏳' : '🔴',
         title: isTrial
-          ? `${sub.name} — триал истёк`
-          : `${sub.name} — платёж просрочен`,
+          ? t('notif.trialExpiredTitle', { name: sub.name })
+          : t('notif.overdueTitle', { name: sub.name }),
         subtitle: isTrial
-          ? (sub.price > 0 ? `Далее ${price}` : 'Отмените, если не нужна')
-          : `Дата была ${formatDate(sub.nextPaymentDate)}`,
-        time: `${Math.abs(daysUntil)} дн. назад`,
+          ? (sub.price > 0 ? t('notif.further', { price }) : t('notif.cancelHint'))
+          : t('notif.overdueDate', { date: dateFormatted }),
+        time: t('notif.daysAgo', { days: Math.abs(daysUntil) }),
         daysUntil,
       });
     } else if (daysUntil === 0) {
@@ -80,12 +91,12 @@ export function generateNotifications(subscriptions: Subscription[], notifyDaysB
         type: 'danger',
         icon: isTrial ? '⏳' : '⚡',
         title: isTrial
-          ? `${sub.name} — триал заканчивается!`
-          : `${sub.name} — платёж сегодня!`,
+          ? t('notif.trialEndingTitle', { name: sub.name })
+          : t('notif.paymentTodayTitle', { name: sub.name }),
         subtitle: isTrial
-          ? (sub.price > 0 ? `Далее ${price}` : 'Последний день')
+          ? (sub.price > 0 ? t('notif.further', { price }) : t('notif.lastDay'))
           : price,
-        time: 'Сегодня',
+        time: t('notif.today'),
         daysUntil,
       });
     } else if (daysUntil <= 3) {
@@ -94,12 +105,12 @@ export function generateNotifications(subscriptions: Subscription[], notifyDaysB
         type: 'warning',
         icon: isTrial ? '⏳' : '⏰',
         title: isTrial
-          ? `${sub.name} — триал через ${daysUntil} дн.`
-          : `${sub.name} — через ${daysUntil} дн.`,
+          ? t('notif.trialSoonTitle', { name: sub.name, days: daysUntil })
+          : t('notif.soonTitle', { name: sub.name, days: daysUntil }),
         subtitle: isTrial
-          ? (sub.price > 0 ? `Далее ${price}` : 'Не забудьте отменить')
+          ? (sub.price > 0 ? t('notif.further', { price }) : t('notif.cancelHint'))
           : price,
-        time: formatDate(sub.nextPaymentDate),
+        time: dateFormatted,
         daysUntil,
       });
     } else if (daysUntil <= 7) {
@@ -108,12 +119,12 @@ export function generateNotifications(subscriptions: Subscription[], notifyDaysB
         type: 'info',
         icon: isTrial ? '⏳' : '📅',
         title: isTrial
-          ? `${sub.name} — триал через ${daysUntil} дн.`
-          : `${sub.name} — через ${daysUntil} дн.`,
+          ? t('notif.trialSoonTitle', { name: sub.name, days: daysUntil })
+          : t('notif.soonTitle', { name: sub.name, days: daysUntil }),
         subtitle: isTrial
-          ? (sub.price > 0 ? `Далее ${price}` : `До ${formatDate(sub.nextPaymentDate)}`)
+          ? (sub.price > 0 ? t('notif.further', { price }) : `${t('calendar.today')} ${dateFormatted}`)
           : price,
-        time: formatDate(sub.nextPaymentDate),
+        time: dateFormatted,
         daysUntil,
       });
     }
@@ -133,9 +144,12 @@ export function NotificationPanel({
   onMarkAsRead,
   onMarkAllAsRead,
 }: NotificationPanelProps) {
+  const { t, lang } = useLanguage();
+
   const notifications = useMemo(
-    () => generateNotifications(subscriptions, notifyDaysBefore),
-    [subscriptions, notifyDaysBefore],
+    () => generateNotifications(subscriptions, notifyDaysBefore, t, lang),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [subscriptions, notifyDaysBefore, lang],
   );
 
   const unread = useMemo(() => notifications.filter((n) => !isRead(n.id)), [notifications, isRead]);
@@ -188,7 +202,7 @@ export function NotificationPanel({
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-4 pb-3">
               <h2 className="font-display font-bold text-base text-text-primary">
-                Уведомления
+                {t('notif.title')}
               </h2>
 
               <div className="flex items-center gap-2">
@@ -204,7 +218,7 @@ export function NotificationPanel({
                       onClick={handleMarkAll}
                       className="text-xs font-medium text-neon px-2 py-1"
                     >
-                      Прочитать все
+                      {t('notif.markAll')}
                     </motion.button>
                   )}
                   {showDone && (
@@ -215,7 +229,7 @@ export function NotificationPanel({
                       exit={{ opacity: 0 }}
                       className="text-xs font-medium text-neon px-2 py-1"
                     >
-                      ✓ Готово
+                      {t('notif.done')}
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -225,7 +239,7 @@ export function NotificationPanel({
                   onClick={onClose}
                   className="text-sm font-medium text-text-secondary px-2 py-1"
                 >
-                  Закрыть
+                  {t('notif.close')}
                 </motion.button>
               </div>
             </div>
@@ -235,24 +249,24 @@ export function NotificationPanel({
               {notifications.length === 0 ? (
                 <div className="flex flex-col items-center py-10 gap-3">
                   <span className="text-3xl">🎉</span>
-                  <p className="text-sm font-medium text-text-primary">Всё спокойно!</p>
+                  <p className="text-sm font-medium text-text-primary">{t('notif.allQuiet')}</p>
                   <p className="text-xs text-text-muted text-center max-w-[220px]">
-                    Нет предстоящих платежей на ближайшую неделю
+                    {t('notif.allQuietDesc')}
                   </p>
                 </div>
               ) : allRead ? (
                 /* All read state */
                 <div className="flex flex-col items-center py-10 gap-3">
                   <span className="text-3xl">✅</span>
-                  <p className="text-sm font-medium text-neon">Всё прочитано</p>
+                  <p className="text-sm font-medium text-neon">{t('notif.allRead')}</p>
                   <p className="text-xs text-text-muted text-center max-w-[240px]">
-                    Уведомления появятся при приближении даты платежа
+                    {t('notif.allReadDesc')}
                   </p>
 
                   {/* Show read items below, faded */}
                   <div className="w-full mt-4 space-y-1.5">
                     <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
-                      Ранее
+                      {t('notif.past')}
                     </p>
                     {read.map((notif, i) => (
                       <NotifRow
@@ -271,7 +285,7 @@ export function NotificationPanel({
                   {unread.length > 0 && (
                     <div>
                       <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
-                        Новые
+                        {t('notif.unread')}
                       </p>
                       <div className="space-y-2">
                         {unread.map((notif, i) => (
@@ -291,7 +305,7 @@ export function NotificationPanel({
                   {read.length > 0 && (
                     <div>
                       <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest pl-1 mb-2">
-                        Ранее
+                        {t('notif.past')}
                       </p>
                       <div className="space-y-1.5">
                         {read.map((notif, i) => (

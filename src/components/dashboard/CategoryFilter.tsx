@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Category, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { soundEngine } from '@/lib/sounds';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface CategoryFilterProps {
   categories: Category[];
@@ -20,6 +21,7 @@ export function CategoryFilter({
   onSelect,
   className,
 }: CategoryFilterProps) {
+  const { t } = useLanguage();
   const countForCategory = (catId: string) =>
     subscriptions.filter((s) => s.category === catId && s.isActive).length;
 
@@ -40,7 +42,7 @@ export function CategoryFilter({
     >
       {/* "All" pill */}
       <PillButton
-        label="Все"
+        label={t('dashboard.filterAll')}
         count={totalActive}
         isActive={activeCategory === null}
         onTap={() => onSelect(null)}

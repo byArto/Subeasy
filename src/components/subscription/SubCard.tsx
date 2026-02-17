@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { useLanguage } from '@/components/providers/LanguageProvider';
+import { Lang } from '@/lib/translations';
 
 interface SubCardProps {
   subscription: Subscription;
@@ -20,44 +22,47 @@ interface SubCardProps {
   className?: string;
 }
 
-const cycleSuffix: Record<BillingCycle, string> = {
-  monthly: '/мес',
-  yearly: '/год',
-  weekly: '/нед',
+type TFunc = (key: string, vars?: Record<string, string | number>) => string;
+
+const cycleSuffixKey: Record<BillingCycle, string> = {
+  monthly: 'cycle.monthly',
+  yearly: 'cycle.yearly',
+  weekly: 'cycle.weekly',
   'one-time': '',
   trial: '',
 };
 
-function getPaymentStatus(sub: Subscription, notifyDaysBefore = 7) {
+function getPaymentStatus(sub: Subscription, notifyDaysBefore = 7, t: TFunc) {
   if (!sub.isActive) {
-    return { label: 'Неактивна', variant: 'neutral' as const, pulse: false };
+    return { label: t('status.inactive'), variant: 'neutral' as const, pulse: false };
   }
 
   const days = getDaysUntilPayment(sub.nextPaymentDate);
 
   if (sub.cycle === 'trial') {
-    if (days < 0) return { label: 'Триал истёк', variant: 'danger' as const, pulse: true };
-    if (days === 0) return { label: 'Последний день!', variant: 'danger' as const, pulse: true };
-    if (days === 1) return { label: 'Завтра истекает!', variant: 'danger' as const, pulse: true };
-    if (days <= notifyDaysBefore) return { label: `${days} дн. осталось`, variant: 'warning' as const, pulse: false };
-    return { label: `${days} дн. осталось`, variant: 'success' as const, pulse: false };
+    if (days < 0) return { label: t('status.trial.expired'), variant: 'danger' as const, pulse: true };
+    if (days === 0) return { label: t('status.trial.lastDay'), variant: 'danger' as const, pulse: true };
+    if (days === 1) return { label: t('status.trial.tomorrow'), variant: 'danger' as const, pulse: true };
+    if (days <= notifyDaysBefore) return { label: t('status.trial.daysLeft', { days }), variant: 'warning' as const, pulse: false };
+    return { label: t('status.trial.daysLeft', { days }), variant: 'success' as const, pulse: false };
   }
 
   if (days < 0) {
-    return { label: 'Просрочена', variant: 'danger' as const, pulse: true };
+    return { label: t('status.overdue'), variant: 'danger' as const, pulse: true };
   }
   if (days <= 1) {
-    return { label: days === 0 ? 'Сегодня!' : 'Завтра!', variant: 'danger' as const, pulse: true };
+    return { label: days === 0 ? t('status.today') : t('status.tomorrow'), variant: 'danger' as const, pulse: true };
   }
   if (days <= notifyDaysBefore) {
-    return { label: `${days} дн.`, variant: 'warning' as const, pulse: false };
+    return { label: t('status.days', { days }), variant: 'warning' as const, pulse: false };
   }
-  return { label: 'Активна', variant: 'success' as const, pulse: false };
+  return { label: t('status.active'), variant: 'success' as const, pulse: false };
 }
 
-function formatNextPayment(dateStr: string): string {
+function formatNextPayment(dateStr: string, lang: Lang): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const locale = lang === 'en' ? 'en-US' : 'ru-RU';
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
 const REVEAL_X = -80;
@@ -73,7 +78,8 @@ export function SubCard({
   notifyDaysBefore = 7,
   className,
 }: SubCardProps) {
-  const status = getPaymentStatus(sub, notifyDaysBefore);
+  const { lang, t } = useLanguage();
+  const status = getPaymentStatus(sub, notifyDaysBefore, t);
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
   const days = getDaysUntilPayment(sub.nextPaymentDate);
   const isOverdue = sub.isActive && days < 0 && sub.cycle !== 'one-time' && sub.cycle !== 'trial';
@@ -118,6 +124,7 @@ export function SubCard({
   }
 
   const cardRadius = isOverdue ? 'rounded-t-2xl' : 'rounded-2xl';
+  const dateFormatted = formatNextPayment(sub.nextPaymentDate, lang);
 
   return (
     <motion.div
@@ -142,7 +149,7 @@ export function SubCard({
             className="absolute right-0 top-0 bottom-0 w-[80px] flex flex-col items-center justify-center gap-1 bg-danger active:bg-danger/80"
           >
             <TrashIcon className="w-5 h-5 text-white" />
-            <span className="text-white text-[10px] font-semibold">Удалить</span>
+            <span className="text-white text-[10px] font-semibold">{t('list.delete')}</span>
           </motion.button>
         )}
 
@@ -202,10 +209,10 @@ export function SubCard({
 
               <p className="text-xs text-text-muted mt-0.5 truncate">
                 {sub.cycle === 'trial'
-                  ? `Триал до · ${formatNextPayment(sub.nextPaymentDate)}`
+                  ? t('payment.trial', { date: dateFormatted })
                   : days < 0
-                    ? `Просрочен · ${formatNextPayment(sub.nextPaymentDate)}`
-                    : `Следующий · ${formatNextPayment(sub.nextPaymentDate)}`}
+                    ? t('payment.overdue', { date: dateFormatted })
+                    : t('payment.next', { date: dateFormatted })}
               </p>
             </div>
 
@@ -216,7 +223,7 @@ export function SubCard({
                   <p className="text-sm font-bold text-neon tabular-nums">FREE</p>
                   {sub.price > 0 && (
                     <p className="text-[10px] text-text-muted">
-                      далее {Math.round(sub.price).toLocaleString('ru-RU')}{symbol}
+                      {t('payment.later')} {Math.round(sub.price).toLocaleString('ru-RU')}{symbol}
                     </p>
                   )}
                 </>
@@ -227,7 +234,7 @@ export function SubCard({
                     <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
                   </p>
                   <p className="text-[10px] text-text-muted">
-                    {cycleSuffix[sub.cycle]}
+                    {cycleSuffixKey[sub.cycle] ? t(cycleSuffixKey[sub.cycle]) : ''}
                   </p>
                 </>
               )}
@@ -245,7 +252,7 @@ export function SubCard({
           }}
           className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-neon/10 border border-t-0 border-border-subtle rounded-b-2xl text-neon text-xs font-semibold active:bg-neon/20 transition-colors"
         >
-          ✓ Оплачено
+          {t('payment.markPaid')}
         </button>
       )}
     </motion.div>

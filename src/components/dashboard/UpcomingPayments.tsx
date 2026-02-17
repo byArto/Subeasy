@@ -5,6 +5,7 @@ import { Subscription, DisplayCurrency } from '@/lib/types';
 import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface UpcomingPaymentsProps {
   subscriptions: Subscription[]; // already filtered & sorted by getUpcomingPayments
@@ -20,11 +21,13 @@ function getDotColor(days: number): string {
   return 'bg-neon';
 }
 
-function formatRelativeDate(days: number): string {
-  if (days < 0) return 'Просрочено';
-  if (days === 0) return 'Сегодня';
-  if (days === 1) return 'Завтра';
-  return `Через ${days} дн.`;
+type TFunc = (key: string, vars?: Record<string, string | number>) => string;
+
+function formatRelativeDate(days: number, t: TFunc): string {
+  if (days < 0) return t('dashboard.overdue');
+  if (days === 0) return t('dashboard.today');
+  if (days === 1) return t('dashboard.tomorrow');
+  return t('dashboard.inDays', { days });
 }
 
 export function UpcomingPayments({
@@ -34,6 +37,7 @@ export function UpcomingPayments({
   onSubTap,
   className,
 }: UpcomingPaymentsProps) {
+  const { t } = useLanguage();
   const items = subscriptions.slice(0, maxItems);
 
   if (items.length === 0) return null;
@@ -43,7 +47,7 @@ export function UpcomingPayments({
       {/* Section header */}
       <div className="flex items-center gap-3">
         <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-          Ближайшие платежи
+          {t('dashboard.upcoming')}
         </h3>
         <div className="flex-1 h-px bg-border-subtle" />
       </div>
@@ -87,7 +91,7 @@ export function UpcomingPayments({
                   days <= 2 ? 'text-danger font-semibold' : 'text-text-muted'
                 )}
               >
-                {formatRelativeDate(days)}
+                {formatRelativeDate(days, t)}
               </span>
 
               {/* Price */}

@@ -18,6 +18,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useSync } from '@/hooks/useSync';
 import { Subscription, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
@@ -55,11 +56,11 @@ const AuthScreen = dynamic(() =>
 
 const TAB_ORDER: TabId[] = ['home', 'analytics', 'calendar', 'settings'];
 
-const tabTitles: Record<TabId, string> = {
-  home: 'Подписки',
-  analytics: 'Аналитика',
-  calendar: 'Календарь',
-  settings: 'Настройки',
+const TAB_TITLE_KEYS: Record<TabId, string> = {
+  home: 'nav.home',
+  analytics: 'nav.analytics',
+  calendar: 'nav.calendar',
+  settings: 'nav.settings',
 };
 
 export default function Home() {
@@ -92,6 +93,7 @@ export default function Home() {
 
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
+  const { t, lang } = useLanguage();
 
   // Shared hooks
   const {
@@ -138,8 +140,9 @@ export default function Home() {
   // Notification read state
   const { isRead, markAsRead, markAllAsRead, cleanup } = useNotificationRead();
   const allNotifications = useMemo(
-    () => generateNotifications(subscriptions, settings.notifyDaysBefore),
-    [subscriptions, settings.notifyDaysBefore],
+    () => generateNotifications(subscriptions, settings.notifyDaysBefore, t, lang),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [subscriptions, settings.notifyDaysBefore, lang],
   );
   const unreadCount = useMemo(
     () => allNotifications.filter((n) => !isRead(n.id)).length,
@@ -204,7 +207,7 @@ export default function Home() {
   return (
     <div className="app-container fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
-        title={tabTitles[activeTab]}
+        title={t(TAB_TITLE_KEYS[activeTab])}
         collapsed={headerCollapsed}
         onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
         onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
@@ -302,7 +305,7 @@ export default function Home() {
       <Modal
         open={showAddModal}
         onClose={closeAdd}
-        title="Новая подписка"
+        title={t('modal.newSubscription')}
       >
         <SubForm
           mode="add"
@@ -351,7 +354,7 @@ export default function Home() {
       <Modal
         open={!!editingSubId}
         onClose={closeEdit}
-        title="Редактирование"
+        title={t('modal.editSubscription')}
       >
         {editingSub && (
           <SubForm

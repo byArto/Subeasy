@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { motion, useMotionValue, animate } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { Subscription, BillingCycle } from '@/lib/types';
 import { Badge } from '@/components/ui';
@@ -82,6 +82,9 @@ export function SubCard({
   const revealedRef = useRef(false);
   const isDraggingRef = useRef(false);
 
+  // Fade delete button in as card is swiped — fully hidden at rest (x=0)
+  const deleteOpacity = useTransform(dragX, [-30, 0], [1, 0]);
+
   function snapTo(x: number) {
     revealedRef.current = x < 0;
     animate(dragX, x, { type: 'spring', stiffness: 500, damping: 35 });
@@ -131,17 +134,16 @@ export function SubCard({
     >
       {/* Swipe container */}
       <div className={cn('relative overflow-hidden', cardRadius)}>
-        {/* Delete action behind the card */}
+        {/* Delete action — hidden at rest, revealed on swipe */}
         {onDelete && (
-          <div className="absolute inset-0 flex items-stretch justify-end">
-            <button
-              onClick={handleDelete}
-              className="w-[80px] flex flex-col items-center justify-center gap-1 bg-danger/90 active:bg-danger transition-colors"
-            >
-              <TrashIcon className="w-5 h-5 text-white" />
-              <span className="text-white text-[10px] font-semibold">Удалить</span>
-            </button>
-          </div>
+          <motion.button
+            onClick={handleDelete}
+            style={{ opacity: deleteOpacity }}
+            className="absolute right-0 top-0 bottom-0 w-[80px] flex flex-col items-center justify-center gap-1 bg-danger active:bg-danger/80"
+          >
+            <TrashIcon className="w-5 h-5 text-white" />
+            <span className="text-white text-[10px] font-semibold">Удалить</span>
+          </motion.button>
         )}
 
         {/* Draggable card layer */}

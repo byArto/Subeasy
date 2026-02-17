@@ -97,15 +97,6 @@ export function TabBar({
                     'transition-colors duration-150'
                   )}
                 >
-                  {/* Active indicator dot */}
-                  {isActive && (
-                    <motion.span
-                      layoutId="tab-indicator"
-                      className="absolute -top-1 w-1 h-1 rounded-full bg-neon shadow-[0_0_6px_rgba(0,255,65,0.6)]"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-
                   <Icon
                     className={cn(
                       'w-[22px] h-[22px] transition-colors duration-150',

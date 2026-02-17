@@ -38,6 +38,11 @@ export function useSync(
   // Initial sync on login
   useEffect(() => {
     if (!user) {
+      // If logging out from a real account, clear local data so next user starts clean
+      if (prevUser.current !== null) {
+        setters.setSubscriptions([]);
+        setters.setCategories([]);
+      }
       initialSyncDone.current = false;
       prevUser.current = null;
       return;
@@ -45,13 +50,20 @@ export function useSync(
 
     // Only sync once per user session
     if (prevUser.current === user.id) return;
+
+    // Detect account switch (was logged in as a different user)
+    const switchingAccounts = prevUser.current !== null;
     prevUser.current = user.id;
 
     async function doInitialSync() {
       try {
+        // When switching accounts, never merge previous user's local data
+        const localSubsToSync = switchingAccounts ? [] : subscriptions;
+        const localCatsToSync = switchingAccounts ? [] : categories;
+
         const [mergedSubs, mergedCats, mergedSettings] = await Promise.all([
-          syncSubscriptions(user!.id, subscriptions),
-          syncCategories(user!.id, categories),
+          syncSubscriptions(user!.id, localSubsToSync),
+          syncCategories(user!.id, localCatsToSync),
           syncSettings(user!.id, settings),
         ]);
 

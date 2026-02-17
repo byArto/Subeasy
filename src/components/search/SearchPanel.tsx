@@ -18,7 +18,6 @@ interface SearchPanelProps {
 export function SearchPanel({
   open,
   subscriptions,
-  categories,
   onClose,
   onSelectSubscription,
 }: SearchPanelProps) {
@@ -37,13 +36,7 @@ export function SearchPanel({
   const results = query.trim()
     ? subscriptions.filter((sub) => {
         const q = query.toLowerCase();
-        const catName = categories.find((c) => c.id === sub.category)?.name || '';
-        return (
-          sub.name.toLowerCase().includes(q) ||
-          catName.toLowerCase().includes(q) ||
-          sub.notes.toLowerCase().includes(q) ||
-          sub.paymentMethod.toLowerCase().includes(q)
-        );
+        return sub.name.toLowerCase().includes(q);
       })
     : [];
 

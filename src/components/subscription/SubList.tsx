@@ -7,6 +7,7 @@ import { SubCard } from './SubCard';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { FunnelIcon } from '@heroicons/react/24/outline';
+import { getLogoUrl } from '@/lib/services';
 
 /* ── Sort types ── */
 
@@ -45,9 +46,11 @@ interface SubListProps {
   activeCategory: string | null;
   onSubTap?: (sub: Subscription) => void;
   onMarkPaid?: (sub: Subscription) => void;
+  onDelete?: (sub: Subscription) => void;
   onAddTap?: () => void;
   mostExpensiveId?: string | null;
   longestId?: string | null;
+  notifyDaysBefore?: number;
   className?: string;
 }
 
@@ -56,9 +59,11 @@ export function SubList({
   activeCategory,
   onSubTap,
   onMarkPaid,
+  onDelete,
   onAddTap,
   mostExpensiveId,
   longestId,
+  notifyDaysBefore = 7,
   className,
 }: SubListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('date');
@@ -184,6 +189,8 @@ export function SubList({
             index={i}
             onTap={onSubTap}
             onMarkPaid={onMarkPaid}
+            onDelete={onDelete}
+            notifyDaysBefore={notifyDaysBefore}
             insightBadge={
               sub.id === mostExpensiveId
                 ? 'expensive'
@@ -199,13 +206,29 @@ export function SubList({
 }
 
 const QUICK_START_SERVICES = [
-  { name: 'YouTube', emoji: '▶️', color: '#FF0000' },
-  { name: 'Spotify', emoji: '🎵', color: '#1DB954' },
-  { name: 'Netflix', emoji: '📺', color: '#E50914' },
-  { name: 'ChatGPT', emoji: '🤖', color: '#10A37F' },
-  { name: 'Telegram', emoji: '✈️', color: '#2AABEE' },
-  { name: 'iCloud', emoji: '☁️', color: '#3395FF' },
+  { name: 'YouTube', emoji: '▶️', color: '#FF0000', domain: 'youtube.com' },
+  { name: 'Spotify', emoji: '🎵', color: '#1DB954', domain: 'spotify.com' },
+  { name: 'Netflix', emoji: '📺', color: '#E50914', domain: 'netflix.com' },
+  { name: 'ChatGPT', emoji: '🤖', color: '#10A37F', domain: 'openai.com' },
+  { name: 'Telegram', emoji: '✈️', color: '#2AABEE', domain: 'telegram.org' },
+  { name: 'iCloud', emoji: '☁️', color: '#3395FF', domain: 'icloud.com' },
 ];
+
+function ServiceIcon({ domain, emoji, name }: { domain: string; emoji: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return <span className="text-xs">{emoji}</span>;
+  return (
+    <img
+      src={getLogoUrl(domain, 64)}
+      alt={name}
+      width={20}
+      height={20}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="rounded-sm object-contain"
+    />
+  );
+}
 
 function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
   return (
@@ -265,10 +288,10 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-2 border border-border-subtle active:bg-surface-3 transition-colors"
             >
               <span
-                className="w-6 h-6 rounded-md flex items-center justify-center text-xs"
+                className="w-6 h-6 rounded-md flex items-center justify-center text-xs overflow-hidden"
                 style={{ backgroundColor: `${svc.color}20` }}
               >
-                {svc.emoji}
+                <ServiceIcon domain={svc.domain} emoji={svc.emoji} name={svc.name} />
               </span>
               <span className="text-xs font-medium text-text-secondary">{svc.name}</span>
             </motion.button>

@@ -137,7 +137,10 @@ export default function Home() {
 
   // Notification read state
   const { isRead, markAsRead, markAllAsRead, cleanup } = useNotificationRead();
-  const allNotifications = useMemo(() => generateNotifications(subscriptions), [subscriptions]);
+  const allNotifications = useMemo(
+    () => generateNotifications(subscriptions, settings.notifyDaysBefore),
+    [subscriptions, settings.notifyDaysBefore],
+  );
   const unreadCount = useMemo(
     () => allNotifications.filter((n) => !isRead(n.id)).length,
     [allNotifications, isRead],
@@ -172,6 +175,11 @@ export default function Home() {
     updateSubscription(sub.id, { nextPaymentDate: nextDate });
     playPaid();
   }, [updateSubscription, playPaid]);
+
+  const handleDeleteSub = useCallback((sub: Subscription) => {
+    deleteSubscription(sub.id);
+    playDelete();
+  }, [deleteSubscription, playDelete]);
 
   // Memoized subscription lookups for modals
   const selectedSub = useMemo(
@@ -226,6 +234,7 @@ export default function Home() {
                 onAddTap={openAdd}
                 onSubTap={openDetail}
                 onMarkPaid={handleMarkPaid}
+                onDeleteSub={handleDeleteSub}
               />
             )}
             {activeTab === 'analytics' && (
@@ -282,6 +291,7 @@ export default function Home() {
       <NotificationPanel
         open={showNotifications}
         subscriptions={subscriptions}
+        notifyDaysBefore={settings.notifyDaysBefore}
         onClose={() => setShowNotifications(false)}
         isRead={isRead}
         onMarkAsRead={markAsRead}
@@ -382,6 +392,7 @@ function HomeTab({
   onAddTap,
   onSubTap,
   onMarkPaid,
+  onDeleteSub,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -393,6 +404,7 @@ function HomeTab({
   onAddTap: () => void;
   onSubTap: (sub: Subscription) => void;
   onMarkPaid: (sub: Subscription) => void;
+  onDeleteSub: (sub: Subscription) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
@@ -483,9 +495,11 @@ function HomeTab({
         activeCategory={activeCategory}
         onSubTap={onSubTap}
         onMarkPaid={onMarkPaid}
+        onDelete={onDeleteSub}
         onAddTap={onAddTap}
         mostExpensiveId={mostExpensiveId}
         longestId={longestId}
+        notifyDaysBefore={settings.notifyDaysBefore}
       />
     </div>
   );

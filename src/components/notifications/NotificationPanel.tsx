@@ -21,6 +21,7 @@ export interface NotificationItem {
 interface NotificationPanelProps {
   open: boolean;
   subscriptions: Subscription[];
+  notifyDaysBefore: number;
   onClose: () => void;
   isRead: (id: string) => boolean;
   onMarkAsRead: (id: string) => void;
@@ -46,7 +47,7 @@ const TYPE_BORDER: Record<string, string> = {
 
 /* ── Generate notifications from subscriptions ── */
 
-export function generateNotifications(subscriptions: Subscription[]): NotificationItem[] {
+export function generateNotifications(subscriptions: Subscription[], notifyDaysBefore = 7): NotificationItem[] {
   const items: NotificationItem[] = [];
 
   subscriptions.filter((s) => s.isActive).forEach((sub) => {
@@ -55,6 +56,9 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
     const isTrial = sub.cycle === 'trial';
     // Stable ID: subId-type-nextPaymentDate
     const dateKey = sub.nextPaymentDate;
+
+    // Skip future payments outside the notification window
+    if (daysUntil > notifyDaysBefore) return;
 
     if (daysUntil < 0) {
       items.push({
@@ -123,12 +127,16 @@ export function generateNotifications(subscriptions: Subscription[]): Notificati
 export function NotificationPanel({
   open,
   subscriptions,
+  notifyDaysBefore,
   onClose,
   isRead,
   onMarkAsRead,
   onMarkAllAsRead,
 }: NotificationPanelProps) {
-  const notifications = useMemo(() => generateNotifications(subscriptions), [subscriptions]);
+  const notifications = useMemo(
+    () => generateNotifications(subscriptions, notifyDaysBefore),
+    [subscriptions, notifyDaysBefore],
+  );
 
   const unread = useMemo(() => notifications.filter((n) => !isRead(n.id)), [notifications, isRead]);
   const read = useMemo(() => notifications.filter((n) => isRead(n.id)), [notifications, isRead]);

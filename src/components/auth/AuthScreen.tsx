@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 type Mode = 'login' | 'register';
 
 export function AuthScreen() {
   const { signIn, signUp, setSkipAuth } = useAuth();
+  const { t, lang, setLang } = useLanguage();
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,17 +22,17 @@ export function AuthScreen() {
     setError(null);
 
     if (!email.trim() || !password.trim()) {
-      setError('Заполните все поля');
+      setError(t('auth.error.fillAll'));
       return;
     }
 
     if (mode === 'register' && password !== confirmPassword) {
-      setError('Пароли не совпадают');
+      setError(t('auth.error.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Пароль минимум 6 символов');
+      setError(t('auth.error.passwordShort'));
       return;
     }
 
@@ -42,7 +44,6 @@ export function AuthScreen() {
     } else {
       const { error: err } = await signUp(email.trim(), password);
       if (err) setError(err);
-      // If no error, signUp auto-logs in (email confirmation disabled)
     }
 
     setLoading(false);
@@ -50,6 +51,24 @@ export function AuthScreen() {
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center max-w-[430px] mx-auto px-6 bg-gradient-to-b from-surface to-[#07070C]">
+
+      {/* Language switcher — top right corner */}
+      <div className="absolute top-5 right-5 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
+        {(['ru', 'en'] as const).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            className={`px-2.5 py-1 rounded-md text-xs font-bold transition-colors ${
+              lang === l
+                ? 'bg-neon text-surface'
+                : 'text-text-muted'
+            }`}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
       {/* Logo */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -84,7 +103,7 @@ export function AuthScreen() {
                 : 'text-text-muted'
             }`}
           >
-            {m === 'login' ? 'Вход' : 'Регистрация'}
+            {m === 'login' ? t('auth.login') : t('auth.register')}
           </button>
         ))}
       </div>
@@ -98,7 +117,7 @@ export function AuthScreen() {
         transition={{ delay: 0.1, duration: 0.3 }}
       >
         <div>
-          <label className="text-xs text-text-muted font-medium mb-1.5 block">Email</label>
+          <label className="text-xs text-text-muted font-medium mb-1.5 block">{t('auth.email')}</label>
           <input
             type="email"
             value={email}
@@ -110,12 +129,12 @@ export function AuthScreen() {
         </div>
 
         <div>
-          <label className="text-xs text-text-muted font-medium mb-1.5 block">Пароль</label>
+          <label className="text-xs text-text-muted font-medium mb-1.5 block">{t('auth.password')}</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Минимум 6 символов"
+            placeholder={t('auth.passwordMin')}
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             className="w-full px-4 py-3 bg-surface-2 border border-border-subtle rounded-xl text-text-primary text-sm placeholder:text-text-muted/50 focus:outline-none focus:border-neon/30 transition-colors"
           />
@@ -131,13 +150,13 @@ export function AuthScreen() {
               className="overflow-hidden"
             >
               <label className="text-xs text-text-muted font-medium mb-1.5 block">
-                Повторите пароль
+                {t('auth.confirmPassword')}
               </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Ещё раз"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 autoComplete="new-password"
                 className="w-full px-4 py-3 bg-surface-2 border border-border-subtle rounded-xl text-text-primary text-sm placeholder:text-text-muted/50 focus:outline-none focus:border-neon/30 transition-colors"
               />
@@ -145,7 +164,7 @@ export function AuthScreen() {
           )}
         </AnimatePresence>
 
-        {/* Error / Success */}
+        {/* Error */}
         <AnimatePresence>
           {error && (
             <motion.p
@@ -168,8 +187,8 @@ export function AuthScreen() {
           {loading
             ? '...'
             : mode === 'login'
-              ? 'Войти'
-              : 'Создать аккаунт'}
+              ? t('auth.submit.login')
+              : t('auth.submit.register')}
         </button>
       </motion.form>
 
@@ -178,10 +197,10 @@ export function AuthScreen() {
         onClick={() => setSkipAuth(true)}
         className="mt-6 text-text-muted text-xs font-medium hover:text-text-secondary transition-colors"
       >
-        Продолжить без входа
+        {t('auth.skip')}
       </button>
       <p className="mt-2 text-[10px] text-text-muted/60 text-center max-w-[260px]">
-        Без аккаунта данные хранятся только на этом устройстве
+        {t('auth.skipNote')}
       </p>
     </div>
   );

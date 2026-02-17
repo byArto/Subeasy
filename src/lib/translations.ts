@@ -333,6 +333,17 @@ const dict: Translations = {
   'month.full.nov': { ru: 'Ноябрь', en: 'November' },
   'month.full.dec': { ru: 'Декабрь', en: 'December' },
 
+  // ── Default categories ──
+  'cat.streaming': { ru: 'Стриминг', en: 'Streaming' },
+  'cat.music': { ru: 'Музыка', en: 'Music' },
+  'cat.software': { ru: 'Софт', en: 'Software' },
+  'cat.cloud': { ru: 'Облако', en: 'Cloud' },
+  'cat.games': { ru: 'Игры', en: 'Games' },
+  'cat.education': { ru: 'Обучение', en: 'Education' },
+  'cat.ai': { ru: 'AI', en: 'AI' },
+  'cat.vpn': { ru: 'VPN/Proxy', en: 'VPN/Proxy' },
+  'cat.other': { ru: 'Другое', en: 'Other' },
+
   // ── Weekdays ──
   'day.mon': { ru: 'Пн', en: 'Mo' },
   'day.tue': { ru: 'Вт', en: 'Tu' },

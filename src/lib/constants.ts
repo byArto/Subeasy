@@ -12,6 +12,19 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: '9', name: 'Другое', emoji: '📦', color: '#8E8E93' },
 ];
 
+/** Maps default category IDs to their translation keys */
+export const DEFAULT_CATEGORY_NAME_KEYS: Record<string, string> = {
+  '1': 'cat.streaming',
+  '2': 'cat.music',
+  '3': 'cat.software',
+  '4': 'cat.cloud',
+  '5': 'cat.games',
+  '6': 'cat.education',
+  '7': 'cat.ai',
+  '8': 'cat.vpn',
+  '9': 'cat.other',
+};
+
 export const DEFAULT_SETTINGS: AppSettings = {
   displayCurrency: 'RUB',
   exchangeRate: 96,

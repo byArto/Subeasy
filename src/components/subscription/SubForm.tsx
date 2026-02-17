@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
@@ -26,6 +26,14 @@ const COLOR_PALETTE = [
 
 const CURRENCIES: Currency[] = ['RUB', 'USD'];
 const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time', 'trial'];
+
+const CYCLE_KEY_MAP: Record<BillingCycle, string> = {
+  monthly: 'cycle.monthly.label',
+  yearly: 'cycle.yearly.label',
+  weekly: 'cycle.weekly.label',
+  'one-time': 'cycle.oneTime.label',
+  trial: 'cycle.trial.label',
+};
 
 /* ── Payment method encoding ── */
 
@@ -422,7 +430,7 @@ export function SubForm({
                   : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
               )}
             >
-              {CYCLE_LABELS[c]}
+              {t(CYCLE_KEY_MAP[c])}
             </motion.button>
           ))}
         </div>
@@ -451,7 +459,7 @@ export function SubForm({
               )}
             >
               <span className="text-sm">{cat.emoji}</span>
-              {cat.name}
+              {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
             </motion.button>
           ))}
 

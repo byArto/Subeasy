@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { cn, getDaysUntilPayment, convertCurrency } from '@/lib/utils';
-import { CURRENCY_SYMBOLS, CYCLE_LABELS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -32,6 +32,14 @@ const CYCLE_SUFFIX_KEY: Record<string, string> = {
   weekly: 'cycle.weekly',
   'one-time': '',
   trial: '',
+};
+
+const CYCLE_LABEL_KEY: Record<string, string> = {
+  monthly: 'cycle.monthly.label',
+  yearly: 'cycle.yearly.label',
+  weekly: 'cycle.weekly.label',
+  'one-time': 'cycle.oneTime.label',
+  trial: 'cycle.trial.label',
 };
 
 function formatDate(iso: string, lang: string): string {
@@ -268,7 +276,7 @@ export function SubDetail({
     },
     {
       label: t('detail.cycle'),
-      value: isTrial ? t('detail.trialPeriod') : (CYCLE_LABELS[sub.cycle] || sub.cycle),
+      value: isTrial ? t('detail.trialPeriod') : (CYCLE_LABEL_KEY[sub.cycle] ? t(CYCLE_LABEL_KEY[sub.cycle]) : sub.cycle),
     },
     ...(isTrial
       ? []
@@ -331,7 +339,7 @@ export function SubDetail({
         <div className="flex items-center gap-2">
           {category && (
             <span className="text-xs text-text-secondary">
-              {category.emoji} {category.name}
+              {category.emoji} {DEFAULT_CATEGORY_NAME_KEYS[category.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[category.id]) : category.name}
             </span>
           )}
           <Badge variant={status.variant} pulse={status.pulse}>
@@ -371,7 +379,7 @@ export function SubDetail({
               <span className="text-xl font-bold ml-1">{symbol}</span>
             </p>
             <p className="text-text-muted text-sm mt-1.5">
-              {CYCLE_SUFFIX_KEY[sub.cycle] ? CYCLE_LABELS[sub.cycle]?.toLowerCase() : t('detail.oneTimePayment')}
+              {CYCLE_SUFFIX_KEY[sub.cycle] ? t(CYCLE_LABEL_KEY[sub.cycle]).toLowerCase() : t('detail.oneTimePayment')}
               {' · '}
               <span className="text-text-secondary">
                 ≈ {altPrice.toLocaleString('ru-RU')} {altSymbol}

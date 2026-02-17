@@ -5,6 +5,7 @@ import { Category, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { soundEngine } from '@/lib/sounds';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 
 interface CategoryFilterProps {
   categories: Category[];
@@ -51,7 +52,7 @@ export function CategoryFilter({
       {usedCategories.map((cat) => (
         <PillButton
           key={cat.id}
-          label={cat.name}
+          label={DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
           emoji={cat.emoji}
           count={countForCategory(cat.id)}
           isActive={activeCategory === cat.id}

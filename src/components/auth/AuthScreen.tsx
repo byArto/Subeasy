@@ -53,7 +53,7 @@ export function AuthScreen() {
     <div className="fixed inset-0 flex flex-col items-center justify-center max-w-[430px] mx-auto px-6 bg-gradient-to-b from-surface to-[#07070C]">
 
       {/* Language switcher — top right corner */}
-      <div className="absolute top-5 right-5 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
+      <div className="absolute top-12 right-5 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
         {(['ru', 'en'] as const).map((l) => (
           <button
             key={l}

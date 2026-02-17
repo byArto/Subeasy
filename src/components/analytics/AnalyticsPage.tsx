@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
-import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
@@ -938,7 +938,9 @@ function CategoryBreakdown({
     for (const [catId, value] of map) {
       const cat = categories.find((c) => c.id === catId);
       result.push({
-        name: cat?.name || t('analytics.other'),
+        name: cat
+          ? (DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name)
+          : t('analytics.other'),
         emoji: cat?.emoji || '📦',
         value: Math.round(value),
         color: cat?.color || '#8E8E93',

@@ -38,13 +38,9 @@ export function useSync(
   // Initial sync on login
   useEffect(() => {
     if (!user) {
-      // If logging out from a real account, clear local data so next user starts clean
-      if (prevUser.current !== null) {
-        setters.setSubscriptions([]);
-        setters.setCategories([]);
-      }
+      // Don't clear data here — auth might be refreshing token (brief null flicker).
+      // Data will be cleared on account switch (different user logs in).
       initialSyncDone.current = false;
-      prevUser.current = null;
       return;
     }
 

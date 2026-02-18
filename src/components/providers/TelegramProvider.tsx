@@ -6,7 +6,7 @@ import { TelegramUser } from '@/hooks/useTelegram';
 interface TelegramContextValue {
   isTelegram: boolean;
   user: TelegramUser | undefined;
-  /** Pixels to pad from top when in Telegram (Telegram header height + device status bar) */
+  /** Pixels to pad from top when in Telegram fullscreen (Telegram overlay height) */
   safeAreaTop: number;
 }
 
@@ -35,7 +35,6 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     webApp.ready();
     webApp.expand();
 
-    // Match Telegram header/bg to our exact surface color (#0A0A0F = --color-surface)
     try {
       webApp.setHeaderColor('#0A0A0F');
       webApp.setBackgroundColor('#0A0A0F');
@@ -43,29 +42,50 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       // older Telegram versions may not support this
     }
 
-    // requestFullscreen() (Telegram v8+): makes the app cover the full screen
-    // including under the Telegram header bar — eliminates the visual gap entirely.
-    // contentSafeAreaInset.top tells us how many px the Telegram header occupies
-    // so we can offset our content correctly.
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (webApp as any).requestFullscreen?.();
     } catch {
-      // not supported — expand() already called above as fallback
+      // not supported in this Telegram version
     }
 
-    // Give Telegram a moment to apply fullscreen + compute insets
-    const applyInsets = () => {
-      const contentInset = webApp.contentSafeAreaInset?.top ?? 0;
-      const deviceInset = webApp.safeAreaInset?.top ?? 0;
-      // Use the larger of the two to ensure content is never hidden under chrome
-      setSafeAreaTop(Math.max(contentInset, deviceInset));
+    // Read current safe area insets from Telegram.
+    // In fullscreen mode, contentSafeAreaInset.top = height of Telegram's
+    // overlay controls ("Закрыть" button etc.) that cover our content.
+    // safeAreaInset.top = device status bar height.
+    // We use the larger value to ensure nothing is hidden under Telegram chrome.
+    const readInsets = () => {
+      const content = webApp.contentSafeAreaInset?.top ?? 0;
+      const device = webApp.safeAreaInset?.top ?? 0;
+      const top = Math.max(content, device);
+      if (top > 0) setSafeAreaTop(top);
     };
 
-    applyInsets();
-    // Re-check after a short delay (insets may update after fullscreen activates)
-    const t = setTimeout(applyInsets, 300);
-    return () => clearTimeout(t);
+    // Listen to Telegram events — fires when fullscreen activates / insets change
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tgEvents = (webApp as any);
+    try {
+      tgEvents.onEvent?.('safeAreaChanged', readInsets);
+      tgEvents.onEvent?.('contentSafeAreaChanged', readInsets);
+      tgEvents.onEvent?.('viewportChanged', readInsets);
+    } catch { /* older Telegram */ }
+
+    // Also poll at intervals — some Telegram versions fire events late
+    readInsets();
+    const t1 = setTimeout(readInsets, 100);
+    const t2 = setTimeout(readInsets, 500);
+    const t3 = setTimeout(readInsets, 1500);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      try {
+        tgEvents.offEvent?.('safeAreaChanged', readInsets);
+        tgEvents.offEvent?.('contentSafeAreaChanged', readInsets);
+        tgEvents.offEvent?.('viewportChanged', readInsets);
+      } catch { /* ignore */ }
+    };
   }, []);
 
   return (

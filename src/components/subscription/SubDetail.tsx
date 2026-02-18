@@ -8,6 +8,7 @@ import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { haptic } from '@/lib/haptic';
 
 /* ── Types ── */
 
@@ -441,7 +442,7 @@ export function SubDetail({
 
         <motion.div custom={onMarkPaid && days < 0 ? 3 : 2} variants={btnVariants} initial="hidden" animate="visible">
           {!confirmDelete ? (
-            <Button fullWidth variant="ghost" size="md" onClick={() => setConfirmDelete(true)}>
+            <Button fullWidth variant="ghost" size="md" onClick={() => { haptic.warning(); setConfirmDelete(true); }}>
               <span className="text-danger">{t('detail.delete')}</span>
             </Button>
           ) : (
@@ -449,7 +450,7 @@ export function SubDetail({
               <Button fullWidth variant="secondary" size="md" onClick={() => setConfirmDelete(false)}>
                 {t('detail.cancel')}
               </Button>
-              <Button fullWidth variant="danger" size="md" onClick={onDelete}>
+              <Button fullWidth variant="danger" size="md" onClick={() => { haptic.error(); onDelete(); }}>
                 {t('detail.confirmDelete')}
               </Button>
             </div>

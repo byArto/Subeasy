@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { haptic } from '@/lib/haptic';
 
 /* ── Constants ── */
 
@@ -822,7 +823,7 @@ export function SubForm({
         animate="visible"
         className="space-y-2.5 pt-2"
       >
-        <Button fullWidth size="lg" onClick={handleSubmit}>
+        <Button fullWidth size="lg" onClick={() => { haptic.success(); handleSubmit(); }}>
           {mode === 'add' ? t('form.add') : t('form.save')}
         </Button>
 
@@ -834,7 +835,7 @@ export function SubForm({
                   fullWidth
                   variant="danger"
                   size="md"
-                  onClick={() => setConfirmDelete(true)}
+                  onClick={() => { haptic.warning(); setConfirmDelete(true); }}
                 >
                   {t('form.deleteSubscription')}
                 </Button>
@@ -858,7 +859,7 @@ export function SubForm({
                   fullWidth
                   variant="danger"
                   size="md"
-                  onClick={onDelete}
+                  onClick={() => { haptic.error(); onDelete?.(); }}
                 >
                   {t('form.confirmDelete')}
                 </Button>

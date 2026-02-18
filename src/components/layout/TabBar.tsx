@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { cn } from '@/lib/utils';
 import { soundEngine } from '@/lib/sounds';
+import { haptic } from '@/lib/haptic';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 export type TabId = 'home' | 'analytics' | 'calendar' | 'settings';
@@ -60,7 +61,7 @@ export function TabBar({
         <motion.button
           whileTap={{ scale: 0.88 }}
           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-          onClick={() => { soundEngine.tap(); onFabTap(); }}
+          onClick={() => { haptic.medium(); soundEngine.tap(); onFabTap(); }}
           className={cn(
             'flex items-center justify-center',
             'w-[56px] h-[56px] rounded-full',
@@ -92,7 +93,7 @@ export function TabBar({
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                  onClick={() => { soundEngine.tabSwitch(); onTabChange(tab.id); }}
+                  onClick={() => { haptic.tap(); soundEngine.tabSwitch(); onTabChange(tab.id); }}
                   className={cn(
                     'relative flex flex-col items-center justify-center',
                     'min-w-[56px] min-h-[44px] gap-0.5',

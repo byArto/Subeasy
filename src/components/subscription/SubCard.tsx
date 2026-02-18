@@ -10,6 +10,7 @@ import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Lang } from '@/lib/translations';
+import { haptic } from '@/lib/haptic';
 
 interface SubCardProps {
   subscription: Subscription;
@@ -119,6 +120,7 @@ export function SubCard({
 
   function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
+    haptic.error();
     snapTo(0);
     setTimeout(() => onDelete?.(sub), 150);
   }

@@ -24,7 +24,7 @@ export function SearchPanel({
   onSelectSubscription,
 }: SearchPanelProps) {
   const { t } = useLanguage();
-  const { isTelegram, safeAreaTop } = useTelegramContext();
+  const { isTelegram } = useTelegramContext();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -69,7 +69,7 @@ export function SearchPanel({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '-100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            style={isTelegram ? { paddingTop: safeAreaTop } : undefined}
+            style={isTelegram ? { paddingTop: 'var(--tg-top-inset)' } : undefined}
             className={cn(
               'fixed top-0 left-0 right-0 z-50',
               'mx-auto max-w-[430px]',

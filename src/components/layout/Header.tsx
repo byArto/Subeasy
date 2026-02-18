@@ -24,14 +24,14 @@ export function Header({
   hasDanger = false,
   className,
 }: HeaderProps) {
-  const { isTelegram, safeAreaTop } = useTelegramContext();
+  const { isTelegram } = useTelegramContext();
 
   return (
     <motion.header
       // In Telegram fullscreen mode, use the exact pixel value from contentSafeAreaInset
       // so content sits perfectly below the Telegram header bar.
       // Outside Telegram, use CSS env() for the device notch/status bar.
-      style={isTelegram ? { paddingTop: safeAreaTop } : undefined}
+      style={isTelegram ? { paddingTop: 'var(--tg-top-inset)' } : undefined}
       className={cn(
         'relative z-50 w-full shrink-0',
         !isTelegram && 'pt-[env(safe-area-inset-top)]',

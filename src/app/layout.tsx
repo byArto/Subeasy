@@ -35,6 +35,8 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        {/* Telegram Mini App SDK — must load before any other scripts */}
+        <script src="https://telegram.org/js/telegram-web-app.js" />
         <link rel="preconnect" href="https://xmmseorpelrppnrlcxai.supabase.co" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

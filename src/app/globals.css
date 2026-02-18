@@ -164,18 +164,11 @@ html {
   height: 100%;
   background-color: #0A0A0F; /* match body/surface — prevents visible gap on iOS PWA */
 
-  /* Telegram injects these CSS variables automatically into the WebView.
-     In non-Telegram context they are undefined → fallback to 0px.
-     --tg-content-safe-area-inset-top = height of Telegram's overlay controls (fullscreen mode)
-     --tg-safe-area-inset-top         = device status bar height */
-  --tg-top-inset: max(
-    var(--tg-content-safe-area-inset-top, 0px),
-    var(--tg-safe-area-inset-top, 0px)
-  );
-  --tg-bottom-inset: max(
-    var(--tg-content-safe-area-inset-bottom, 0px),
-    var(--tg-safe-area-inset-bottom, 0px)
-  );
+  /* --tg-top-inset is set by TelegramProvider via JS (document.documentElement.style).
+     Default: env(safe-area-inset-top) so PWA/browser still works correctly.
+     In Telegram fullscreen JS overrides this with safeAreaInset.top + contentSafeAreaInset.top */
+  --tg-top-inset: env(safe-area-inset-top, 0px);
+  --tg-bottom-inset: env(safe-area-inset-bottom, 0px);
 }
 
 body {

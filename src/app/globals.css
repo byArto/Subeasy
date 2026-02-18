@@ -165,9 +165,10 @@ html {
   background-color: #0A0A0F; /* match body/surface — prevents visible gap on iOS PWA */
 
   /* --tg-top-inset is set by TelegramProvider via JS (document.documentElement.style).
-     Default: env(safe-area-inset-top) so PWA/browser still works correctly.
-     In Telegram fullscreen JS overrides this with safeAreaInset.top + contentSafeAreaInset.top */
-  --tg-top-inset: env(safe-area-inset-top, 0px);
+     CSS default: env(safe-area-inset-top, 44px) covers device notch/status bar.
+     +52px covers Telegram fullscreen overlay controls ("Закрыть" / "..." bar).
+     JS override (TelegramProvider) replaces this with exact SDK values when available. */
+  --tg-top-inset: calc(env(safe-area-inset-top, 44px) + 52px);
   --tg-bottom-inset: env(safe-area-inset-bottom, 0px);
 }
 

@@ -34,9 +34,15 @@ function applyTelegramInsets() {
     return;
   }
 
-  // Fallback when SDK doesn't return values yet (old Telegram or timing):
-  // Use device-only inset — JS-readable via webApp but sometimes delayed.
-  // Ultimate fallback is the CSS default (env(safe-area-inset-top)) already set in globals.css.
+  // SDK вернул 0 (старый Telegram iOS или timing issue).
+  // CSS fallback в globals.css даёт 119px (59+60), JS уточняет по высоте экрана.
+  // window.screen.height в Safari iOS = CSS пиксели, не физические.
+  const screenH = window.screen.height;
+  const estimated = screenH >= 852 ? 103  // iPhone 14 Pro / 15 Pro (Dynamic Island ~59px)
+                  : screenH >= 844 ? 100  // iPhone 14 / 13 (~47px notch)
+                  : screenH >= 812 ?  88  // iPhone X / 11 / 12 / 13 mini (44px notch)
+                  :                   72; // iPhone SE (20px status bar)
+  document.documentElement.style.setProperty('--tg-top-inset', `${estimated}px`);
 }
 
 export function TelegramProvider({ children }: { children: ReactNode }) {

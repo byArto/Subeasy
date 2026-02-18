@@ -164,11 +164,17 @@ html {
   height: 100%;
   background-color: #0A0A0F; /* match body/surface — prevents visible gap on iOS PWA */
 
-  /* --tg-top-inset is set by TelegramProvider via JS (document.documentElement.style).
-     CSS default: env(safe-area-inset-top, 44px) covers device notch/status bar.
-     +52px covers Telegram fullscreen overlay controls ("Закрыть" / "..." bar).
-     JS override (TelegramProvider) replaces this with exact SDK values when available. */
-  --tg-top-inset: calc(env(safe-area-inset-top, 44px) + 52px);
+  /* --tg-top-inset: 3 слоя защиты для Telegram fullscreen overlay.
+     Telegram WKWebView обнуляет env(safe-area-inset-top), поэтому нужен надёжный fallback.
+     Layer 1: var(--tg-safe-area-inset-top)         — CSS var от Telegram v8+ (device notch)
+     Layer 2: env(safe-area-inset-top, 59px)        — CSS env или 59px fallback (notch iPhone)
+     +         var(--tg-content-safe-area-inset-top, 60px) — Telegram controls bar + запас
+     Итог без SDK: 59 + 60 = 119px > 103px (нужный минимум на iPhone 14 Pro) ✅
+     JS в TelegramProvider перезаписывает точными значениями из SDK когда они ненулевые. */
+  --tg-top-inset: calc(
+    var(--tg-safe-area-inset-top, env(safe-area-inset-top, 59px)) +
+    var(--tg-content-safe-area-inset-top, 60px)
+  );
   --tg-bottom-inset: env(safe-area-inset-bottom, 0px);
 }
 

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { LanguageProvider } from '@/components/providers/LanguageProvider';
+import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -99,13 +100,15 @@ export default function RootLayout({
             __html: `window.__removeSplash=function(){var s=document.getElementById('pre-splash');if(s){s.style.opacity='0';setTimeout(function(){s.remove()},300)}}`,
           }}
         />
-        <LanguageProvider>
-          <AuthProvider>
-            <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-              {children}
-            </div>
-          </AuthProvider>
-        </LanguageProvider>
+        <TelegramProvider>
+          <LanguageProvider>
+            <AuthProvider>
+              <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+                {children}
+              </div>
+            </AuthProvider>
+          </LanguageProvider>
+        </TelegramProvider>
         <Analytics />
       </body>
     </html>

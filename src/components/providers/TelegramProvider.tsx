@@ -21,10 +21,24 @@ function applyTelegramInsets() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return;
 
+  // ── Режим: Fullsize vs Fullscreen ────────────────────────────────────────
+  // Fullsize:    Telegram header — отдельный нативный бар над WebView.
+  //             window.innerHeight < screen.height на ~88-103px.
+  //             Overlay поверх контента отсутствует → отступ = 0.
+  // Fullscreen: WebView = весь экран, Telegram controls — overlay.
+  //             window.innerHeight ≈ screen.height (разница < 60px).
+  //             Нужен отступ для overlay controls.
+  // > 200px:    клавиатура открыта — не меняем режим.
+  const heightDiff = window.screen.height - window.innerHeight;
+  if (heightDiff > 60 && heightDiff < 200) {
+    // Fullsize: header выше WebView, overlay-отступ не нужен
+    document.documentElement.style.setProperty('--tg-top-inset', '0px');
+    return;
+  }
+
+  // ── Fullscreen: считаем отступ для overlay controls ──────────────────────
   // safeAreaInset.top      = device status bar height (notch / Dynamic Island)
-  // contentSafeAreaInset.top = Telegram overlay controls height in fullscreen
-  //                            (the "Закрыть" / "..." row on top of our content)
-  // These are TWO SEPARATE values that must be SUMMED, not max'd.
+  // contentSafeAreaInset.top = Telegram overlay controls height
   const device  = (webApp.safeAreaInset?.top         ?? 0);
   const content = (webApp.contentSafeAreaInset?.top   ?? 0);
   const total   = device + content;
@@ -34,14 +48,12 @@ function applyTelegramInsets() {
     return;
   }
 
-  // SDK вернул 0 (старый Telegram iOS или timing issue).
-  // CSS fallback в globals.css даёт 119px (59+60), JS уточняет по высоте экрана.
-  // window.screen.height в Safari iOS = CSS пиксели, не физические.
+  // SDK вернул 0 — heuristic по высоте экрана (CSS пиксели в Safari iOS).
   const screenH = window.screen.height;
-  const estimated = screenH >= 852 ? 103  // iPhone 14 Pro / 15 Pro (Dynamic Island ~59px)
-                  : screenH >= 844 ? 100  // iPhone 14 / 13 (~47px notch)
-                  : screenH >= 812 ?  88  // iPhone X / 11 / 12 / 13 mini (44px notch)
-                  :                   72; // iPhone SE (20px status bar)
+  const estimated = screenH >= 852 ? 103  // iPhone 14 Pro / 15 Pro
+                  : screenH >= 844 ? 100  // iPhone 14 / 13
+                  : screenH >= 812 ?  88  // iPhone X / 11 / 12 / 13 mini
+                  :                   72; // iPhone SE
   document.documentElement.style.setProperty('--tg-top-inset', `${estimated}px`);
 }
 

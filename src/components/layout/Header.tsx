@@ -24,14 +24,16 @@ export function Header({
   hasDanger = false,
   className,
 }: HeaderProps) {
-  const { isTelegram } = useTelegramContext();
+  const { isTelegram, safeAreaTop } = useTelegramContext();
 
   return (
     <motion.header
+      // In Telegram fullscreen mode, use the exact pixel value from contentSafeAreaInset
+      // so content sits perfectly below the Telegram header bar.
+      // Outside Telegram, use CSS env() for the device notch/status bar.
+      style={isTelegram ? { paddingTop: safeAreaTop } : undefined}
       className={cn(
         'relative z-50 w-full shrink-0',
-        // In Telegram, the WebView starts below the Telegram header bar —
-        // safe-area-inset-top would double the offset, so skip it.
         !isTelegram && 'pt-[env(safe-area-inset-top)]',
         className
       )}

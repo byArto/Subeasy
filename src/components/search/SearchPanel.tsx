@@ -7,6 +7,7 @@ import { Subscription } from '@/lib/types';
 import { SubCard } from '@/components/subscription/SubCard';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 interface SearchPanelProps {
   open: boolean;
@@ -23,6 +24,7 @@ export function SearchPanel({
   onSelectSubscription,
 }: SearchPanelProps) {
   const { t } = useLanguage();
+  const { isTelegram, safeAreaTop } = useTelegramContext();
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -67,12 +69,13 @@ export function SearchPanel({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '-100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            style={isTelegram ? { paddingTop: safeAreaTop } : undefined}
             className={cn(
               'fixed top-0 left-0 right-0 z-50',
               'mx-auto max-w-[430px]',
               'bg-surface-2 rounded-b-2xl',
               'border-b border-x border-border-subtle',
-              'pt-[env(safe-area-inset-top)]',
+              !isTelegram && 'pt-[env(safe-area-inset-top)]',
               'max-h-[80dvh] flex flex-col',
             )}
           >

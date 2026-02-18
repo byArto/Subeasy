@@ -7,6 +7,7 @@ import { getDaysUntilPayment, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Lang } from '@/lib/translations';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 /* ── Types ── */
 
@@ -145,6 +146,7 @@ export function NotificationPanel({
   onMarkAllAsRead,
 }: NotificationPanelProps) {
   const { t, lang } = useLanguage();
+  const { isTelegram, safeAreaTop } = useTelegramContext();
 
   const notifications = useMemo(
     () => generateNotifications(subscriptions, notifyDaysBefore, t, lang),
@@ -190,12 +192,13 @@ export function NotificationPanel({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '-100%', opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            style={isTelegram ? { paddingTop: safeAreaTop } : undefined}
             className={cn(
               'fixed top-0 left-0 right-0 z-50',
               'mx-auto max-w-[430px]',
               'bg-surface-2 rounded-b-2xl',
               'border-b border-x border-border-subtle',
-              'pt-[env(safe-area-inset-top)]',
+              !isTelegram && 'pt-[env(safe-area-inset-top)]',
               'max-h-[70dvh] flex flex-col',
             )}
           >

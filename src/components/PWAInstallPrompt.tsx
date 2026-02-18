@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { Button } from '@/components/ui';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 type Platform = 'ios' | 'android' | 'desktop';
 
@@ -19,6 +20,7 @@ const SESSION_KEY = 'neonsub-a2hs-dismissed';
 
 export function PWAInstallPrompt() {
   const isInstalled = useStandaloneMode();
+  const { isTelegram } = useTelegramContext();
   const [show, setShow] = useState(false);
   const [platform, setPlatform] = useState<Platform>('desktop');
 
@@ -26,9 +28,9 @@ export function PWAInstallPrompt() {
     const p = detectPlatform();
     setPlatform(p);
 
-    // Only show on mobile, not installed, not dismissed this session
+    // Only show on mobile, not installed, not dismissed this session, not in Telegram
     const dismissed = typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === 'true';
-    if (p === 'desktop' || isInstalled || dismissed) return;
+    if (p === 'desktop' || isInstalled || dismissed || isTelegram) return;
 
     const timer = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(timer);

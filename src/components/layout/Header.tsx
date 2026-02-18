@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 interface HeaderProps {
   title: string;
@@ -23,11 +24,15 @@ export function Header({
   hasDanger = false,
   className,
 }: HeaderProps) {
+  const { isTelegram } = useTelegramContext();
+
   return (
     <motion.header
       className={cn(
         'relative z-50 w-full shrink-0',
-        'pt-[env(safe-area-inset-top)]',
+        // In Telegram, the WebView starts below the Telegram header bar —
+        // safe-area-inset-top would double the offset, so skip it.
+        !isTelegram && 'pt-[env(safe-area-inset-top)]',
         className
       )}
     >

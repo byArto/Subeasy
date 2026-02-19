@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
-import { cn, getDaysUntilPayment, convertCurrency } from '@/lib/utils';
+import { cn, getDaysUntilPayment, convertCurrency, sanitizeUrl } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -124,7 +124,7 @@ function formatPaymentMethod(raw: string, t: TFunc): React.ReactNode {
   }
   if (raw.startsWith('paypal:')) {
     const detail = raw.substring(7).trim();
-    return detail ? <span>⚡ {t('detail.sbp')} · {detail}</span> : <span>⚡ {t('detail.sbp')}</span>;
+    return detail ? <span>🅿 PayPal · {detail}</span> : <span>🅿 PayPal</span>;
   }
   if (raw.startsWith('other:')) {
     const detail = raw.substring(6).trim();
@@ -289,21 +289,22 @@ export function SubDetail({
             </span>
           ),
         }]),
-    ...(sub.managementUrl
+    ...(sanitizeUrl(sub.managementUrl)
       ? [{
           label: t('detail.management'),
           value: (
             <a
-              href={sub.managementUrl}
+              href={sanitizeUrl(sub.managementUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-neon underline underline-offset-2 break-all"
               onClick={(e) => {
                 e.stopPropagation();
+                const safeUrl = sanitizeUrl(sub.managementUrl);
                 const tgWebApp = window.Telegram?.WebApp;
-                if (tgWebApp && sub.managementUrl) {
+                if (tgWebApp && safeUrl) {
                   e.preventDefault();
-                  tgWebApp.openLink(sub.managementUrl);
+                  tgWebApp.openLink(safeUrl);
                 }
               }}
             >

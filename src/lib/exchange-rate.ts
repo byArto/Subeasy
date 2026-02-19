@@ -38,6 +38,7 @@ function getCachedRate(): ExchangeRateCache | null {
 }
 
 function setCachedRate(rate: number): void {
+  if (typeof window === 'undefined') return;
   const cache: ExchangeRateCache = {
     rate,
     fetchedAt: new Date().toISOString(),

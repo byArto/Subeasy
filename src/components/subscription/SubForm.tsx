@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, sanitizeUrl } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -214,7 +214,7 @@ export function SubForm({
       nextPaymentDate,
       startDate,
       paymentMethod: encodePaymentMethod(paymentType, cardType, paymentDetail),
-      managementUrl: managementUrl.trim(),
+      managementUrl: sanitizeUrl(managementUrl.trim()),
       notes: notes.trim(),
       color,
       icon,

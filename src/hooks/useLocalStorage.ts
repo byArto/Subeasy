@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 type SetValue<T> = T | ((prev: T) => T);
 
@@ -17,22 +17,26 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: SetValue<T>) => void, () => void] {
-  const [storedValue, setStoredValue] = useState<T>(() => readStorage(key, initialValue));
+  // Capture initialValue once to avoid re-running the effect on every render
+  // when the caller passes an inline object/array literal
+  const initialRef = useRef(initialValue);
+
+  const [storedValue, setStoredValue] = useState<T>(() => readStorage(key, initialRef.current));
 
   // Sync across tabs
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== key) return;
       try {
-        setStoredValue(e.newValue !== null ? JSON.parse(e.newValue) : initialValue);
+        setStoredValue(e.newValue !== null ? JSON.parse(e.newValue) : initialRef.current);
       } catch {
-        setStoredValue(initialValue);
+        setStoredValue(initialRef.current);
       }
     };
 
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, [key, initialValue]);
+  }, [key]);
 
   const setValue = useCallback(
     (value: SetValue<T>) => {
@@ -50,13 +54,13 @@ export function useLocalStorage<T>(
   );
 
   const removeValue = useCallback(() => {
-    setStoredValue(initialValue);
+    setStoredValue(initialRef.current);
     try {
       window.localStorage.removeItem(key);
     } catch (error) {
       console.warn(`[useLocalStorage] Error removing "${key}":`, error);
     }
-  }, [key, initialValue]);
+  }, [key]);
 
   return [storedValue, setValue, removeValue];
 }

@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   headers: async () => [
+    // Security headers for all routes
+    {
+      source: '/(.*)',
+      headers: [
+        { key: 'X-Content-Type-Options', value: 'nosniff' },
+        { key: 'X-DNS-Prefetch-Control', value: 'on' },
+        { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        // Allow embedding inside Telegram WebView, block other iframes
+        { key: 'Content-Security-Policy', value: "frame-ancestors 'self' https://web.telegram.org t.me" },
+      ],
+    },
     {
       source: '/sw.js',
       headers: [

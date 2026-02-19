@@ -5,6 +5,18 @@ export function generateId(): string {
   return crypto.randomUUID();
 }
 
+/** Whitelist only http/https URLs — blocks javascript:, data:, etc. */
+export function sanitizeUrl(url: string): string {
+  if (!url) return '';
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return url;
+    }
+  } catch { /* invalid URL */ }
+  return '';
+}
+
 export function formatPrice(amount: number, currency: Currency): string {
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
   return `${amount.toLocaleString('ru-RU')} ${symbol}`;

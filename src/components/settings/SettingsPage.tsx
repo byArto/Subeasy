@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import { cn, sanitizeUrl } from '@/lib/utils';
 import { requestNotificationPermission } from '@/lib/notifications';
 import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -118,13 +118,20 @@ export function SettingsPage({
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target?.result as string);
-        if (data.subscriptions) {
-          localStorage.setItem('neonsub-subscriptions', JSON.stringify(data.subscriptions));
+        if (!data || typeof data !== 'object') throw new Error('invalid');
+
+        if (Array.isArray(data.subscriptions)) {
+          // Sanitize managementUrl in every imported subscription
+          const sanitized = data.subscriptions.map((s: Record<string, unknown>) => ({
+            ...s,
+            managementUrl: sanitizeUrl(typeof s.managementUrl === 'string' ? s.managementUrl : ''),
+          }));
+          localStorage.setItem('neonsub-subscriptions', JSON.stringify(sanitized));
         }
-        if (data.categories) {
+        if (Array.isArray(data.categories)) {
           localStorage.setItem('neonsub-categories', JSON.stringify(data.categories));
         }
-        if (data.settings) {
+        if (data.settings && typeof data.settings === 'object') {
           localStorage.setItem('neonsub-settings', JSON.stringify(data.settings));
         }
         window.location.reload();

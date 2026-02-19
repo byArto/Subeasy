@@ -75,7 +75,7 @@ export default function RootLayout({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to bottom, #0A0A12, #07070C)',
+            background: 'linear-gradient(to bottom, #0A0A0F, #07070C)',
             zIndex: 9999,
             transition: 'opacity 0.3s',
           }}

@@ -111,7 +111,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               <span style={{ fontSize: 44, display: 'block', marginBottom: 10 }}>👑</span>
 
               <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                SubEasy <span style={{ color: '#f5c842' }}>PRO</span>
+                <span style={{ color: '#f5c842' }}>Sub</span>Easy <span style={{ color: '#f5c842' }}>PRO</span>
               </h2>
 
               <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', marginTop: 6, marginBottom: 0 }}>

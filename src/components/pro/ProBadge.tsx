@@ -20,13 +20,13 @@ export function ProBadge({ onOpen }: { onOpen: () => void }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 5,
+        gap: 4,
         background: 'rgba(245,200,66,0.12)',
         border: '1px solid rgba(245,200,66,0.3)',
         borderRadius: 20,
-        padding: '4px 10px',
+        padding: '3px 8px',
         color: '#f5c842',
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: 700,
         cursor: 'pointer',
         flexShrink: 0,
@@ -36,8 +36,8 @@ export function ProBadge({ onOpen }: { onOpen: () => void }) {
         animate={{ opacity: [1, 0.2, 1] }}
         transition={{ duration: 1.4, repeat: Infinity }}
         style={{
-          width: 5,
-          height: 5,
+          width: 4,
+          height: 4,
           borderRadius: '50%',
           background: '#f5c842',
           display: 'inline-block',

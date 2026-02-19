@@ -68,8 +68,8 @@ export function useTelegram() {
 
     // Match Telegram header/bg to our dark theme
     try {
-      webApp.setHeaderColor('#0A0A12');
-      webApp.setBackgroundColor('#0A0A12');
+      webApp.setHeaderColor('#0A0A0F');
+      webApp.setBackgroundColor('#0A0A0F');
     } catch {
       // older Telegram versions may not support this
     }

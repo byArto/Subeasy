@@ -298,7 +298,14 @@ export function SubDetail({
               target="_blank"
               rel="noopener noreferrer"
               className="text-neon underline underline-offset-2 break-all"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                const tgWebApp = window.Telegram?.WebApp;
+                if (tgWebApp && sub.managementUrl) {
+                  e.preventDefault();
+                  tgWebApp.openLink(sub.managementUrl);
+                }
+              }}
             >
               {t('detail.openLink')}
             </a>

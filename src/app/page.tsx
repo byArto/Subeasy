@@ -19,6 +19,7 @@ import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { useSync } from '@/hooks/useSync';
 import { Subscription, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
@@ -81,6 +82,31 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+
+  // Telegram Back Button — show when any modal is open, close topmost on press
+  const { isTelegram } = useTelegramContext();
+  useEffect(() => {
+    if (!isTelegram) return;
+    const backBtn = window.Telegram?.WebApp?.BackButton;
+    if (!backBtn) return;
+
+    const anyOpen = showAddModal || !!selectedSubId || !!editingSubId || showSearch || showNotifications;
+
+    if (anyOpen) {
+      backBtn.show();
+      const handleBack = () => {
+        if (editingSubId)       { setEditingSubId(null); return; }
+        if (selectedSubId)      { setSelectedSubId(null); return; }
+        if (showAddModal)       { setShowAddModal(false); return; }
+        if (showSearch)         { setShowSearch(false); return; }
+        if (showNotifications)  { setShowNotifications(false); return; }
+      };
+      backBtn.onClick(handleBack);
+      return () => { backBtn.offClick(handleBack); };
+    } else {
+      backBtn.hide();
+    }
+  }, [isTelegram, showAddModal, selectedSubId, editingSubId, showSearch, showNotifications]);
 
   // Track scroll position for header collapse
   useEffect(() => {

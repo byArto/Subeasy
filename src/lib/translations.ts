@@ -290,20 +290,26 @@ const dict: Translations = {
   'splash.tagline': { ru: 'Трекер подписок', en: 'Subscription tracker' },
 
   // ── Auth ──
-  'auth.login': { ru: 'Вход', en: 'Sign in' },
-  'auth.register': { ru: 'Регистрация', en: 'Sign up' },
   'auth.email': { ru: 'Email', en: 'Email' },
-  'auth.password': { ru: 'Пароль', en: 'Password' },
-  'auth.passwordMin': { ru: 'Минимум 6 символов', en: 'Minimum 6 characters' },
-  'auth.confirmPassword': { ru: 'Повторите пароль', en: 'Confirm password' },
-  'auth.confirmPasswordPlaceholder': { ru: 'Ещё раз', en: 'Once more' },
-  'auth.submit.login': { ru: 'Войти', en: 'Sign in' },
-  'auth.submit.register': { ru: 'Создать аккаунт', en: 'Create account' },
   'auth.skip': { ru: 'Продолжить без входа', en: 'Continue without signing in' },
   'auth.skipNote': { ru: 'Без аккаунта данные хранятся только на этом устройстве', en: 'Without an account, data is stored only on this device' },
-  'auth.error.fillAll': { ru: 'Заполните все поля', en: 'Fill in all fields' },
-  'auth.error.passwordMismatch': { ru: 'Пароли не совпадают', en: 'Passwords do not match' },
-  'auth.error.passwordShort': { ru: 'Пароль минимум 6 символов', en: 'Password must be at least 6 characters' },
+
+  // OTP flow
+  'auth.otp.title': { ru: 'Войти или зарегистрироваться', en: 'Sign in or sign up' },
+  'auth.otp.subtitle': { ru: 'Введите email — пришлём код подтверждения', en: 'Enter your email — we\'ll send a verification code' },
+  'auth.otp.sendCode': { ru: 'Получить код', en: 'Send code' },
+  'auth.otp.sending': { ru: 'Отправляем...', en: 'Sending...' },
+  'auth.otp.codeSentTo': { ru: 'Код отправлен на', en: 'Code sent to' },
+  'auth.otp.codeLabel': { ru: 'Код из письма', en: 'Code from email' },
+  'auth.otp.verify': { ru: 'Войти', en: 'Sign in' },
+  'auth.otp.verifying': { ru: 'Проверяем...', en: 'Verifying...' },
+  'auth.otp.resend': { ru: 'Отправить снова', en: 'Resend code' },
+  'auth.otp.changeEmail': { ru: '← Изменить email', en: '← Change email' },
+  'auth.otp.checkSpam': { ru: 'Не пришло? Проверьте папку «Спам»', en: 'Not received? Check your spam folder' },
+  'auth.otp.error.empty': { ru: 'Введите email', en: 'Enter your email' },
+  'auth.otp.error.codeEmpty': { ru: 'Введите код из письма', en: 'Enter the code from email' },
+  'auth.otp.error.invalid': { ru: 'Неверный или истёкший код', en: 'Invalid or expired code' },
+  'auth.otp.error.rateLimit': { ru: 'Слишком много попыток, подождите', en: 'Too many attempts, please wait' },
 
   // ── Month names (short) ──
   'month.jan': { ru: 'Янв', en: 'Jan' },

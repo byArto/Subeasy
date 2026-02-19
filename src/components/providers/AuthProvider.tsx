@@ -8,8 +8,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   skipAuth: boolean;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  sendOtp: (email: string) => Promise<{ error: string | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   setSkipAuth: (skip: boolean) => void;
 }
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     })();
 
-    // Listen for auth changes (will catch session even if getSession was slow)
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -54,16 +54,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  /** Step 1 — send 6-digit OTP to email */
+  const sendOtp = useCallback(async (email: string) => {
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
     if (error) return { error: translateAuthError(error.message) };
     return { error: null };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  /** Step 2 — verify the 6-digit code */
+  const verifyOtp = useCallback(async (email: string, token: string) => {
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
     if (error) return { error: translateAuthError(error.message) };
     return { error: null };
   }, []);
@@ -91,8 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         skipAuth,
-        signUp,
-        signIn,
+        sendOtp,
+        verifyOtp,
         signOut,
         setSkipAuth: handleSetSkipAuth,
       }}
@@ -109,11 +114,14 @@ export function useAuth() {
 }
 
 function translateAuthError(msg: string): string {
-  if (msg.includes('Invalid login credentials')) return 'Неверный email или пароль';
-  if (msg.includes('User already registered')) return 'Пользователь уже зарегистрирован';
-  if (msg.includes('Password should be at least')) return 'Пароль должен быть минимум 6 символов';
-  if (msg.includes('Unable to validate email')) return 'Некорректный email';
-  if (msg.includes('Email not confirmed')) return 'Подтвердите email (проверьте почту)';
-  if (msg.includes('rate limit')) return 'Слишком много попыток, подождите';
+  if (
+    msg.includes('Token has expired') ||
+    msg.includes('token is invalid') ||
+    msg.includes('Invalid') ||
+    msg.includes('invalid')
+  ) return 'Неверный или истёкший код';
+  if (msg.includes('Unable to validate email') || msg.includes('valid email')) return 'Некорректный email';
+  if (msg.includes('rate limit') || msg.includes('Rate limit') || msg.includes('429')) return 'Слишком много попыток, подождите';
+  if (msg.includes('Email not confirmed')) return 'Email не подтверждён';
   return msg;
 }

@@ -27,6 +27,7 @@ import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
+import { ProBadge, ProModal } from '@/components/pro';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -80,6 +81,7 @@ export default function Home() {
   const [tabDirection, setTabDirection] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
@@ -90,7 +92,7 @@ export default function Home() {
     const backBtn = window.Telegram?.WebApp?.BackButton;
     if (!backBtn) return;
 
-    const anyOpen = showAddModal || !!selectedSubId || !!editingSubId || showSearch || showNotifications;
+    const anyOpen = showAddModal || !!selectedSubId || !!editingSubId || showSearch || showNotifications || showProModal;
 
     if (anyOpen) {
       backBtn.show();
@@ -100,13 +102,14 @@ export default function Home() {
         if (showAddModal)       { setShowAddModal(false); return; }
         if (showSearch)         { setShowSearch(false); return; }
         if (showNotifications)  { setShowNotifications(false); return; }
+        if (showProModal)       { setShowProModal(false); return; }
       };
       backBtn.onClick(handleBack);
       return () => { backBtn.offClick(handleBack); };
     } else {
       backBtn.hide();
     }
-  }, [isTelegram, showAddModal, selectedSubId, editingSubId, showSearch, showNotifications]);
+  }, [isTelegram, showAddModal, selectedSubId, editingSubId, showSearch, showNotifications, showProModal]);
 
   // Track scroll position for header collapse
   useEffect(() => {
@@ -234,6 +237,7 @@ export default function Home() {
     <div className="app-container fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
       <Header
         title={t(TAB_TITLE_KEYS[activeTab])}
+        titleBadge={activeTab === 'home' ? <ProBadge onOpen={() => setShowProModal(true)} /> : undefined}
         collapsed={headerCollapsed}
         onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
         onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
@@ -295,6 +299,7 @@ export default function Home() {
                 rateLastUpdated={rateLastUpdated}
                 rateIsLoading={rateIsLoading}
                 onRefreshRate={refreshRate}
+                onOpenPro={() => setShowProModal(true)}
               />
             )}
           </motion.div>
@@ -402,6 +407,9 @@ export default function Home() {
           />
         )}
       </Modal>
+
+      {/* PRO Modal */}
+      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} />
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />

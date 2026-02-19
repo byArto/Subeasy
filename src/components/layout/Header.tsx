@@ -7,6 +7,7 @@ import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 interface HeaderProps {
   title: string;
+  titleBadge?: React.ReactNode;
   collapsed?: boolean;
   onSearchTap?: () => void;
   onNotificationTap?: () => void;
@@ -17,6 +18,7 @@ interface HeaderProps {
 
 export function Header({
   title,
+  titleBadge,
   collapsed = false,
   onSearchTap,
   onNotificationTap,
@@ -48,18 +50,23 @@ export function Header({
       />
 
       <div className="relative flex items-end justify-between px-5">
-        {/* Title */}
-        <motion.h1
-          animate={{
-            fontSize: collapsed ? '18px' : '30px',
-            paddingTop: collapsed ? '12px' : '16px',
-            paddingBottom: collapsed ? '12px' : '4px',
-          }}
-          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-          className="font-display font-extrabold text-text-primary leading-tight tracking-tight"
-        >
-          {title}
-        </motion.h1>
+        {/* Title + optional badge */}
+        <div className="flex items-end gap-2.5">
+          <motion.h1
+            animate={{
+              fontSize: collapsed ? '18px' : '30px',
+              paddingTop: collapsed ? '12px' : '16px',
+              paddingBottom: collapsed ? '12px' : '4px',
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            className="font-display font-extrabold text-text-primary leading-tight tracking-tight"
+          >
+            {title}
+          </motion.h1>
+          {titleBadge && (
+            <div className="pb-3">{titleBadge}</div>
+          )}
+        </div>
 
         {/* Action icons */}
         <div className="flex items-center gap-1 pb-2.5">

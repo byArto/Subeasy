@@ -25,6 +25,7 @@ interface SettingsPageProps {
   rateLastUpdated: string | null;
   rateIsLoading: boolean;
   onRefreshRate: () => Promise<number>;
+  onOpenPro: () => void;
 }
 
 /* ── Stagger ── */
@@ -57,6 +58,7 @@ export function SettingsPage({
   rateLastUpdated,
   rateIsLoading,
   onRefreshRate,
+  onOpenPro,
 }: SettingsPageProps) {
   const { user, signOut, setSkipAuth } = useAuth();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
@@ -172,6 +174,33 @@ export function SettingsPage({
 
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
+
+      {/* ── PRO Plan Banner ── */}
+      <div
+        onClick={onOpenPro}
+        style={{
+          background: 'rgba(245,200,66,0.06)',
+          border: '1px solid rgba(245,200,66,0.2)',
+          borderRadius: 14,
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 16,
+          cursor: 'pointer',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#39ff84', letterSpacing: '0.08em' }}>FREE</span>
+          <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', display: 'inline-block' }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+            {lang === 'ru' ? 'Текущий план' : 'Current plan'}
+          </span>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
+          👑 {lang === 'ru' ? 'PRO скоро →' : 'PRO soon →'}
+        </span>
+      </div>
 
       {/* ── 0. Язык / Language ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">

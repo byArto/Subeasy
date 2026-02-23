@@ -117,6 +117,7 @@ const dict: Translations = {
   'dashboard.soonPayment': { ru: 'скоро оплата', en: 'due soon' },
   'dashboard.allGood': { ru: 'Всё под контролем', en: 'All under control' },
   'dashboard.upcoming': { ru: 'Ближайшие платежи', en: 'Upcoming payments' },
+  'dashboard.showMore': { ru: 'Ещё {{count}}', en: '{{count}} more' },
   'dashboard.overdue': { ru: 'Просрочено', en: 'Overdue' },
   'dashboard.today': { ru: 'Сегодня', en: 'Today' },
   'dashboard.tomorrow': { ru: 'Завтра', en: 'Tomorrow' },
@@ -423,6 +424,23 @@ const dict: Translations = {
   'settings.about.title': { ru: 'О приложении', en: 'About' },
   'settings.about.version': { ru: 'Версия', en: 'Version' },
   'settings.about.description': { ru: 'Твой личный трекер подписок', en: 'Your personal subscription tracker' },
+
+  // ── Share card ──
+  'share.title': { ru: 'Поделиться', en: 'Share' },
+  'share.save': { ru: 'Сохранить', en: 'Save image' },
+  'share.generating': { ru: 'Создаём карточку...', en: 'Generating...' },
+  'share.subsCount': { ru: 'подписок', en: 'subscriptions' },
+  'share.perMonth': { ru: 'в месяц', en: 'per month' },
+  'share.perYear': { ru: 'в год', en: 'per year' },
+  'share.cta': { ru: 'Считай подписки в SubEasy', en: 'Track subscriptions in SubEasy' },
+
+  // ── Badges ──
+  'badge.ordinary': { ru: 'Обычный чел', en: 'Regular User' },
+  'badge.monk': { ru: 'Цифровой монах', en: 'Digital Monk' },
+  'badge.maniac': { ru: 'Подписочный маньяк', en: 'Subscription Addict' },
+  'badge.king': { ru: 'Король сервисов', en: 'Service King' },
+  'badge.whale': { ru: 'Кит подписок', en: 'Subscription Whale' },
+  'badge.legend': { ru: 'Легенда', en: 'Legend' },
 };
 
 /** Translate a key with optional variable interpolation.

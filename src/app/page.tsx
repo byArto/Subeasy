@@ -28,6 +28,7 @@ import { NotificationPanel, generateNotifications } from '@/components/notificat
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
 import { ProBadge, ProModal } from '@/components/pro';
+import { ShareModal } from '@/components/share/ShareModal';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -447,7 +448,9 @@ function HomeTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [hidePaused, setHidePaused] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
+  const { lang } = useLanguage();
   const { displayCurrency, exchangeRate } = settings;
   const totalMonthly = useMemo(
     () => getTotalMonthly(displayCurrency, exchangeRate),
@@ -507,6 +510,7 @@ function HomeTab({
           activeCount={active.length}
           upcomingSoonCount={upcoming.length}
           currency={displayCurrency}
+          onShare={() => setShowShareModal(true)}
         />
       )}
 
@@ -550,6 +554,18 @@ function HomeTab({
         mostExpensiveId={mostExpensiveId}
         longestId={longestId}
         notifyDaysBefore={settings.notifyDaysBefore}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        totalMonthly={totalMonthly}
+        totalYearly={totalYearly}
+        activeCount={active.length}
+        currency={displayCurrency}
+        subscriptions={active}
+        lang={lang}
       />
     </div>
   );

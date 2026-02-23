@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { ShareIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { DisplayCurrency } from '@/lib/types';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
@@ -13,6 +14,7 @@ interface SummaryCardsProps {
   activeCount: number;
   upcomingSoonCount: number;
   currency: DisplayCurrency;
+  onShare?: () => void;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function SummaryCards({
   activeCount,
   upcomingSoonCount,
   currency,
+  onShare,
   className,
 }: SummaryCardsProps) {
   const { t } = useLanguage();
@@ -62,6 +65,16 @@ export function SummaryCards({
             ? `${Math.round(totalMonthly).toLocaleString('ru-RU')} ${symbol}${t('cycle.monthly')}`
             : `${Math.round(totalYearly).toLocaleString('ru-RU')} ${symbol}${t('cycle.yearly')}`}
         </p>
+
+        {/* Share icon */}
+        {onShare && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onShare(); }}
+            className="absolute bottom-2 right-2 p-1.5 text-neon/40 active:text-neon transition-colors rounded-lg active:bg-neon/10"
+          >
+            <ShareIcon className="w-3.5 h-3.5" />
+          </button>
+        )}
       </motion.button>
 
       {/* Right — Active count */}

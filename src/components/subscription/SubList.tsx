@@ -1,26 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Subscription } from '@/lib/types';
 import { SubCard } from './SubCard';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { FunnelIcon } from '@heroicons/react/24/outline';
 import { getLogoUrl } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
-
-/* ── Sort types ── */
-
-type SortOption = 'date' | 'price-desc' | 'price-asc' | 'name' | 'added';
-
-const SORT_OPTION_KEYS: { value: SortOption; labelKey: string }[] = [
-  { value: 'date', labelKey: 'list.sort.date' },
-  { value: 'price-desc', labelKey: 'list.sort.priceDesc' },
-  { value: 'price-asc', labelKey: 'list.sort.priceAsc' },
-  { value: 'name', labelKey: 'list.sort.name' },
-  { value: 'added', labelKey: 'list.sort.added' },
-];
+import { SortOption } from '@/components/dashboard/CategoryFilter';
 
 function sortSubscriptions(subs: Subscription[], sort: SortOption): Subscription[] {
   const sorted = [...subs];
@@ -45,6 +33,9 @@ function sortSubscriptions(subs: Subscription[], sort: SortOption): Subscription
 interface SubListProps {
   subscriptions: Subscription[];
   activeCategory: string | null;
+  searchQuery?: string;
+  sortBy?: SortOption;
+  hidePaused?: boolean;
   onSubTap?: (sub: Subscription) => void;
   onMarkPaid?: (sub: Subscription) => void;
   onDelete?: (sub: Subscription) => void;
@@ -58,6 +49,9 @@ interface SubListProps {
 export function SubList({
   subscriptions,
   activeCategory,
+  searchQuery = '',
+  sortBy = 'date',
+  hidePaused = false,
   onSubTap,
   onMarkPaid,
   onDelete,
@@ -68,9 +62,6 @@ export function SubList({
   className,
 }: SubListProps) {
   const { t } = useLanguage();
-  const [sortBy, setSortBy] = useState<SortOption>('date');
-  const [showSort, setShowSort] = useState(false);
-  const [hidePaused, setHidePaused] = useState(false);
 
   const filtered = useMemo(() => {
     let result = activeCategory
@@ -79,13 +70,12 @@ export function SubList({
     if (hidePaused) {
       result = result.filter((s) => s.isActive);
     }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((s) => s.name.toLowerCase().includes(q));
+    }
     return result;
-  }, [subscriptions, activeCategory, hidePaused]);
-
-  const pausedCount = useMemo(
-    () => subscriptions.filter((s) => !s.isActive).length,
-    [subscriptions]
-  );
+  }, [subscriptions, activeCategory, hidePaused, searchQuery]);
 
   const sorted = useMemo(() => sortSubscriptions(filtered, sortBy), [filtered, sortBy]);
 
@@ -110,79 +100,16 @@ export function SubList({
     );
   }
 
-  const currentSortLabel = SORT_OPTION_KEYS.find((o) => o.value === sortBy);
-
   return (
     <div className={cn('space-y-2.5', className)}>
-      {/* Section header with sort */}
+      {/* Section header */}
       <div className="flex items-center gap-3">
         <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
           {t('list.title')}
         </h3>
         <div className="flex-1 h-px bg-border-subtle" />
-        <span className="text-xs text-text-muted mr-1">{sorted.length}</span>
-        {pausedCount > 0 && (
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setHidePaused((p) => !p)}
-            className={cn(
-              'text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
-              hidePaused
-                ? 'text-neon bg-neon/10'
-                : 'text-text-muted active:text-text-secondary'
-            )}
-          >
-            {hidePaused ? t('list.showPaused', { count: pausedCount }) : t('list.hidePaused')}
-          </motion.button>
-        )}
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={() => setShowSort((p) => !p)}
-          className={cn(
-            'flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
-            showSort
-              ? 'text-neon bg-neon/10'
-              : 'text-text-muted active:text-text-secondary'
-          )}
-        >
-          <FunnelIcon className="w-3.5 h-3.5" />
-          {currentSortLabel ? t(currentSortLabel.labelKey) : t('list.sort.label')}
-        </motion.button>
+        <span className="text-xs text-text-muted">{sorted.length}</span>
       </div>
-
-      {/* Sort pills */}
-      <AnimatePresence>
-        {showSort && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="overflow-hidden"
-          >
-            <div className="flex flex-wrap gap-1.5 pb-1">
-              {SORT_OPTION_KEYS.map((opt) => (
-                <motion.button
-                  key={opt.value}
-                  whileTap={{ scale: 0.93 }}
-                  onClick={() => {
-                    setSortBy(opt.value);
-                    setShowSort(false);
-                  }}
-                  className={cn(
-                    'min-h-[32px] px-3 rounded-full text-[11px] font-semibold transition-colors',
-                    sortBy === opt.value
-                      ? 'bg-neon text-surface'
-                      : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
-                  )}
-                >
-                  {t(opt.labelKey)}
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Cards */}
       <AnimatePresence mode="popLayout">
@@ -218,15 +145,15 @@ const QUICK_START_SERVICES = [
   { name: 'iCloud', emoji: '☁️', color: '#3395FF', domain: 'icloud.com' },
 ];
 
-function ServiceIcon({ domain, emoji, name }: { domain: string; emoji: string; name: string }) {
+function ServiceIcon({ domain, emoji, name, size = 20 }: { domain: string; emoji: string; name: string; size?: number }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return <span className="text-xs">{emoji}</span>;
+  if (failed) return <span style={{ fontSize: size * 0.6 }}>{emoji}</span>;
   return (
     <img
-      src={getLogoUrl(domain, 64)}
+      src={getLogoUrl(domain, size >= 40 ? 128 : 64)}
       alt={name}
-      width={20}
-      height={20}
+      width={size}
+      height={size}
       loading="lazy"
       onError={() => setFailed(true)}
       className="rounded-sm object-contain"
@@ -236,6 +163,13 @@ function ServiceIcon({ domain, emoji, name }: { domain: string; emoji: string; n
 
 function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
   const { t } = useLanguage();
+  const [carouselIdx, setCarouselIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setCarouselIdx((i) => (i + 1) % QUICK_START_SERVICES.length), 1500);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -243,31 +177,44 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="flex flex-col items-center pt-10 pb-8 gap-5 px-2"
     >
-      {/* Icon with glow */}
+      {/* Logo carousel */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 30 }}
         className="relative"
       >
-        <div className="w-20 h-20 rounded-2xl bg-surface-2 border border-border-subtle flex items-center justify-center">
-          <span className="text-4xl">💎</span>
+        <div className="w-20 h-20 rounded-2xl bg-surface-2 border border-border-subtle overflow-hidden flex items-center justify-center">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={carouselIdx}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.35 }}
+              className="flex items-center justify-center w-full h-full"
+            >
+              <ServiceIcon
+                domain={QUICK_START_SERVICES[carouselIdx].domain}
+                emoji={QUICK_START_SERVICES[carouselIdx].emoji}
+                name={QUICK_START_SERVICES[carouselIdx].name}
+                size={48}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
         <div className="absolute -inset-4 rounded-[28px] bg-neon/5 blur-xl -z-10" />
       </motion.div>
 
-      {/* Title + description */}
+      {/* Title only (no subtitle) */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 30 }}
-        className="text-center space-y-2"
+        className="text-center"
       >
         <p className="font-display font-bold text-lg text-text-primary">
           {t('empty.title')}
-        </p>
-        <p className="text-text-muted text-sm max-w-[260px] leading-relaxed">
-          {t('empty.subtitle')}
         </p>
       </motion.div>
 

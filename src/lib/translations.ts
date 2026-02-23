@@ -122,6 +122,10 @@ const dict: Translations = {
   'dashboard.tomorrow': { ru: 'Завтра', en: 'Tomorrow' },
   'dashboard.inDays': { ru: 'Через {{days}} дн.', en: 'In {{days}} d.' },
   'dashboard.filterAll': { ru: 'Все', en: 'All' },
+  'dashboard.searchFilter': { ru: 'Поиск и фильтры', en: 'Search & filters' },
+  'dashboard.searchPlaceholder': { ru: 'Поиск подписок...', en: 'Search subscriptions...' },
+  'dashboard.categories': { ru: 'Категории', en: 'Categories' },
+  'dashboard.sorting': { ru: 'Сортировка', en: 'Sort by' },
 
   // ── SubDetail ──
   'detail.cost': { ru: 'Стоимость', en: 'Cost' },
@@ -145,7 +149,8 @@ const dict: Translations = {
   'detail.edit': { ru: 'Редактировать', en: 'Edit' },
   'detail.pause': { ru: 'Приостановить', en: 'Pause' },
   'detail.resume': { ru: 'Возобновить', en: 'Resume' },
-  'detail.delete': { ru: 'Удалить', en: 'Delete' },
+  'detail.delete': { ru: 'Удалить (удерживайте)', en: 'Delete (hold)' },
+  'detail.holdToDelete': { ru: 'Удерживайте...', en: 'Hold to delete...' },
   'detail.cancel': { ru: 'Отмена', en: 'Cancel' },
   'detail.confirmDelete': { ru: 'Да, удалить', en: 'Yes, delete' },
   'detail.expired': { ru: 'истёк', en: 'expired' },
@@ -181,6 +186,7 @@ const dict: Translations = {
   'form.cryptoWallet': { ru: 'Кошелёк / сеть (Bitcoin, USDT TRC-20...)', en: 'Wallet / network (Bitcoin, USDT TRC-20...)' },
   'form.sbpBank': { ru: 'Банк или номер телефона', en: 'Bank or phone number' },
   'form.paymentMethodOther': { ru: 'Способ оплаты...', en: 'Payment method...' },
+  'form.extra': { ru: 'Дополнительно', en: 'Additional' },
   'form.cardColor': { ru: 'Цвет карточки', en: 'Card color' },
   'form.notes': { ru: 'Заметки', en: 'Notes' },
   'form.notesPlaceholder': { ru: 'Промокод, семейная подписка, условия...', en: 'Promo code, family plan, conditions...' },

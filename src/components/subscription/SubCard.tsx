@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { Subscription, BillingCycle } from '@/lib/types';
@@ -88,6 +88,8 @@ export function SubCard({
   const dragX = useMotionValue(0);
   const revealedRef = useRef(false);
   const isDraggingRef = useRef(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fade delete button in as card is swiped — fully hidden at rest (x=0)
   const deleteOpacity = useTransform(dragX, [-30, 0], [1, 0]);
@@ -118,11 +120,29 @@ export function SubCard({
     }
   }
 
-  function handleDelete(e: React.MouseEvent) {
+  function handleHoldStart(e: React.PointerEvent) {
     e.stopPropagation();
-    haptic.error();
-    snapTo(0);
-    setTimeout(() => onDelete?.(sub), 150);
+    let progress = 0;
+    holdTimerRef.current = setInterval(() => {
+      progress += 4;
+      setHoldProgress(progress);
+      if (progress >= 100) {
+        clearInterval(holdTimerRef.current!);
+        holdTimerRef.current = null;
+        setHoldProgress(0);
+        haptic.error();
+        snapTo(0);
+        setTimeout(() => onDelete?.(sub), 150);
+      }
+    }, 100);
+  }
+
+  function handleHoldEnd() {
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setHoldProgress(0);
   }
 
   const cardRadius = isOverdue ? 'rounded-t-2xl' : 'rounded-2xl';
@@ -146,12 +166,22 @@ export function SubCard({
         {/* Delete action — hidden at rest, revealed on swipe */}
         {onDelete && (
           <motion.button
-            onClick={handleDelete}
             style={{ opacity: deleteOpacity }}
-            className="absolute right-0 top-0 bottom-0 w-[80px] flex flex-col items-center justify-center gap-1 bg-danger active:bg-danger/80"
+            onPointerDown={handleHoldStart}
+            onPointerUp={handleHoldEnd}
+            onPointerLeave={handleHoldEnd}
+            onPointerCancel={handleHoldEnd}
+            className="absolute right-0 top-0 bottom-0 w-[80px] flex flex-col items-center justify-center gap-1 bg-danger overflow-hidden select-none touch-none"
           >
-            <TrashIcon className="w-5 h-5 text-white" />
-            <span className="text-white text-[10px] font-semibold">{t('list.delete')}</span>
+            {/* Hold progress fill from bottom */}
+            <div
+              className="absolute inset-0 bg-red-800"
+              style={{ transform: `scaleY(${holdProgress / 100})`, transformOrigin: 'bottom', transition: 'none' }}
+            />
+            <TrashIcon className="relative w-5 h-5 text-white z-10" />
+            <span className="relative text-white text-[10px] font-semibold z-10">
+              {holdProgress > 0 ? `${Math.round(holdProgress)}%` : t('list.delete')}
+            </span>
           </motion.button>
         )}
 

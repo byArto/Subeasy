@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { cn, getDaysUntilPayment, convertCurrency, sanitizeUrl } from '@/lib/utils';
@@ -218,7 +218,31 @@ export function SubDetail({
     convertCurrency(sub.price, sub.currency, altCurrency, settings.exchangeRate)
   );
 
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [holdProgress, setHoldProgress] = useState(0);
+  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const handleHoldStart = useCallback(() => {
+    let progress = 0;
+    holdTimerRef.current = setInterval(() => {
+      progress += 4;
+      setHoldProgress(progress);
+      if (progress >= 100) {
+        clearInterval(holdTimerRef.current!);
+        holdTimerRef.current = null;
+        setHoldProgress(0);
+        haptic.error();
+        onDelete();
+      }
+    }, 100);
+  }, [onDelete]);
+
+  const handleHoldEnd = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    setHoldProgress(0);
+  }, []);
 
   const isTrial = sub.cycle === 'trial';
   const costPerDay = getCostPerDay(sub);
@@ -449,20 +473,26 @@ export function SubDetail({
         </motion.div>
 
         <motion.div custom={onMarkPaid && days < 0 ? 3 : 2} variants={btnVariants} initial="hidden" animate="visible">
-          {!confirmDelete ? (
-            <Button fullWidth variant="ghost" size="md" onClick={() => { haptic.warning(); setConfirmDelete(true); }}>
-              <span className="text-danger">{t('detail.delete')}</span>
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button fullWidth variant="secondary" size="md" onClick={() => setConfirmDelete(false)}>
-                {t('detail.cancel')}
-              </Button>
-              <Button fullWidth variant="danger" size="md" onClick={() => { haptic.error(); onDelete(); }}>
-                {t('detail.confirmDelete')}
-              </Button>
-            </div>
-          )}
+          <div className="relative overflow-hidden rounded-xl">
+            {/* Hold progress fill */}
+            <div
+              className="absolute inset-0 bg-danger rounded-xl pointer-events-none"
+              style={{ transform: `scaleX(${holdProgress / 100})`, transformOrigin: 'left', transition: 'none' }}
+            />
+            <button
+              className={cn(
+                'relative z-10 w-full min-h-[44px] flex items-center justify-center rounded-xl',
+                'border border-danger/30 text-sm font-semibold select-none transition-colors',
+                holdProgress > 0 ? 'text-white' : 'text-danger'
+              )}
+              onPointerDown={handleHoldStart}
+              onPointerUp={handleHoldEnd}
+              onPointerLeave={handleHoldEnd}
+              onPointerCancel={handleHoldEnd}
+            >
+              {holdProgress > 0 ? t('detail.holdToDelete') : t('detail.delete')}
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>

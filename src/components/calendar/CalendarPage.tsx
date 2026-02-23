@@ -437,6 +437,9 @@ function CalendarGrid({
           const dayNum = day.getDate();
           const daySubs = inMonth ? (payments.get(dayNum) || []) : [];
           const hasSubs = daySubs.length > 0;
+          const dayDate = new Date(year, month, dayNum);
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const isDayPast = dayDate < today;
 
           return (
             <motion.button
@@ -463,32 +466,28 @@ function CalendarGrid({
                 {dayNum}
               </span>
 
-              {/* Payment dots */}
+              {/* Payment indicators */}
               {hasSubs && inMonth && (
-                <div className="flex gap-0.5 mt-0.5 h-1.5">
-                  {daySubs.length <= 3 ? (
-                    daySubs.map((s, i) => (
-                      <span
-                        key={i}
-                        className="w-1.5 h-1.5 rounded-full"
-                        style={{ backgroundColor: getUrgencyColor(new Date(year, month, dayNum)) }}
-                      />
-                    ))
-                  ) : (
-                    <>
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          className="w-1.5 h-1.5 rounded-full"
-                          style={{ backgroundColor: getUrgencyColor(new Date(year, month, dayNum)) }}
-                        />
-                      ))}
+                isDayPast ? (
+                  /* Past: white dots */
+                  <div className="flex gap-0.5 mt-0.5 h-1.5">
+                    {daySubs.slice(0, 3).map((_, i) => (
+                      <span key={i} className="w-1.5 h-1.5 rounded-full bg-white/40" />
+                    ))}
+                  </div>
+                ) : (
+                  /* Future: service icons */
+                  <div className="flex gap-0.5 mt-0.5 items-center">
+                    {daySubs.slice(0, 3).map((s, i) => (
+                      <ServiceLogo key={i} name={s.name} emoji={s.icon} size={11} className="rounded-sm flex-shrink-0" />
+                    ))}
+                    {daySubs.length > 3 && (
                       <span className="text-[7px] text-text-muted leading-none ml-0.5">
                         +{daySubs.length - 3}
                       </span>
-                    </>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )
               )}
             </motion.button>
           );

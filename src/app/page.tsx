@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { TabBar, TabId } from '@/components/layout/TabBar';
 import { Modal } from '@/components/ui';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
-import { CategoryFilter } from '@/components/dashboard/CategoryFilter';
+import { CategoryFilter, SortOption } from '@/components/dashboard/CategoryFilter';
 import { UpcomingPayments } from '@/components/dashboard/UpcomingPayments';
 import { SubList } from '@/components/subscription/SubList';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -246,13 +246,13 @@ export default function Home() {
       />
 
       <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, x: tabDirection * 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: tabDirection * -40 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
             className="pb-4"
           >
             {activeTab === 'home' && (
@@ -444,6 +444,9 @@ function HomeTab({
   onDeleteSub: (sub: Subscription) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [hidePaused, setHidePaused] = useState(false);
 
   const { displayCurrency, exchangeRate } = settings;
   const totalMonthly = useMemo(
@@ -516,13 +519,20 @@ function HomeTab({
         />
       )}
 
-      {/* Category filter */}
+      {/* Search + Category + Sort filter */}
       {hasSubscriptions && (
         <CategoryFilter
           categories={categories}
           subscriptions={subscriptions}
           activeCategory={activeCategory}
           onSelect={setActiveCategory}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          hidePaused={hidePaused}
+          onHidePausedChange={setHidePaused}
+          pausedCount={subscriptions.filter((s) => !s.isActive).length}
         />
       )}
 
@@ -530,6 +540,9 @@ function HomeTab({
       <SubList
         subscriptions={subscriptions}
         activeCategory={activeCategory}
+        searchQuery={searchQuery}
+        sortBy={sortBy}
+        hidePaused={hidePaused}
         onSubTap={onSubTap}
         onMarkPaid={onMarkPaid}
         onDelete={onDeleteSub}

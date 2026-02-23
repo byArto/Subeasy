@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
 import { cn, sanitizeUrl } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
@@ -152,6 +153,7 @@ export function SubForm({
   const [newCatEmoji, setNewCatEmoji] = useState('📦');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [suggestions, setSuggestions] = useState<ServiceTemplate[]>([]);
+  const [showExtra, setShowExtra] = useState(mode === 'edit');
 
   /* ── Service autocomplete ── */
 
@@ -194,6 +196,7 @@ export function SubForm({
     if (Object.keys(e).length > 0) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
+      if (e.category) setShowExtra(true);
       return false;
     }
 
@@ -437,107 +440,25 @@ export function SubForm({
         </div>
       </motion.div>
 
-      {/* ── Category ── */}
+      {/* ── Start Date ── */}
       <motion.div
         custom={fieldIndex++}
         variants={fieldVariants}
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={t('form.category')} error={errors.category} />
-        <div className="flex flex-wrap gap-1.5">
-          {categories.map((cat) => (
-            <motion.button
-              key={cat.id}
-              type="button"
-              whileTap={{ scale: 0.93 }}
-              onClick={() => setCategory(cat.id)}
-              className={cn(
-                'flex items-center gap-1.5 min-h-[36px] px-3 rounded-full text-xs font-semibold transition-colors',
-                category === cat.id
-                  ? 'bg-neon text-surface'
-                  : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
-              )}
-            >
-              <span className="text-sm">{cat.emoji}</span>
-              {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
-            </motion.button>
-          ))}
-
-          {/* "+ New" pill */}
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.93 }}
-            onClick={() => setShowNewCategory((p) => !p)}
-            className={cn(
-              'flex items-center gap-1 min-h-[36px] px-3 rounded-full text-xs font-semibold',
-              'border border-dashed transition-colors',
-              showNewCategory
-                ? 'border-neon/40 text-neon bg-neon/5'
-                : 'border-border-subtle text-text-muted active:bg-surface-4'
-            )}
-          >
-            <span className="text-sm">+</span>
-            {t('form.newCategory')}
-          </motion.button>
-        </div>
-
-        {/* Inline new category form */}
-        <AnimatePresence>
-          {showNewCategory && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="overflow-hidden"
-            >
-              <div className="flex gap-2 mt-2.5">
-                {/* Emoji selector for new category */}
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => {
-                    const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟'];
-                    const idx = emojis.indexOf(newCatEmoji);
-                    setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
-                  }}
-                  className="w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center text-xl"
-                >
-                  {newCatEmoji}
-                </motion.button>
-
-                <input
-                  type="text"
-                  value={newCatName}
-                  onChange={(e) => setNewCatName(e.target.value)}
-                  placeholder={t('form.categoryNamePlaceholder')}
-                  className={cn(
-                    'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
-                    'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                    'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
-                  )}
-                />
-
-                <motion.button
-                  type="button"
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleAddCategory}
-                  disabled={!newCatName.trim()}
-                  className={cn(
-                    'w-[48px] h-[48px] shrink-0 rounded-xl flex items-center justify-center text-lg',
-                    'transition-colors',
-                    newCatName.trim()
-                      ? 'bg-neon text-surface'
-                      : 'bg-surface-3 text-text-muted'
-                  )}
-                >
-                  ✓
-                </motion.button>
-              </div>
-            </motion.div>
+        <FieldLabel text={t('form.startDate')} />
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className={cn(
+            'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+            'outline-none transition-all duration-200',
+            '[color-scheme:dark]',
+            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
           )}
-        </AnimatePresence>
+        />
       </motion.div>
 
       {/* ── Next Payment Date ── */}
@@ -559,27 +480,6 @@ export function SubForm({
             errors.nextPaymentDate
               ? 'border-danger/40'
               : 'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
-          )}
-        />
-      </motion.div>
-
-      {/* ── Start Date ── */}
-      <motion.div
-        custom={fieldIndex++}
-        variants={fieldVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <FieldLabel text={t('form.startDate')} />
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className={cn(
-            'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
-            'outline-none transition-all duration-200',
-            '[color-scheme:dark]',
-            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
           )}
         />
       </motion.div>
@@ -768,51 +668,170 @@ export function SubForm({
         </AnimatePresence>
       </motion.div>
 
-      {/* ── Color ── */}
+      {/* ── Дополнительно (Category + Color + Notes) ── */}
       <motion.div
         custom={fieldIndex++}
         variants={fieldVariants}
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={t('form.cardColor')} />
-        <div className="flex flex-wrap gap-2">
-          {COLOR_PALETTE.map((c) => (
-            <motion.button
-              key={c}
-              type="button"
-              whileTap={{ scale: 0.85 }}
-              onClick={() => setColor(c)}
-              className={cn(
-                'w-8 h-8 rounded-full transition-all',
-                color === c && 'ring-2 ring-offset-2 ring-offset-surface ring-neon scale-110'
-              )}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-      </motion.div>
-
-      {/* ── Notes ── */}
-      <motion.div
-        custom={fieldIndex++}
-        variants={fieldVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <FieldLabel text={t('form.notes')} />
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder={t('form.notesPlaceholder')}
-          rows={3}
+        <button
+          type="button"
+          onClick={() => setShowExtra((p) => !p)}
           className={cn(
-            'w-full px-3.5 py-3 rounded-xl bg-surface-2 border border-border-subtle',
-            'text-sm text-text-primary outline-none resize-none',
-            'placeholder:text-text-muted/50 transition-all duration-200',
-            'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+            'w-full flex items-center justify-between min-h-[48px] px-3.5 rounded-xl',
+            'bg-surface-2 border border-border-subtle text-sm font-semibold text-text-secondary',
+            'active:bg-surface-3 transition-colors',
+            errors.category && 'border-danger/40'
           )}
-        />
+        >
+          <span className={errors.category ? 'text-danger' : ''}>
+            {t('form.extra')}
+            {errors.category && <span className="ml-2 text-xs font-normal">{errors.category}</span>}
+          </span>
+          <ChevronDownIcon
+            className={cn('w-4 h-4 transition-transform duration-200', showExtra && 'rotate-180')}
+          />
+        </button>
+
+        <AnimatePresence>
+          {showExtra && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-5 pt-4">
+                {/* Category */}
+                <div>
+                  <FieldLabel text={t('form.category')} error={errors.category} />
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.map((cat) => (
+                      <motion.button
+                        key={cat.id}
+                        type="button"
+                        whileTap={{ scale: 0.93 }}
+                        onClick={() => setCategory(cat.id)}
+                        className={cn(
+                          'flex items-center gap-1.5 min-h-[36px] px-3 rounded-full text-xs font-semibold transition-colors',
+                          category === cat.id
+                            ? 'bg-neon text-surface'
+                            : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
+                        )}
+                      >
+                        <span className="text-sm">{cat.emoji}</span>
+                        {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
+                      </motion.button>
+                    ))}
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.93 }}
+                      onClick={() => setShowNewCategory((p) => !p)}
+                      className={cn(
+                        'flex items-center gap-1 min-h-[36px] px-3 rounded-full text-xs font-semibold',
+                        'border border-dashed transition-colors',
+                        showNewCategory
+                          ? 'border-neon/40 text-neon bg-neon/5'
+                          : 'border-border-subtle text-text-muted active:bg-surface-4'
+                      )}
+                    >
+                      <span className="text-sm">+</span>
+                      {t('form.newCategory')}
+                    </motion.button>
+                  </div>
+                  <AnimatePresence>
+                    {showNewCategory && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex gap-2 mt-2.5">
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟'];
+                              const idx = emojis.indexOf(newCatEmoji);
+                              setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
+                            }}
+                            className="w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center text-xl"
+                          >
+                            {newCatEmoji}
+                          </motion.button>
+                          <input
+                            type="text"
+                            value={newCatName}
+                            onChange={(e) => setNewCatName(e.target.value)}
+                            placeholder={t('form.categoryNamePlaceholder')}
+                            className={cn(
+                              'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
+                              'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
+                              'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                            )}
+                          />
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleAddCategory}
+                            disabled={!newCatName.trim()}
+                            className={cn(
+                              'w-[48px] h-[48px] shrink-0 rounded-xl flex items-center justify-center text-lg transition-colors',
+                              newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
+                            )}
+                          >
+                            ✓
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Color */}
+                <div>
+                  <FieldLabel text={t('form.cardColor')} />
+                  <div className="flex flex-wrap gap-2">
+                    {COLOR_PALETTE.map((c) => (
+                      <motion.button
+                        key={c}
+                        type="button"
+                        whileTap={{ scale: 0.85 }}
+                        onClick={() => setColor(c)}
+                        className={cn(
+                          'w-8 h-8 rounded-full transition-all',
+                          color === c && 'ring-2 ring-offset-2 ring-offset-surface ring-neon scale-110'
+                        )}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <FieldLabel text={t('form.notes')} />
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={t('form.notesPlaceholder')}
+                    rows={3}
+                    className={cn(
+                      'w-full px-3.5 py-3 rounded-xl bg-surface-2 border border-border-subtle',
+                      'text-sm text-text-primary outline-none resize-none',
+                      'placeholder:text-text-muted/50 transition-all duration-200',
+                      'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                    )}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* ── Actions ── */}

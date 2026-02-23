@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Modal } from '@/components/ui/Modal';
 import { ShareCard } from './ShareCard';
 import { Subscription, DisplayCurrency } from '@/lib/types';
@@ -34,39 +35,39 @@ export function ShareModal({
   const { t } = useLanguage();
   const captureRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
-  // After save: store data URL to show as long-pressable image
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
+  // Ensure we're client-side before using createPortal
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate };
 
-  async function captureCanvas() {
-    if (!captureRef.current) return null;
-    const html2canvas = (await import('html2canvas')).default;
-    return html2canvas(captureRef.current, {
-      scale: 2,
-      useCORS: false,
-      allowTaint: true,
-      backgroundColor: '#0d0d0d',
-      logging: false,
-    });
+  async function capture(): Promise<string> {
+    if (!captureRef.current) throw new Error('ref not ready');
+    const domToImage = (await import('dom-to-image-more')).default;
+    // Wait one frame to ensure element is fully painted
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    return domToImage.toPng(captureRef.current, { scale: 2 });
   }
 
   async function handleShare() {
     setGenerating(true);
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
-      const blob: Blob = await new Promise(r => canvas.toBlob(b => r(b!), 'image/png'));
+      const dataUrl = await capture();
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
       const file = new File([blob], 'subeasy-stats.png', { type: 'image/png' });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file] });
       } else {
-        // Desktop fallback: download
-        const url = URL.createObjectURL(blob);
+        // Desktop fallback
         const a = document.createElement('a');
-        a.href = url; a.download = 'subeasy-stats.png'; a.click();
-        URL.revokeObjectURL(url);
+        a.href = dataUrl;
+        a.download = 'subeasy-stats.png';
+        a.click();
       }
+    } catch (e) {
+      console.error('Share failed:', e);
     } finally {
       setGenerating(false);
     }
@@ -75,10 +76,10 @@ export function ShareModal({
   async function handleSave() {
     setGenerating(true);
     try {
-      const canvas = await captureCanvas();
-      if (!canvas) return;
-      // Show as image — user long-presses to save natively (works on iOS/Android/Telegram)
-      setSavedImageUrl(canvas.toDataURL('image/png'));
+      const dataUrl = await capture();
+      setSavedImageUrl(dataUrl);
+    } catch (e) {
+      console.error('Save failed:', e);
     } finally {
       setGenerating(false);
     }
@@ -91,24 +92,25 @@ export function ShareModal({
 
   return (
     <>
-      {/* Off-screen capture target — outside modal transform/overflow */}
-      {open && (
-        <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }}>
+      {/* Portal: off-screen capture target at document.body — outside any overflow/transform */}
+      {mounted && open && createPortal(
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none' }}>
           <ShareCard ref={captureRef} {...cardProps} />
-        </div>
+        </div>,
+        document.body
       )}
 
       <Modal open={open} onClose={handleClose} title={t('share.title')} size="full">
         {savedImageUrl ? (
-          /* ── Saved state: show image for long-press save ── */
+          /* Saved state: show image for long-press */
           <div className="flex flex-col items-center gap-4">
             <img
               src={savedImageUrl}
               alt="share card"
-              className="w-full rounded-2xl shadow-lg"
+              className="w-full rounded-2xl"
               style={{ imageRendering: 'auto' }}
             />
-            <p className="text-xs text-text-muted text-center px-4">{t('share.ready')}</p>
+            <p className="text-xs text-text-muted text-center px-2">{t('share.ready')}</p>
             <button
               onClick={() => setSavedImageUrl(null)}
               className="text-xs text-text-muted underline"
@@ -118,14 +120,13 @@ export function ShareModal({
           </div>
         ) : (
           <>
-            {/* Card preview */}
-            <div className="flex justify-center mb-5" style={{ overflow: 'hidden', height: '340px' }}>
-              <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center' }}>
+            {/* Preview — scaled to fit, decorative only */}
+            <div className="flex justify-center mb-5" style={{ overflow: 'hidden' }}>
+              <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center', marginBottom: '-50px' }}>
                 <ShareCard {...cardProps} />
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex flex-col gap-3">
               <button
                 onClick={handleShare}

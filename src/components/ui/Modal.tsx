@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
 type ModalSize = 'compact' | 'full';
@@ -89,12 +90,20 @@ export function Modal({
               className
             )}
           >
-            {/* Handle bar — drag zone */}
-            <div
-              onPointerDown={(e) => dragControls.start(e)}
-              className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
-            >
-              <div className="w-9 h-1 rounded-full bg-text-muted/40" />
+            {/* Handle bar with close button */}
+            <div className="relative flex items-center justify-center pt-3 pb-2">
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="flex-1 flex justify-center cursor-grab active:cursor-grabbing py-1"
+              >
+                <div className="w-9 h-1 rounded-full bg-text-muted/40" />
+              </div>
+              <button
+                onClick={onClose}
+                className="absolute right-3 top-1 p-1.5 rounded-full text-text-muted active:text-text-primary active:bg-surface-3 transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
             </div>
 
             {/* Title */}

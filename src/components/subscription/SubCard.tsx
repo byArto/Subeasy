@@ -89,7 +89,8 @@ export function SubCard({
   const revealedRef = useRef(false);
   const isDraggingRef = useRef(false);
   const [holdProgress, setHoldProgress] = useState(0);
-  const holdTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const holdStartRef = useRef<number>(0);
 
   // Fade delete button in as card is swiped — fully hidden at rest (x=0)
   const deleteOpacity = useTransform(dragX, [-30, 0], [1, 0]);
@@ -122,24 +123,28 @@ export function SubCard({
 
   function handleHoldStart(e: React.PointerEvent) {
     e.stopPropagation();
-    let progress = 0;
-    holdTimerRef.current = setInterval(() => {
-      progress += 4;
+    holdStartRef.current = performance.now();
+    const duration = 2000;
+    function tick() {
+      const elapsed = performance.now() - holdStartRef.current;
+      const progress = Math.min((elapsed / duration) * 100, 100);
       setHoldProgress(progress);
       if (progress >= 100) {
-        clearInterval(holdTimerRef.current!);
         holdTimerRef.current = null;
         setHoldProgress(0);
         haptic.error();
         snapTo(0);
         setTimeout(() => onDelete?.(sub), 150);
+      } else {
+        holdTimerRef.current = requestAnimationFrame(tick);
       }
-    }, 100);
+    }
+    holdTimerRef.current = requestAnimationFrame(tick);
   }
 
   function handleHoldEnd() {
-    if (holdTimerRef.current) {
-      clearInterval(holdTimerRef.current);
+    if (holdTimerRef.current !== null) {
+      cancelAnimationFrame(holdTimerRef.current);
       holdTimerRef.current = null;
     }
     setHoldProgress(0);

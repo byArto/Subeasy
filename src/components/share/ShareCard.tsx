@@ -49,8 +49,7 @@ function buildCategoryBars(
     }));
 }
 
-// Neon shades for bars: brightest → most muted
-const BAR_COLORS = ['#39FF14', '#2ECC10', '#1F8B0A', '#134F06'];
+const BAR_COLORS = ['#39FF14', '#2ECC10', '#1A8C0A', '#0F5206'];
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
   function ShareCard({ totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate }, ref) {
@@ -68,7 +67,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         ref={ref}
         style={{
           width: '360px',
-          background: 'linear-gradient(145deg, #111111, #0d0d0d)',
+          background: 'linear-gradient(160deg, #0e0e16 0%, #0a0a0a 45%, #0c100c 100%)',
           borderRadius: '20px',
           padding: '24px',
           fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
@@ -78,71 +77,105 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           boxSizing: 'border-box',
         }}
       >
-        {/* Neon top border */}
+        {/* Background: bottom-left blue accent glow */}
         <div style={{
-          position: 'absolute', top: 0, left: '10%', right: '10%', height: '2px',
-          background: 'linear-gradient(90deg, transparent, #39FF14, transparent)',
-        }} />
-
-        {/* Corner glow */}
-        <div style={{
-          position: 'absolute', top: '-40px', right: '-40px',
-          width: '120px', height: '120px',
-          background: 'radial-gradient(circle, rgba(57,255,20,0.08), transparent 70%)',
+          position: 'absolute', bottom: '-60px', left: '-60px',
+          width: '220px', height: '220px',
+          background: 'radial-gradient(circle, rgba(60,80,255,0.07), transparent 65%)',
           pointerEvents: 'none',
         }} />
 
+        {/* Background: top-right neon green glow */}
+        <div style={{
+          position: 'absolute', top: '-50px', right: '-50px',
+          width: '200px', height: '200px',
+          background: 'radial-gradient(circle, rgba(57,255,20,0.09), transparent 65%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Subtle grid overlay — horizontal lines */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 28px)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Neon top border */}
+        <div style={{
+          position: 'absolute', top: 0, left: '8%', right: '8%', height: '2px',
+          background: 'linear-gradient(90deg, transparent, #39FF14CC, transparent)',
+        }} />
+
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: '#39FF14', letterSpacing: '0.5px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', position: 'relative' }}>
+          <span style={{ fontSize: '14px', fontWeight: 800, color: '#39FF14', letterSpacing: '1px' }}>
             SubEasy
           </span>
-          <span style={{ fontSize: '11px', color: '#666', fontWeight: 500 }}>
+          <span style={{ fontSize: '11px', color: '#555', fontWeight: 500 }}>
             {monthLabel}
           </span>
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: 'linear-gradient(90deg, #39FF1420, #39FF1440, #39FF1420)', marginBottom: '20px' }} />
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, #39FF1415, #39FF1435, #39FF1415)', marginBottom: '20px' }} />
 
         {/* Main amount */}
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '22px', position: 'relative' }}>
+          <div style={{ fontSize: '13px', color: '#555', fontWeight: 500, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+            {t('share.perMonth')}
+          </div>
           <div style={{
-            fontSize: '48px', fontWeight: 800, color: '#39FF14',
-            lineHeight: 1.1, letterSpacing: '-1px',
-            textShadow: '0 0 20px rgba(57,255,20,0.4)',
+            fontSize: '52px', fontWeight: 800, color: '#39FF14',
+            lineHeight: 1, letterSpacing: '-2px',
+            textShadow: '0 0 30px rgba(57,255,20,0.35)',
           }}>
             {formattedMonthly}
-            <span style={{ fontSize: '24px', fontWeight: 700, marginLeft: '3px' }}>{symbol}</span>
-          </div>
-          <div style={{ fontSize: '13px', color: '#888', marginTop: '4px', fontWeight: 500 }}>
-            {t('share.perMonth')}
+            <span style={{ fontSize: '22px', fontWeight: 700, marginLeft: '4px', letterSpacing: 0 }}>{symbol}</span>
           </div>
         </div>
 
-        {/* Category progress bars */}
+        {/* Category bars */}
         {categories.length > 0 && (
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '12px',
+            padding: '14px',
+            marginBottom: '18px',
+            position: 'relative',
+          }}>
             {categories.map(({ name, amount, pct }, i) => (
-              <div key={name} style={{ marginBottom: i < categories.length - 1 ? '10px' : 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{
-                    fontSize: '11px', color: '#888', fontWeight: 500,
-                    textTransform: 'capitalize',
-                    maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {name}
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#666', fontWeight: 600 }}>
+              <div key={name} style={{ marginBottom: i < categories.length - 1 ? '12px' : 0 }}>
+                {/* Label row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {/* Color dot */}
+                    <div style={{
+                      width: '6px', height: '6px', borderRadius: '50%',
+                      background: BAR_COLORS[i],
+                      boxShadow: `0 0 6px ${BAR_COLORS[i]}80`,
+                      flexShrink: 0,
+                    }} />
+                    <span style={{
+                      fontSize: '11px', color: '#aaa', fontWeight: 600,
+                      textTransform: 'uppercase', letterSpacing: '0.5px',
+                      maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {name}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '12px', color: '#ccc', fontWeight: 700 }}>
                     {Math.round(amount).toLocaleString('ru-RU')} {symbol}
                   </span>
                 </div>
-                <div style={{ height: '5px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                {/* Bar */}
+                <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%',
                     width: `${Math.max(pct, 2)}%`,
-                    background: BAR_COLORS[i] || BAR_COLORS[3],
+                    background: `linear-gradient(90deg, ${BAR_COLORS[i]}, ${BAR_COLORS[i]}99)`,
                     borderRadius: '3px',
+                    boxShadow: `0 0 8px ${BAR_COLORS[i]}50`,
                   }} />
                 </div>
               </div>
@@ -152,21 +185,21 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
 
         {/* Stats row */}
         <div style={{
-          display: 'flex', justifyContent: 'center', gap: '16px',
-          fontSize: '11px', color: '#555', marginBottom: '18px', fontWeight: 500,
+          display: 'flex', justifyContent: 'center', gap: '14px',
+          fontSize: '11px', color: '#444', marginBottom: '16px', fontWeight: 500,
         }}>
           <span>{activeCount} {t('share.subsCount')}</span>
-          <span style={{ color: '#333' }}>•</span>
+          <span style={{ color: '#2a2a2a' }}>•</span>
           <span>{formattedYearly} {symbol} {t('share.perYear')}</span>
         </div>
 
         {/* Badge */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px',
-            background: 'rgba(57,255,20,0.05)',
-            border: '1px solid rgba(57,255,20,0.25)',
+            display: 'inline-flex', alignItems: 'center', gap: '7px',
+            padding: '9px 18px',
+            background: 'rgba(57,255,20,0.06)',
+            border: '1px solid rgba(57,255,20,0.22)',
             borderRadius: '100px',
             fontSize: '13px', fontWeight: 700, color: '#39FF14',
           }}>
@@ -176,11 +209,11 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: '#1a1a1a', marginBottom: '12px' }} />
+        <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)', marginBottom: '12px' }} />
 
         {/* Footer CTA */}
         <div style={{
-          textAlign: 'center', fontSize: '11px', color: '#444', fontWeight: 500,
+          textAlign: 'center', fontSize: '11px', color: '#3a3a3a', fontWeight: 500, letterSpacing: '0.3px',
         }}>
           {t('share.cta')} ↗
         </div>

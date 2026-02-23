@@ -433,6 +433,8 @@ const dict: Translations = {
   'share.perMonth': { ru: 'в месяц', en: 'per month' },
   'share.perYear': { ru: 'в год', en: 'per year' },
   'share.cta': { ru: 'Считай подписки в SubEasy', en: 'Track subscriptions in SubEasy' },
+  'share.longPress': { ru: 'Нажмите и удерживайте изображение для сохранения', en: 'Long press the image to save' },
+  'share.ready': { ru: 'Готово! Удержи фото чтобы сохранить', en: 'Done! Long press to save' },
 
   // ── Badges ──
   'badge.ordinary': { ru: 'Обычный чел', en: 'Regular User' },

@@ -18,7 +18,7 @@ interface ModalProps {
 
 const sizeStyles: Record<ModalSize, string> = {
   compact: 'max-h-[50dvh]',
-  full: 'max-h-[90dvh]',
+  full: 'h-[85dvh]',
 };
 
 export function Modal({

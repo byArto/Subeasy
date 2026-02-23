@@ -101,14 +101,15 @@ export function ShareModal({
         </div>
       ) : (
         <>
-          {/* Preview — compact peek, both buttons must be visible without scrolling */}
-          <div className="flex justify-center mb-3" style={{ overflow: 'hidden', maxHeight: '110px' }}>
-            <div style={{ transform: 'scale(0.75)', transformOrigin: 'top center' }}>
+          {/* Preview — scrollable above sticky buttons */}
+          <div className="flex justify-center mb-4" style={{ overflow: 'hidden', maxHeight: '280px' }}>
+            <div style={{ transform: 'scale(0.82)', transformOrigin: 'top center', marginBottom: '-60px' }}>
               <ShareCard {...cardProps} />
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          {/* Buttons — sticky to bottom of the modal scroll container */}
+          <div className="sticky bottom-0 -mx-5 px-5 pt-3 pb-2 bg-surface-2 border-t border-border-subtle flex flex-col gap-3">
             <button
               onClick={handleShare}
               disabled={generating}

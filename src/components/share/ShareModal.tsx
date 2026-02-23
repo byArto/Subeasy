@@ -101,9 +101,9 @@ export function ShareModal({
         </div>
       ) : (
         <>
-          {/* Preview — decorative only, scaled to fit */}
-          <div className="flex justify-center mb-5" style={{ overflow: 'hidden' }}>
-            <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center', marginBottom: '-50px' }}>
+          {/* Preview — clipped to fixed height so buttons stay visible */}
+          <div className="flex justify-center mb-4" style={{ overflow: 'hidden', maxHeight: '220px' }}>
+            <div style={{ transform: 'scale(0.78)', transformOrigin: 'top center', marginBottom: '-160px' }}>
               <ShareCard {...cardProps} />
             </div>
           </div>

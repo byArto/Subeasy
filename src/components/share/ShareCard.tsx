@@ -3,7 +3,7 @@
 import { forwardRef } from 'react';
 import { Subscription, DisplayCurrency } from '@/lib/types';
 import { Lang, translate } from '@/lib/translations';
-import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { getSpendBadge } from '@/lib/badge';
 import { getMonthlyPrice, convertCurrency } from '@/lib/utils';
 
@@ -29,7 +29,8 @@ function buildCategoryBars(
   subscriptions: Subscription[],
   currency: DisplayCurrency,
   exchangeRate: number,
-  totalMonthly: number
+  totalMonthly: number,
+  t: (key: string) => string,
 ): Array<{ name: string; amount: number; pct: number }> {
   const totals: Record<string, number> = {};
   for (const sub of subscriptions) {
@@ -42,11 +43,11 @@ function buildCategoryBars(
   return Object.entries(totals)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 4)
-    .map(([name, amount]) => ({
-      name,
-      amount,
-      pct: totalMonthly > 0 ? (amount / totalMonthly) * 100 : 0,
-    }));
+    .map(([catId, amount]) => {
+      const key = DEFAULT_CATEGORY_NAME_KEYS[catId];
+      const name = key ? t(key) : catId.charAt(0).toUpperCase() + catId.slice(1);
+      return { name, amount, pct: totalMonthly > 0 ? (amount / totalMonthly) * 100 : 0 };
+    });
 }
 
 const BAR_COLORS = ['#39FF14', '#2ECC10', '#1A8C0A', '#0F5206'];
@@ -57,7 +58,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
     const symbol = CURRENCY_SYMBOLS[currency] || currency;
     const badge = getSpendBadge(totalMonthly, currency);
     const monthLabel = getMonthLabel(lang);
-    const categories = buildCategoryBars(subscriptions, currency, exchangeRate, totalMonthly);
+    const categories = buildCategoryBars(subscriptions, currency, exchangeRate, totalMonthly, t);
 
     const formattedMonthly = Math.round(totalMonthly).toLocaleString('ru-RU');
     const formattedYearly = Math.round(totalYearly).toLocaleString('ru-RU');

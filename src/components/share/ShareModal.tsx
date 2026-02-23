@@ -43,17 +43,18 @@ export function ShareModal({
     try {
       const canvas = buildShareCanvas(cardProps);
       const dataUrl = canvas.toDataURL('image/png');
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
+
+      // Use toBlob — more reliable in WebViews than fetch(data:URL)
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png')
+      );
       const file = new File([blob], 'subeasy-stats.png', { type: 'image/png' });
+
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file] });
       } else {
-        // Desktop fallback: trigger download
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = 'subeasy-stats.png';
-        a.click();
+        // Fallback: show image in modal for long-press save/share
+        setSavedImageUrl(dataUrl);
       }
     } catch (e) {
       console.error('Share failed:', e);

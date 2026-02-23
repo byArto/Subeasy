@@ -5,6 +5,7 @@ import { Subscription, DisplayCurrency } from '@/lib/types';
 import { Lang, translate } from '@/lib/translations';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { getSpendBadge } from '@/lib/badge';
+import { getMonthlyPrice, convertCurrency } from '@/lib/utils';
 
 interface ShareCardProps {
   totalMonthly: number;
@@ -13,6 +14,7 @@ interface ShareCardProps {
   currency: DisplayCurrency;
   subscriptions: Subscription[];
   lang: Lang;
+  exchangeRate: number;
 }
 
 function getMonthLabel(lang: Lang): string {
@@ -20,23 +22,46 @@ function getMonthLabel(lang: Lang): string {
   const locale = lang === 'en' ? 'en-US' : 'ru-RU';
   const month = now.toLocaleDateString(locale, { month: 'long' });
   const year = now.getFullYear();
-  // Capitalize first letter
   return month.charAt(0).toUpperCase() + month.slice(1) + ' ' + year;
 }
 
+function buildCategoryBars(
+  subscriptions: Subscription[],
+  currency: DisplayCurrency,
+  exchangeRate: number,
+  totalMonthly: number
+): Array<{ name: string; amount: number; pct: number }> {
+  const totals: Record<string, number> = {};
+  for (const sub of subscriptions) {
+    if (!sub.isActive || sub.cycle === 'trial' || sub.cycle === 'one-time') continue;
+    const monthly = getMonthlyPrice(sub);
+    const converted = convertCurrency(monthly, sub.currency, currency, exchangeRate);
+    const cat = sub.category || 'other';
+    totals[cat] = (totals[cat] || 0) + converted;
+  }
+  return Object.entries(totals)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 4)
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      pct: totalMonthly > 0 ? (amount / totalMonthly) * 100 : 0,
+    }));
+}
+
+// Neon shades for bars: brightest → most muted
+const BAR_COLORS = ['#39FF14', '#2ECC10', '#1F8B0A', '#134F06'];
+
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ totalMonthly, totalYearly, activeCount, currency, subscriptions, lang }, ref) {
+  function ShareCard({ totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate }, ref) {
     const t = (key: string) => translate(key, lang);
     const symbol = CURRENCY_SYMBOLS[currency] || currency;
     const badge = getSpendBadge(totalMonthly, currency);
     const monthLabel = getMonthLabel(lang);
+    const categories = buildCategoryBars(subscriptions, currency, exchangeRate, totalMonthly);
 
     const formattedMonthly = Math.round(totalMonthly).toLocaleString('ru-RU');
     const formattedYearly = Math.round(totalYearly).toLocaleString('ru-RU');
-
-    // Active subscriptions with emoji, max 8
-    const activeSlice = subscriptions.filter(s => s.isActive).slice(0, 8);
-    const extraCount = Math.max(0, subscriptions.filter(s => s.isActive).length - 8);
 
     return (
       <div
@@ -53,11 +78,10 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           boxSizing: 'border-box',
         }}
       >
-        {/* Neon glow top border */}
+        {/* Neon top border */}
         <div style={{
           position: 'absolute', top: 0, left: '10%', right: '10%', height: '2px',
           background: 'linear-gradient(90deg, transparent, #39FF14, transparent)',
-          borderRadius: '0 0 4px 4px',
         }} />
 
         {/* Corner glow */}
@@ -68,7 +92,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           pointerEvents: 'none',
         }} />
 
-        {/* Header row */}
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <span style={{ fontSize: '13px', fontWeight: 700, color: '#39FF14', letterSpacing: '0.5px' }}>
             SubEasy
@@ -89,57 +113,55 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
             textShadow: '0 0 20px rgba(57,255,20,0.4)',
           }}>
             {formattedMonthly}
-            <span style={{ fontSize: '24px', fontWeight: 700, marginLeft: '3px', color: '#39FF14' }}>{symbol}</span>
+            <span style={{ fontSize: '24px', fontWeight: 700, marginLeft: '3px' }}>{symbol}</span>
           </div>
           <div style={{ fontSize: '13px', color: '#888', marginTop: '4px', fontWeight: 500 }}>
             {t('share.perMonth')}
           </div>
         </div>
 
-        {/* Service emoji grid */}
-        {activeSlice.length > 0 && (
-          <div style={{
-            display: 'flex', justifyContent: 'center', gap: '8px',
-            flexWrap: 'wrap', marginBottom: '16px',
-          }}>
-            {activeSlice.map((sub) => (
-              <div key={sub.id} style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                background: `linear-gradient(135deg, ${sub.color}22, ${sub.color}44)`,
-                border: `1px solid ${sub.color}40`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '18px',
-              }}>
-                {sub.icon || '📦'}
+        {/* Category progress bars */}
+        {categories.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            {categories.map(({ name, amount, pct }, i) => (
+              <div key={name} style={{ marginBottom: i < categories.length - 1 ? '10px' : 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{
+                    fontSize: '11px', color: '#888', fontWeight: 500,
+                    textTransform: 'capitalize',
+                    maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {name}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#666', fontWeight: 600 }}>
+                    {Math.round(amount).toLocaleString('ru-RU')} {symbol}
+                  </span>
+                </div>
+                <div style={{ height: '5px', background: '#1a1a1a', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${Math.max(pct, 2)}%`,
+                    background: BAR_COLORS[i] || BAR_COLORS[3],
+                    borderRadius: '3px',
+                  }} />
+                </div>
               </div>
             ))}
-            {extraCount > 0 && (
-              <div style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                background: '#1a1a1a', border: '1px solid #333',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '10px', color: '#888', fontWeight: 600,
-              }}>
-                +{extraCount}
-              </div>
-            )}
           </div>
         )}
 
         {/* Stats row */}
         <div style={{
           display: 'flex', justifyContent: 'center', gap: '16px',
-          fontSize: '12px', color: '#666', marginBottom: '20px', fontWeight: 500,
+          fontSize: '11px', color: '#555', marginBottom: '18px', fontWeight: 500,
         }}>
           <span>{activeCount} {t('share.subsCount')}</span>
-          <span style={{ color: '#444' }}>•</span>
+          <span style={{ color: '#333' }}>•</span>
           <span>{formattedYearly} {symbol} {t('share.perYear')}</span>
         </div>
 
         {/* Badge */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', marginBottom: '20px',
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '18px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             padding: '8px 16px',
@@ -154,11 +176,11 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
         </div>
 
         {/* Divider */}
-        <div style={{ height: '1px', background: '#1a1a1a', marginBottom: '14px' }} />
+        <div style={{ height: '1px', background: '#1a1a1a', marginBottom: '12px' }} />
 
         {/* Footer CTA */}
         <div style={{
-          textAlign: 'center', fontSize: '11px', color: '#555', fontWeight: 500, letterSpacing: '0.2px',
+          textAlign: 'center', fontSize: '11px', color: '#444', fontWeight: 500,
         }}>
           {t('share.cta')} ↗
         </div>

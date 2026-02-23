@@ -566,6 +566,7 @@ function HomeTab({
         currency={displayCurrency}
         subscriptions={active}
         lang={lang}
+        exchangeRate={exchangeRate}
       />
     </div>
   );

@@ -17,6 +17,7 @@ interface ShareModalProps {
   currency: DisplayCurrency;
   subscriptions: Subscription[];
   lang: Lang;
+  exchangeRate: number;
 }
 
 export function ShareModal({
@@ -28,17 +29,22 @@ export function ShareModal({
   currency,
   subscriptions,
   lang,
+  exchangeRate,
 }: ShareModalProps) {
   const { t } = useLanguage();
-  const cardRef = useRef<HTMLDivElement>(null);
+  // Capture ref points to off-screen full-size card (outside modal transform/overflow)
+  const captureRef = useRef<HTMLDivElement>(null);
   const [generating, setGenerating] = useState(false);
 
+  const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate };
+
   async function captureCard(): Promise<Blob | null> {
-    if (!cardRef.current) return null;
+    if (!captureRef.current) return null;
     const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(cardRef.current, {
+    const canvas = await html2canvas(captureRef.current, {
       scale: 2,
       useCORS: false,
+      allowTaint: true,
       backgroundColor: '#0d0d0d',
       logging: false,
     });
@@ -82,41 +88,42 @@ export function ShareModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('share.title')} size="full">
-      {/* Card preview — centered, scaled to fit narrower screens */}
-      <div className="flex justify-center mb-6">
-        <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center' }}>
-          <ShareCard
-            ref={cardRef}
-            totalMonthly={totalMonthly}
-            totalYearly={totalYearly}
-            activeCount={activeCount}
-            currency={currency}
-            subscriptions={subscriptions}
-            lang={lang}
-          />
+    <>
+      {/* Off-screen capture target — NOT inside modal transform/overflow */}
+      {open && (
+        <div style={{ position: 'fixed', left: '-9999px', top: 0, pointerEvents: 'none', zIndex: -1 }}>
+          <ShareCard ref={captureRef} {...cardProps} />
         </div>
-      </div>
+      )}
 
-      {/* Action buttons */}
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={handleShare}
-          disabled={generating}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-neon text-black font-bold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
-        >
-          <ShareIcon className="w-4 h-4" />
-          {generating ? t('share.generating') : t('share.title')}
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={generating}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-surface-3 border border-border-subtle text-text-primary font-semibold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
-        >
-          <ArrowDownTrayIcon className="w-4 h-4" />
-          {t('share.save')}
-        </button>
-      </div>
-    </Modal>
+      <Modal open={open} onClose={onClose} title={t('share.title')} size="full">
+        {/* Visual preview — scaled to fit, no ref needed */}
+        <div className="flex justify-center mb-6 overflow-hidden">
+          <div style={{ transform: 'scale(0.88)', transformOrigin: 'top center', marginBottom: '-40px' }}>
+            <ShareCard {...cardProps} />
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={handleShare}
+            disabled={generating}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-neon text-black font-bold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
+          >
+            <ShareIcon className="w-4 h-4" />
+            {generating ? t('share.generating') : t('share.title')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={generating}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-surface-3 border border-border-subtle text-text-primary font-semibold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+            {t('share.save')}
+          </button>
+        </div>
+      </Modal>
+    </>
   );
 }

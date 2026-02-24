@@ -3,6 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/components/providers/AuthProvider';
 import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import { TelegramProvider } from '@/components/providers/TelegramProvider';
+import { ProProvider } from '@/components/providers/ProProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -105,9 +106,11 @@ export default function RootLayout({
         <TelegramProvider>
           <LanguageProvider>
             <AuthProvider>
-              <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-                {children}
-              </div>
+              <ProProvider>
+                <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+                  {children}
+                </div>
+              </ProProvider>
             </AuthProvider>
           </LanguageProvider>
         </TelegramProvider>

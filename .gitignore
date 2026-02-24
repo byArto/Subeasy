@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# MCP config (contains secrets)
+.mcp.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

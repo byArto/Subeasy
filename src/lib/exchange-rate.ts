@@ -2,25 +2,27 @@ const CACHE_KEY = 'neonsub-exchange-rate';
 
 interface ExchangeRateCache {
   rate: number;
+  eurRate: number;
   fetchedAt: string;
   source: 'cbr';
 }
 
-async function fetchCBRRate(): Promise<number | null> {
-  // Сначала через наш API route (обходит CORS)
+async function fetchCBRRates(): Promise<{ rate: number; eurRate: number } | null> {
   try {
     const res = await fetch('/api/rate');
     if (res.ok) {
       const data = await res.json();
-      if (data.rate) return data.rate;
+      if (data.rate && data.eurRate) return { rate: data.rate, eurRate: data.eurRate };
     }
   } catch { /* fallback ниже */ }
 
-  // Fallback: напрямую к cbr-xml-daily
   try {
     const res = await fetch('https://www.cbr-xml-daily.ru/daily_json.js');
     const data = await res.json();
-    return Math.round(data.Valute.USD.Value * 100) / 100;
+    return {
+      rate: Math.round(data.Valute.USD.Value * 100) / 100,
+      eurRate: Math.round(data.Valute.EUR.Value * 100) / 100,
+    };
   } catch {
     return null;
   }
@@ -37,10 +39,11 @@ function getCachedRate(): ExchangeRateCache | null {
   }
 }
 
-function setCachedRate(rate: number): void {
+function setCachedRate(rate: number, eurRate: number): void {
   if (typeof window === 'undefined') return;
   const cache: ExchangeRateCache = {
     rate,
+    eurRate,
     fetchedAt: new Date().toISOString(),
     source: 'cbr',
   };
@@ -55,39 +58,41 @@ function isRateStale(cache: ExchangeRateCache): boolean {
 }
 
 /** Получить курс: из кеша или запросить свежий */
-export async function getExchangeRate(fallbackRate: number = 96): Promise<number> {
+export async function getExchangeRate(fallbackRate: number = 96): Promise<{ rate: number; eurRate: number }> {
   const cached = getCachedRate();
 
   if (cached && !isRateStale(cached)) {
-    return cached.rate;
+    return { rate: cached.rate, eurRate: cached.eurRate ?? 105 };
   }
 
-  const freshRate = await fetchCBRRate();
+  const fresh = await fetchCBRRates();
 
-  if (freshRate) {
-    setCachedRate(freshRate);
-    return freshRate;
+  if (fresh) {
+    setCachedRate(fresh.rate, fresh.eurRate);
+    return fresh;
   }
 
-  return cached?.rate ?? fallbackRate;
+  return { rate: cached?.rate ?? fallbackRate, eurRate: cached?.eurRate ?? 105 };
 }
 
 /** Принудительно обновить курс */
-export async function refreshExchangeRate(fallbackRate: number = 96): Promise<number> {
-  const freshRate = await fetchCBRRate();
-  if (freshRate) {
-    setCachedRate(freshRate);
-    return freshRate;
+export async function refreshExchangeRate(fallbackRate: number = 96): Promise<{ rate: number; eurRate: number }> {
+  const fresh = await fetchCBRRates();
+  if (fresh) {
+    setCachedRate(fresh.rate, fresh.eurRate);
+    return fresh;
   }
-  return getCachedRate()?.rate ?? fallbackRate;
+  const cached = getCachedRate();
+  return { rate: cached?.rate ?? fallbackRate, eurRate: cached?.eurRate ?? 105 };
 }
 
 /** Информация о кеше для UI */
-export function getRateInfo(): { rate: number; updatedAt: string; isStale: boolean } | null {
+export function getRateInfo(): { rate: number; eurRate: number; updatedAt: string; isStale: boolean } | null {
   const cached = getCachedRate();
   if (!cached) return null;
   return {
     rate: cached.rate,
+    eurRate: cached.eurRate ?? 105,
     updatedAt: cached.fetchedAt,
     isStale: isRateStale(cached),
   };

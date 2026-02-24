@@ -1,13 +1,14 @@
-export type Lang = 'ru' | 'en';
+export type Lang = 'ru' | 'en' | 'es' | 'tr' | 'de' | 'kk' | 'hy' | 'pl';
 
-type Translations = Record<string, Record<Lang, string>>;
+type TranslationEntry = { ru: string; en: string } & Partial<Record<Exclude<Lang, 'ru' | 'en'>, string>>;
+type Translations = Record<string, TranslationEntry>;
 
 const dict: Translations = {
   // ── Navigation ──
-  'nav.home': { ru: 'Подписки', en: 'Subscriptions' },
-  'nav.analytics': { ru: 'Аналитика', en: 'Analytics' },
-  'nav.calendar': { ru: 'Календарь', en: 'Calendar' },
-  'nav.settings': { ru: 'Настройки', en: 'Settings' },
+  'nav.home': { ru: 'Подписки', en: 'Subscriptions', es: 'Suscripciones', tr: 'Abonelikler', de: 'Abonnements', kk: 'Жазылымдар', hy: 'Բաժ.', pl: 'Subskrypcje' },
+  'nav.analytics': { ru: 'Аналитика', en: 'Analytics', es: 'Análisis', tr: 'Analiz', de: 'Analyse', kk: 'Аналитика', hy: 'Վերլ.', pl: 'Analityka' },
+  'nav.calendar': { ru: 'Календарь', en: 'Calendar', es: 'Calendario', tr: 'Takvim', de: 'Kalender', kk: 'Күнтізбе', hy: 'Օրաց.', pl: 'Kalendarz' },
+  'nav.settings': { ru: 'Настройки', en: 'Settings', es: 'Ajustes', tr: 'Ayarlar', de: 'Einstellungen', kk: 'Параметр', hy: 'Կարգ.', pl: 'Ustawienia' },
 
   // ── Cycle suffixes ──
   'cycle.monthly': { ru: '/мес', en: '/mo' },
@@ -443,6 +444,16 @@ const dict: Translations = {
   'badge.king': { ru: 'Король сервисов', en: 'Service King' },
   'badge.whale': { ru: 'Кит подписок', en: 'Subscription Whale' },
   'badge.legend': { ru: 'Легенда', en: 'Legend' },
+
+  // ── Language names ──
+  'settings.langEs': { ru: 'Español', en: 'Español', es: 'Español', tr: 'İspanyolca', de: 'Spanisch', kk: 'Испан', hy: 'Իսպաներեն', pl: 'Hiszpański' },
+  'settings.langTr': { ru: 'Türkçe', en: 'Türkçe', es: 'Turco', tr: 'Türkçe', de: 'Türkisch', kk: 'Түрік', hy: 'Թուրքերեն', pl: 'Turecki' },
+  'settings.langDe': { ru: 'Deutsch', en: 'Deutsch', es: 'Alemán', tr: 'Almanca', de: 'Deutsch', kk: 'Неміс', hy: 'Գերմաներեն', pl: 'Niemiecki' },
+  'settings.langKk': { ru: 'Қазақша', en: 'Қазақша', es: 'Kazajo', tr: 'Kazakça', de: 'Kasachisch', kk: 'Қазақша', hy: 'Ղազախերեն', pl: 'Kazachski' },
+  'settings.langHy': { ru: 'Հայերեն', en: 'Հայերեն', es: 'Armenio', tr: 'Ermenice', de: 'Armenisch', kk: 'Армян', hy: 'Հայերեն', pl: 'Ormiański' },
+  'settings.langPl': { ru: 'Polski', en: 'Polski', es: 'Polaco', tr: 'Lehçe', de: 'Polnisch', kk: 'Поляк', hy: 'Լեհերեն', pl: 'Polski' },
+
+
 };
 
 /** Translate a key with optional variable interpolation.
@@ -451,7 +462,7 @@ const dict: Translations = {
 export function translate(key: string, lang: Lang, vars?: Record<string, string | number>): string {
   const entry = dict[key];
   if (!entry) return key; // fallback: return key itself
-  let str = entry[lang] ?? entry.ru;
+  let str = entry[lang] ?? entry.en ?? entry.ru;
   if (vars) {
     Object.entries(vars).forEach(([k, v]) => {
       str = str.replace(`{{${k}}}`, String(v));

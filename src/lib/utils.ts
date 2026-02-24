@@ -26,23 +26,26 @@ export function convertCurrency(
   amount: number,
   from: Currency,
   to: Currency,
-  exchangeRate: number
+  exchangeRate: number,  // USD/RUB
+  eurRate: number = 105  // EUR/RUB
 ): number {
   if (from === to) return amount;
 
-  // exchangeRate = сколько RUB за 1 USD
-  const toUsd: Record<Currency, (n: number) => number> = {
-    USD: (n) => n,
-    RUB: (n) => n / exchangeRate,
+  // Convert to RUB first, then to target
+  const toRub: Record<Currency, (n: number) => number> = {
+    RUB: (n) => n,
+    USD: (n) => n * exchangeRate,
+    EUR: (n) => n * eurRate,
   };
 
-  const fromUsd: Record<Currency, (n: number) => number> = {
-    USD: (n) => n,
-    RUB: (n) => n * exchangeRate,
+  const fromRub: Record<Currency, (n: number) => number> = {
+    RUB: (n) => n,
+    USD: (n) => n / exchangeRate,
+    EUR: (n) => n / eurRate,
   };
 
-  const usdAmount = toUsd[from](amount);
-  return Math.round(fromUsd[to](usdAmount) * 100) / 100;
+  const rubAmount = toRub[from](amount);
+  return Math.round(fromRub[to](rubAmount) * 100) / 100;
 }
 
 export function getMonthlyPrice(sub: Subscription): number {

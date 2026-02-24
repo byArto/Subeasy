@@ -28,6 +28,7 @@ export const DEFAULT_CATEGORY_NAME_KEYS: Record<string, string> = {
 export const DEFAULT_SETTINGS: AppSettings = {
   displayCurrency: 'RUB',
   exchangeRate: 96,
+  eurExchangeRate: 105,
   useManualRate: false,
   notificationsEnabled: true,
   notifyDaysBefore: 3,
@@ -36,6 +37,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 export const CURRENCY_SYMBOLS: Record<string, string> = {
   RUB: '₽',
   USD: '$',
+  EUR: '€',
 };
 
 export const CYCLE_LABELS: Record<string, string> = {

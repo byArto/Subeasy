@@ -9,6 +9,8 @@ interface LanguageContextValue {
   t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
+const VALID_LANGS: Lang[] = ['ru', 'en', 'es', 'tr', 'de', 'kk', 'hy', 'pl'];
+
 const LanguageContext = createContext<LanguageContextValue>({
   lang: 'ru',
   setLang: () => {},
@@ -17,8 +19,8 @@ const LanguageContext = createContext<LanguageContextValue>({
 
 function getInitialLang(): Lang {
   if (typeof window === 'undefined') return 'ru';
-  const saved = window.localStorage.getItem('neonsub-language');
-  return saved === 'en' ? 'en' : 'ru';
+  const saved = window.localStorage.getItem('neonsub-language') as Lang;
+  return VALID_LANGS.includes(saved) ? saved : 'ru';
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {

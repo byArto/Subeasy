@@ -1,5 +1,5 @@
-export type Currency = 'RUB' | 'USD';
-export type DisplayCurrency = 'RUB' | 'USD';
+export type Currency = 'RUB' | 'USD' | 'EUR';
+export type DisplayCurrency = 'RUB' | 'USD' | 'EUR';
 export type BillingCycle = 'monthly' | 'yearly' | 'weekly' | 'one-time' | 'trial';
 
 export interface Subscription {
@@ -30,8 +30,9 @@ export interface Category {
 
 export interface AppSettings {
   displayCurrency: DisplayCurrency;
-  exchangeRate: number; // курс RUB/USD
-  useManualRate: boolean; // true = ручной курс, false = авто от ЦБ
+  exchangeRate: number;     // курс USD/RUB
+  eurExchangeRate?: number; // курс EUR/RUB (optional — falls back to 105)
+  useManualRate: boolean;  // true = ручной курс, false = авто от ЦБ
   notificationsEnabled: boolean;
   notifyDaysBefore: number; // за сколько дней до платежа
 }

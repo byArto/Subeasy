@@ -206,13 +206,7 @@ export function SettingsPage({
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.language.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-sm text-text-primary font-medium">{t('settings.language.label')}</span>
-              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.language.hint')}</p>
-            </div>
-            <LangSwitch value={lang} onToggle={(l) => setLang(l)} />
-          </div>
+          <LangGrid value={lang} onSelect={(l) => setLang(l)} />
         </div>
       </motion.div>
 
@@ -231,7 +225,7 @@ export function SettingsPage({
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-text-primary font-medium">
-                  1$ = {settings.exchangeRate}₽
+                  1$ = {settings.exchangeRate}₽ · 1€ = {settings.eurExchangeRate ?? 105}₽
                 </span>
                 {rateIsLoading && (
                   <svg className="animate-spin h-3.5 w-3.5 text-neon" viewBox="0 0 24 24" fill="none">
@@ -752,93 +746,77 @@ function formatRateDate(iso: string, lang: string): string {
   return d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
-/* ── Language Switch ── */
+/* ── Language Grid ── */
 
 import { Lang } from '@/lib/translations';
 
-function LangSwitch({
-  value,
-  onToggle,
-}: {
-  value: Lang;
-  onToggle: (l: Lang) => void;
-}) {
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.95 }}
-      onClick={() => onToggle(value === 'ru' ? 'en' : 'ru')}
-      className="relative flex items-center w-[100px] h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1"
-    >
-      {/* Animated background */}
-      <motion.span
-        animate={{ x: value === 'ru' ? 0 : 46 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        className="absolute w-[46px] h-[32px] rounded-lg bg-neon"
-        style={{ boxShadow: '0 0 12px rgba(0, 255, 65, 0.3)' }}
-      />
+const LANG_OPTIONS: { code: Lang; label: string; name: string }[] = [
+  { code: 'ru', label: 'RU', name: 'Русский' },
+  { code: 'en', label: 'EN', name: 'English' },
+  { code: 'es', label: 'ES', name: 'Español' },
+  { code: 'tr', label: 'TR', name: 'Türkçe' },
+  { code: 'de', label: 'DE', name: 'Deutsch' },
+  { code: 'kk', label: 'KK', name: 'Қазақша' },
+  { code: 'hy', label: 'HY', name: 'Հայերեն' },
+  { code: 'pl', label: 'PL', name: 'Polski' },
+];
 
-      <span
-        className={cn(
-          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
-          value === 'ru' ? 'text-surface' : 'text-text-secondary'
-        )}
-      >
-        RU
-      </span>
-      <span
-        className={cn(
-          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
-          value === 'en' ? 'text-surface' : 'text-text-secondary'
-        )}
-      >
-        EN
-      </span>
-    </motion.button>
+function LangGrid({ value, onSelect }: { value: Lang; onSelect: (l: Lang) => void }) {
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {LANG_OPTIONS.map((opt) => (
+        <motion.button
+          key={opt.code}
+          type="button"
+          whileTap={{ scale: 0.93 }}
+          onClick={() => onSelect(opt.code)}
+          className={cn(
+            'flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl border transition-colors',
+            value === opt.code
+              ? 'bg-neon/15 border-neon/40 text-neon'
+              : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
+          )}
+          style={value === opt.code ? { boxShadow: '0 0 10px rgba(0,255,65,0.15)' } : undefined}
+        >
+          <span className="text-[11px] font-bold tracking-wide">{opt.label}</span>
+          <span className="text-[9px] opacity-70 leading-none">{opt.name}</span>
+        </motion.button>
+      ))}
+    </div>
   );
 }
 
 /* ── Currency Switch ── */
 
-function CurrencySwitch({
-  value,
-  onToggle,
-}: {
-  value: 'RUB' | 'USD';
-  onToggle: () => void;
-}) {
-  return (
-    <motion.button
-      type="button"
-      whileTap={{ scale: 0.95 }}
-      onClick={onToggle}
-      className="relative flex items-center w-[100px] h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1"
-    >
-      {/* Animated background */}
-      <motion.span
-        animate={{ x: value === 'RUB' ? 0 : 46 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        className="absolute w-[46px] h-[32px] rounded-lg bg-neon"
-        style={{ boxShadow: '0 0 12px rgba(0, 255, 65, 0.3)' }}
-      />
+import { DisplayCurrency } from '@/lib/types';
 
-      <span
-        className={cn(
-          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
-          value === 'RUB' ? 'text-surface' : 'text-text-secondary'
-        )}
-      >
-        ₽
-      </span>
-      <span
-        className={cn(
-          'relative z-10 flex-1 text-center text-sm font-bold transition-colors',
-          value === 'USD' ? 'text-surface' : 'text-text-secondary'
-        )}
-      >
-        $
-      </span>
-    </motion.button>
+const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
+  { code: 'RUB', symbol: '₽' },
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+];
+
+function CurrencySwitch({ value, onToggle }: { value: DisplayCurrency; onToggle: () => void }) {
+  return (
+    <div className="relative flex items-center h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1 gap-0.5">
+      {CURRENCY_OPTIONS.map((opt) => (
+        <motion.button
+          key={opt.code}
+          type="button"
+          whileTap={{ scale: 0.93 }}
+          onClick={onToggle}
+          className={cn(
+            'relative z-10 w-[44px] h-[32px] rounded-lg text-sm font-bold transition-colors',
+            value === opt.code
+              ? 'bg-neon text-surface'
+              : 'text-text-secondary'
+          )}
+          style={value === opt.code ? { boxShadow: '0 0 12px rgba(0,255,65,0.3)' } : undefined}
+        >
+          {opt.symbol}
+        </motion.button>
+      ))}
+    </div>
   );
 }
 

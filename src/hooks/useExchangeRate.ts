@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getExchangeRate, refreshExchangeRate, getRateInfo } from '@/lib/exchange-rate';
 
-export function useExchangeRate(currentRate: number) {
+export function useExchangeRate(currentRate: number, currentEurRate: number) {
   const [rate, setRate] = useState(() => {
-    // Return cached rate immediately (sync, no network)
     const info = getRateInfo();
     return info ? info.rate : currentRate;
+  });
+  const [eurRate, setEurRate] = useState(() => {
+    const info = getRateInfo();
+    return info ? info.eurRate : currentEurRate;
   });
   const [lastUpdated, setLastUpdated] = useState<string | null>(() => {
     const info = getRateInfo();
@@ -22,22 +25,23 @@ export function useExchangeRate(currentRate: number) {
     }
   }, []);
 
-  // Background refresh — deferred, non-blocking
   useEffect(() => {
     let cancelled = false;
     const id = typeof requestIdleCallback !== 'undefined'
       ? requestIdleCallback(() => {
-          getExchangeRate(currentRate).then((freshRate) => {
+          getExchangeRate(currentRate).then((fresh) => {
             if (!cancelled) {
-              setRate(freshRate);
+              setRate(fresh.rate);
+              setEurRate(fresh.eurRate);
               syncInfo();
             }
           });
         })
       : setTimeout(() => {
-          getExchangeRate(currentRate).then((freshRate) => {
+          getExchangeRate(currentRate).then((fresh) => {
             if (!cancelled) {
-              setRate(freshRate);
+              setRate(fresh.rate);
+              setEurRate(fresh.eurRate);
               syncInfo();
             }
           });
@@ -53,15 +57,15 @@ export function useExchangeRate(currentRate: number) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Manual refresh
   const refresh = useCallback(async () => {
     setIsLoading(true);
-    const freshRate = await refreshExchangeRate(rate);
-    setRate(freshRate);
+    const fresh = await refreshExchangeRate(rate);
+    setRate(fresh.rate);
+    setEurRate(fresh.eurRate);
     syncInfo();
     setIsLoading(false);
-    return freshRate;
+    return fresh.rate;
   }, [rate, syncInfo]);
 
-  return { rate, lastUpdated, isLoading, refresh };
+  return { rate, eurRate, lastUpdated, isLoading, refresh };
 }

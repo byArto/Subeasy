@@ -152,17 +152,21 @@ export default function Home() {
   // Auto exchange rate from CBR
   const {
     rate: autoRate,
+    eurRate: autoEurRate,
     lastUpdated: rateLastUpdated,
     isLoading: rateIsLoading,
     refresh: refreshRate,
-  } = useExchangeRate(settings.exchangeRate);
+  } = useExchangeRate(settings.exchangeRate, settings.eurExchangeRate ?? 105);
 
   // Sync auto rate to settings (only if not using manual rate)
   useEffect(() => {
-    if (!settings.useManualRate && autoRate !== settings.exchangeRate) {
-      setExchangeRate(autoRate);
+    if (!settings.useManualRate) {
+      const updates: Record<string, number> = {};
+      if (autoRate !== settings.exchangeRate) updates.exchangeRate = autoRate;
+      if (autoEurRate !== settings.eurExchangeRate) updates.eurExchangeRate = autoEurRate;
+      if (Object.keys(updates).length > 0) updateSettings(updates);
     }
-  }, [autoRate, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [autoRate, autoEurRate, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(subscriptions, settings);

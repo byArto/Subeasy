@@ -8,6 +8,7 @@ import { requestNotificationPermission } from '@/lib/notifications';
 import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { usePro } from '@/components/providers/ProProvider';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -63,6 +64,7 @@ export function SettingsPage({
   const { user, signOut, setSkipAuth } = useAuth();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const { lang, setLang, t } = useLanguage();
+  const { isPro } = usePro();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
@@ -206,7 +208,7 @@ export function SettingsPage({
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.language.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
-          <LangGrid value={lang} onSelect={(l) => setLang(l)} />
+          <LangGrid value={lang} onSelect={(l) => setLang(l)} isPro={isPro} onOpenPro={onOpenPro} />
         </div>
       </motion.div>
 
@@ -217,7 +219,7 @@ export function SettingsPage({
           {/* Currency toggle */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-primary font-medium">{t('settings.currency.main')}</span>
-            <CurrencySwitch value={settings.displayCurrency} onToggle={toggleCurrency} />
+            <CurrencySwitch value={settings.displayCurrency} onToggle={toggleCurrency} isPro={isPro} onOpenPro={onOpenPro} />
           </div>
 
           {/* Current rate display */}
@@ -761,27 +763,48 @@ const LANG_OPTIONS: { code: Lang; label: string; name: string }[] = [
   { code: 'pl', label: 'PL', name: 'Polski' },
 ];
 
-function LangGrid({ value, onSelect }: { value: Lang; onSelect: (l: Lang) => void }) {
+const FREE_LANGS: Lang[] = ['ru', 'en'];
+
+function LangGrid({
+  value,
+  onSelect,
+  isPro,
+  onOpenPro,
+}: {
+  value: Lang;
+  onSelect: (l: Lang) => void;
+  isPro: boolean;
+  onOpenPro: () => void;
+}) {
   return (
     <div className="grid grid-cols-4 gap-2">
-      {LANG_OPTIONS.map((opt) => (
-        <motion.button
-          key={opt.code}
-          type="button"
-          whileTap={{ scale: 0.93 }}
-          onClick={() => onSelect(opt.code)}
-          className={cn(
-            'flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl border transition-colors',
-            value === opt.code
-              ? 'bg-neon/15 border-neon/40 text-neon'
-              : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
-          )}
-          style={value === opt.code ? { boxShadow: '0 0 10px rgba(0,255,65,0.15)' } : undefined}
-        >
-          <span className="text-[11px] font-bold tracking-wide">{opt.label}</span>
-          <span className="text-[9px] opacity-70 leading-none">{opt.name}</span>
-        </motion.button>
-      ))}
+      {LANG_OPTIONS.map((opt) => {
+        const locked = !isPro && !FREE_LANGS.includes(opt.code);
+        const active = value === opt.code;
+        return (
+          <motion.button
+            key={opt.code}
+            type="button"
+            whileTap={{ scale: 0.93 }}
+            onClick={() => locked ? onOpenPro() : onSelect(opt.code)}
+            className={cn(
+              'relative flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl border transition-colors',
+              active
+                ? 'bg-neon/15 border-neon/40 text-neon'
+                : locked
+                  ? 'bg-surface-3 border-border-subtle text-text-muted opacity-60'
+                  : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
+            )}
+            style={active ? { boxShadow: '0 0 10px rgba(0,255,65,0.15)' } : undefined}
+          >
+            {locked && (
+              <span className="absolute top-1 right-1.5 text-[8px] text-text-muted">🔒</span>
+            )}
+            <span className="text-[11px] font-bold tracking-wide">{opt.label}</span>
+            <span className="text-[9px] opacity-70 leading-none">{opt.name}</span>
+          </motion.button>
+        );
+      })}
     </div>
   );
 }
@@ -796,26 +819,41 @@ const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
   { code: 'EUR', symbol: '€' },
 ];
 
-function CurrencySwitch({ value, onToggle }: { value: DisplayCurrency; onToggle: () => void }) {
+function CurrencySwitch({
+  value,
+  onToggle,
+  isPro,
+  onOpenPro,
+}: {
+  value: DisplayCurrency;
+  onToggle: () => void;
+  isPro: boolean;
+  onOpenPro: () => void;
+}) {
   return (
     <div className="relative flex items-center h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1 gap-0.5">
-      {CURRENCY_OPTIONS.map((opt) => (
-        <motion.button
-          key={opt.code}
-          type="button"
-          whileTap={{ scale: 0.93 }}
-          onClick={onToggle}
-          className={cn(
-            'relative z-10 w-[44px] h-[32px] rounded-lg text-sm font-bold transition-colors',
-            value === opt.code
-              ? 'bg-neon text-surface'
-              : 'text-text-secondary'
-          )}
-          style={value === opt.code ? { boxShadow: '0 0 12px rgba(0,255,65,0.3)' } : undefined}
-        >
-          {opt.symbol}
-        </motion.button>
-      ))}
+      {CURRENCY_OPTIONS.map((opt) => {
+        const locked = !isPro && opt.code === 'EUR';
+        return (
+          <motion.button
+            key={opt.code}
+            type="button"
+            whileTap={{ scale: 0.93 }}
+            onClick={() => locked ? onOpenPro() : onToggle()}
+            className={cn(
+              'relative z-10 w-[44px] h-[32px] rounded-lg text-sm font-bold transition-colors',
+              value === opt.code
+                ? 'bg-neon text-surface'
+                : locked
+                  ? 'text-text-muted opacity-50'
+                  : 'text-text-secondary'
+            )}
+            style={value === opt.code ? { boxShadow: '0 0 12px rgba(0,255,65,0.3)' } : undefined}
+          >
+            {locked ? '🔒' : opt.symbol}
+          </motion.button>
+        );
+      })}
     </div>
   );
 }

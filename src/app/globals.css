@@ -4,7 +4,7 @@
    NEONSUB — NEON CYBERPUNK THEME (Tailwind v4)
    ═══════════════════════════════════════════════ */
 
-@theme inline {
+@theme {
   /* ── Fonts ── */
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Manrope', sans-serif;

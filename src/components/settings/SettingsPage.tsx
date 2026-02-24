@@ -65,6 +65,7 @@ export function SettingsPage({
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const { lang, setLang, t } = useLanguage();
   const { isPro } = usePro();
+  const [langOpen, setLangOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
@@ -207,8 +208,45 @@ export function SettingsPage({
       {/* ── 0. Язык / Language ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.language.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
-          <LangGrid value={lang} onSelect={(l) => setLang(l)} isPro={isPro} onOpenPro={onOpenPro} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          {/* Row — always visible */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setLangOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3.5"
+          >
+            <div>
+              <span className="text-sm text-text-primary font-medium">{t('settings.language.label')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5 text-left">{lang.toUpperCase()}</p>
+            </div>
+            <motion.svg
+              animate={{ rotate: langOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted shrink-0"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
+
+          {/* Expandable grid */}
+          <AnimatePresence initial={false}>
+            {langOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 pt-1 border-t border-border-subtle">
+                  <LangGrid value={lang} onSelect={(l) => { setLang(l); setLangOpen(false); }} isPro={isPro} onOpenPro={onOpenPro} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 

@@ -4,6 +4,7 @@ import { AuthProvider } from '@/components/providers/AuthProvider';
 import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import { ProProvider } from '@/components/providers/ProProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -45,15 +46,21 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* Theme init — reads localStorage before paint to avoid flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('neonsub-theme');if(t==='purple'||t==='blue')document.documentElement.dataset.theme=t;}catch(e){}`,
+          }}
+        />
         {/* Non-blocking font load via preload */}
         <link
           rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap"
           as="style"
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap';document.head.appendChild(l)`,
+            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap';document.head.appendChild(l)`,
           }}
         />
         <link rel="icon" href="/icons/favicon.ico" sizes="any" />
@@ -104,15 +111,17 @@ export default function RootLayout({
           }}
         />
         <TelegramProvider>
-          <LanguageProvider>
-            <AuthProvider>
-              <ProProvider>
-                <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-                  {children}
-                </div>
-              </ProProvider>
-            </AuthProvider>
-          </LanguageProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <ProProvider>
+                  <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+                    {children}
+                  </div>
+                </ProProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
         </TelegramProvider>
         <Analytics />
       </body>

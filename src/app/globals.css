@@ -51,6 +51,52 @@
 }
 
 /* ═══════════════════════════════════════════════
+   PRO THEMES — runtime CSS variable overrides
+   Applied via data-theme attribute on <html>
+   ═══════════════════════════════════════════════ */
+
+[data-theme="purple"] {
+  --color-neon: #A855F7;
+  --color-neon-dark: #7C3AED;
+  --color-neon-glow: #C084FC;
+  --color-neon-subtle: #9333EA;
+  --color-surface: #08070F;
+  --color-surface-2: #0F0B1C;
+  --color-surface-3: #140F24;
+  --color-surface-4: #1E1633;
+  --color-border-subtle: rgba(168, 85, 247, 0.08);
+  --color-border-neon: rgba(168, 85, 247, 0.2);
+  --color-success: #A855F7;
+  --shadow-neon: 0 0 20px rgba(168, 85, 247, 0.15), 0 0 60px rgba(168, 85, 247, 0.05);
+  --shadow-neon-strong: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 60px rgba(168, 85, 247, 0.1);
+  --font-display: 'Exo 2', sans-serif;
+  background-color: #08070F;
+}
+
+[data-theme="blue"] {
+  --color-neon: #06B6D4;
+  --color-neon-dark: #0891B2;
+  --color-neon-glow: #22D3EE;
+  --color-neon-subtle: #0EA5E9;
+  --color-surface: #060B0F;
+  --color-surface-2: #090F16;
+  --color-surface-3: #0D1520;
+  --color-surface-4: #132030;
+  --color-border-subtle: rgba(6, 182, 212, 0.08);
+  --color-border-neon: rgba(6, 182, 212, 0.2);
+  --color-success: #06B6D4;
+  --shadow-neon: 0 0 20px rgba(6, 182, 212, 0.15), 0 0 60px rgba(6, 182, 212, 0.05);
+  --shadow-neon-strong: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 60px rgba(6, 182, 212, 0.1);
+  --font-display: 'Golos Text', sans-serif;
+  background-color: #060B0F;
+}
+
+[data-theme="purple"] body,
+[data-theme="blue"] body {
+  background-color: var(--color-surface);
+}
+
+/* ═══════════════════════════════════════════════
    KEYFRAMES
    ═══════════════════════════════════════════════ */
 

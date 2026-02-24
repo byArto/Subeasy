@@ -453,8 +453,15 @@ const dict: Translations = {
   'settings.langHy': { ru: 'Հայերեն', en: 'Հայերեն', es: 'Armenio', tr: 'Ermenice', de: 'Armenisch', kk: 'Армян', hy: 'Հայերեն', pl: 'Ormiański' },
   'settings.langPl': { ru: 'Polski', en: 'Polski', es: 'Polaco', tr: 'Lehçe', de: 'Polnisch', kk: 'Поляк', hy: 'Լեհերեն', pl: 'Polski' },
 
-
+  // ── Themes ──
+  'settings.themes.title': { ru: 'Тема оформления', en: 'Appearance' },
+  'settings.themes.green': { ru: 'NeonSub Green', en: 'NeonSub Green' },
+  'settings.themes.purple': { ru: 'Midnight Purple', en: 'Midnight Purple' },
+  'settings.themes.blue': { ru: 'Arctic Blue', en: 'Arctic Blue' },
+  'settings.themes.free': { ru: 'Текущая', en: 'Current' },
+  'settings.themes.proOnly': { ru: 'PRO', en: 'PRO' },
 };
+
 
 /** Translate a key with optional variable interpolation.
  *  @example t('status.days', 'ru', { days: 3 }) → '3 дн.'

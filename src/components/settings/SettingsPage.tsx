@@ -9,6 +9,7 @@ import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
+import { useTheme, Theme } from '@/components/providers/ThemeProvider';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -65,6 +66,7 @@ export function SettingsPage({
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const { lang, setLang, t } = useLanguage();
   const { isPro } = usePro();
+  const { theme, setTheme } = useTheme();
   const [langOpen, setLangOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -250,7 +252,13 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 1. Валюта ── */}
+      {/* ── 1. Тема оформления ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.themes.title')} />
+        <ThemeSwitch value={theme} onChange={setTheme} isPro={isPro} onOpenPro={onOpenPro} t={t} />
+      </motion.div>
+
+      {/* ── 2. Валюта ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.currency.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-4">
@@ -840,6 +848,74 @@ function LangGrid({
             )}
             <span className="text-[11px] font-bold tracking-wide">{opt.label}</span>
             <span className="text-[9px] opacity-70 leading-none">{opt.name}</span>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Theme Switch ── */
+
+const THEME_OPTIONS: { value: Theme; label: string; key: string; color: string; proOnly: boolean }[] = [
+  { value: 'green',  label: 'NeonSub Green',   key: 'settings.themes.green',  color: '#00FF41', proOnly: false },
+  { value: 'purple', label: 'Midnight Purple',  key: 'settings.themes.purple', color: '#A855F7', proOnly: true },
+  { value: 'blue',   label: 'Arctic Blue',      key: 'settings.themes.blue',   color: '#06B6D4', proOnly: true },
+];
+
+function ThemeSwitch({
+  value,
+  onChange,
+  isPro,
+  onOpenPro,
+  t,
+}: {
+  value: Theme;
+  onChange: (t: Theme) => void;
+  isPro: boolean;
+  onOpenPro: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      {THEME_OPTIONS.map((opt) => {
+        const locked = opt.proOnly && !isPro;
+        const active = value === opt.value;
+        return (
+          <motion.button
+            key={opt.value}
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => locked ? onOpenPro() : onChange(opt.value)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-2xl border transition-colors',
+              active
+                ? 'bg-surface-2 border-neon/30'
+                : 'bg-surface-2 border-border-subtle active:bg-surface-3'
+            )}
+            style={active ? { boxShadow: '0 0 12px rgba(var(--color-neon), 0.08)' } : undefined}
+          >
+            {/* Color dot */}
+            <span
+              className="w-7 h-7 rounded-full shrink-0 flex items-center justify-center"
+              style={{ background: opt.color, boxShadow: active ? `0 0 10px ${opt.color}60` : undefined }}
+            />
+            {/* Label */}
+            <span className={cn('flex-1 text-sm font-medium text-left', active ? 'text-text-primary' : 'text-text-secondary')}>
+              {t(opt.key)}
+            </span>
+            {/* Right indicator */}
+            {locked ? (
+              <span className="text-xs font-bold text-warning/70 bg-warning/10 px-2 py-0.5 rounded-lg">PRO</span>
+            ) : active ? (
+              <span className="w-5 h-5 rounded-full bg-neon flex items-center justify-center">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-surface">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </span>
+            ) : (
+              <span className="w-5 h-5 rounded-full border border-border-subtle" />
+            )}
           </motion.button>
         );
       })}

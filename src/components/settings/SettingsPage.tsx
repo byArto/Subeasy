@@ -893,7 +893,7 @@ function ThemeSwitch({
                 ? 'bg-surface-2 border-neon/30'
                 : 'bg-surface-2 border-border-subtle active:bg-surface-3'
             )}
-            style={active ? { boxShadow: '0 0 12px rgba(var(--color-neon), 0.08)' } : undefined}
+            style={active ? { boxShadow: '0 0 12px color-mix(in srgb, var(--color-neon) 20%, transparent)' } : undefined}
           >
             {/* Color dot */}
             <span
@@ -1036,6 +1036,7 @@ function CategoryRow({
           type="text"
           value={editName}
           onChange={(e) => onEditNameChange(e.target.value)}
+          placeholder={namePlaceholder}
           autoFocus
           className={cn(
             'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-neon/30',

@@ -10,6 +10,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { useTheme, Theme } from '@/components/providers/ThemeProvider';
+import { exportCSV, exportPDF } from '@/lib/export';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -111,6 +112,16 @@ export function SettingsPage({
     a.download = `subeasy-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function handleExportCsv() {
+    if (!isPro) { onOpenPro(); return; }
+    exportCSV(subscriptions, categories, settings, lang);
+  }
+
+  async function handleExportPdf() {
+    if (!isPro) { onOpenPro(); return; }
+    await exportPDF(subscriptions, categories, settings, lang);
   }
 
   function handleImport() {
@@ -567,6 +578,18 @@ export function SettingsPage({
         <SectionHeader title={t('settings.data.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
           <SettingsRow label={t('settings.data.export')} hint={t('settings.data.exportHint')} onTap={handleExport} />
+          <SettingsRow
+            label={t('settings.data.exportCsv')}
+            hint={t('settings.data.exportCsvHint')}
+            onTap={handleExportCsv}
+            proLocked={!isPro}
+          />
+          <SettingsRow
+            label={t('settings.data.exportPdf')}
+            hint={t('settings.data.exportPdfHint')}
+            onTap={handleExportPdf}
+            proLocked={!isPro}
+          />
           <SettingsRow label={t('settings.data.import')} hint={t('settings.data.importHint')} onTap={handleImport} isLast={false} />
 
           {/* Clear data */}
@@ -729,11 +752,13 @@ function SettingsRow({
   hint,
   onTap,
   isLast = false,
+  proLocked = false,
 }: {
   label: string;
   hint?: string;
   onTap: () => void;
   isLast?: boolean;
+  proLocked?: boolean;
 }) {
   return (
     <motion.button
@@ -746,8 +771,14 @@ function SettingsRow({
         !isLast && 'border-b border-border-subtle'
       )}
     >
-      <span className="text-sm text-text-primary font-medium">{label}</span>
-      {hint && <span className="text-xs text-text-muted">{hint}</span>}
+      <div className="flex flex-col items-start gap-0.5">
+        <span className="text-sm text-text-primary font-medium">{label}</span>
+        {hint && <span className="text-xs text-text-muted">{hint}</span>}
+      </div>
+      {proLocked
+        ? <span className="text-[10px] font-bold text-warning/70 bg-warning/10 px-2 py-0.5 rounded-lg shrink-0">PRO</span>
+        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted shrink-0"><path d="m9 18 6-6-6-6"/></svg>
+      }
     </motion.button>
   );
 }

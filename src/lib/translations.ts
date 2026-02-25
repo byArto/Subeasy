@@ -404,8 +404,12 @@ const dict: Translations = {
   'settings.categories.add': { ru: 'Добавить категорию', en: 'Add category' },
 
   'settings.data.title': { ru: 'Данные', en: 'Data' },
-  'settings.data.export': { ru: 'Экспорт данных', en: 'Export data' },
+  'settings.data.export': { ru: 'Резервная копия JSON', en: 'JSON backup' },
   'settings.data.exportHint': { ru: 'Сохранить JSON-файл', en: 'Save JSON file' },
+  'settings.data.exportCsv': { ru: 'Экспорт CSV', en: 'Export CSV' },
+  'settings.data.exportCsvHint': { ru: 'Для Excel / Google Sheets', en: 'For Excel / Google Sheets' },
+  'settings.data.exportPdf': { ru: 'Экспорт PDF', en: 'Export PDF' },
+  'settings.data.exportPdfHint': { ru: 'Красивый отчёт для печати', en: 'Formatted report' },
   'settings.data.import': { ru: 'Импорт данных', en: 'Import data' },
   'settings.data.importHint': { ru: 'Загрузить из файла', en: 'Load from file' },
   'settings.data.clearAll': { ru: 'Очистить все данные', en: 'Clear all data' },

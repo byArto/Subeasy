@@ -31,6 +31,7 @@ import { ProBadge, ProModal } from '@/components/pro';
 import { ShareModal } from '@/components/share/ShareModal';
 import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
+import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -126,6 +127,9 @@ export default function Home() {
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
   const { t, lang } = useLanguage();
+
+  // Save Telegram chat_id to Supabase for push notifications
+  useSaveTelegramChatId();
 
   // Shared hooks
   const {

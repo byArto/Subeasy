@@ -120,6 +120,7 @@ export async function pullSettings(userId: string): Promise<AppSettings | null> 
   return {
     displayCurrency: data.display_currency,
     exchangeRate: Number(data.exchange_rate),
+    eurExchangeRate: data.eur_exchange_rate ? Number(data.eur_exchange_rate) : 105,
     useManualRate: data.use_manual_rate,
     notificationsEnabled: data.notifications_enabled,
     notifyDaysBefore: data.notify_days_before,
@@ -133,6 +134,7 @@ export async function pushSettings(userId: string, settings: AppSettings): Promi
       user_id: userId,
       display_currency: settings.displayCurrency,
       exchange_rate: settings.exchangeRate,
+      eur_exchange_rate: settings.eurExchangeRate ?? 105,
       use_manual_rate: settings.useManualRate,
       notifications_enabled: settings.notificationsEnabled,
       notify_days_before: settings.notifyDaysBefore,

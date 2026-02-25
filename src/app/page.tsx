@@ -29,6 +29,8 @@ import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
 import { ProBadge, ProModal } from '@/components/pro';
 import { ShareModal } from '@/components/share/ShareModal';
+import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
+import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -273,6 +275,7 @@ export default function Home() {
                 onSubTap={openDetail}
                 onMarkPaid={handleMarkPaid}
                 onDeleteSub={handleDeleteSub}
+                onDeactivateSub={(id) => updateSubscription(id, { isActive: false })}
               />
             )}
             {activeTab === 'analytics' && (
@@ -346,6 +349,7 @@ export default function Home() {
         <SubForm
           mode="add"
           categories={categories}
+          existingSubscriptions={subscriptions}
           onSubmit={(data) => {
             addSubscription(data);
             playSuccess();
@@ -435,6 +439,7 @@ function HomeTab({
   onSubTap,
   onMarkPaid,
   onDeleteSub,
+  onDeactivateSub,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -447,12 +452,14 @@ function HomeTab({
   onSubTap: (sub: Subscription) => void;
   onMarkPaid: (sub: Subscription) => void;
   onDeleteSub: (sub: Subscription) => void;
+  onDeactivateSub: (id: string) => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [hidePaused, setHidePaused] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [ignoredDups, setIgnoredDups] = useState<Set<string>>(() => getIgnoredPairs());
 
   const { lang } = useLanguage();
   const { displayCurrency, exchangeRate } = settings;
@@ -502,6 +509,11 @@ function HomeTab({
     return bestId === mostExpensiveId ? null : bestId; // avoid double badge
   }, [active, mostExpensiveId]);
 
+  const dupGroups = useMemo(
+    () => findDuplicates(subscriptions).filter((g) => !isGroupIgnored(g, ignoredDups)),
+    [subscriptions, ignoredDups],
+  );
+
   const hasSubscriptions = subscriptions.length > 0;
 
   return (
@@ -526,6 +538,21 @@ function HomeTab({
           onSubTap={onSubTap}
         />
       )}
+
+      {/* Duplicate detector banner */}
+      <AnimatePresence>
+        {dupGroups.length > 0 && (
+          <DuplicateBanner
+            groups={dupGroups}
+            onDeactivate={onDeactivateSub}
+            onDelete={(id) => onDeleteSub(subscriptions.find((s) => s.id === id)!)}
+            onIgnore={(id1, id2) => {
+              ignorePair(id1, id2);
+              setIgnoredDups(getIgnoredPairs());
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Search + Category + Sort filter */}
       {hasSubscriptions && (

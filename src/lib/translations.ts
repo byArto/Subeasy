@@ -430,6 +430,16 @@ const dict: Translations = {
   'settings.about.version': { ru: 'Версия', en: 'Version' },
   'settings.about.description': { ru: 'Твой личный трекер подписок', en: 'Your personal subscription tracker' },
 
+  // ── Duplicate detector ──
+  'dup.banner':      { ru: 'Возможные дубли',                          en: 'Possible duplicates' },
+  'dup.review':      { ru: 'Проверить',                                en: 'Review' },
+  'dup.modalTitle':  { ru: 'Дубли подписок',                           en: 'Duplicate subscriptions' },
+  'dup.deactivate':  { ru: 'Деактивировать',                           en: 'Deactivate' },
+  'dup.delete':      { ru: 'Удалить',                                  en: 'Delete' },
+  'dup.ignore':      { ru: 'Игнорировать',                             en: 'Ignore' },
+  'dup.formWarning': { ru: 'Уже есть подписка с таким именем:',        en: 'A subscription with this name exists:' },
+  'dup.addAnyway':   { ru: 'Добавить всё равно',                       en: 'Add anyway' },
+
   // ── Share card ──
   'share.title': { ru: 'Поделиться', en: 'Share' },
   'share.save': { ru: 'Сохранить', en: 'Save image' },

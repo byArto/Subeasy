@@ -87,6 +87,7 @@ interface SubFormProps {
   mode: 'add' | 'edit';
   initialData?: Subscription;
   categories: Category[];
+  existingSubscriptions?: Subscription[];
   onSubmit: (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onDelete?: () => void;
   onAddCategory: (cat: Omit<Category, 'id'>) => void;
@@ -117,6 +118,7 @@ export function SubForm({
   mode,
   initialData,
   categories,
+  existingSubscriptions,
   onSubmit,
   onDelete,
   onAddCategory,
@@ -154,11 +156,13 @@ export function SubForm({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [suggestions, setSuggestions] = useState<ServiceTemplate[]>([]);
   const [showExtra, setShowExtra] = useState(mode === 'edit');
+  const [dupWarning, setDupWarning] = useState<Subscription | null>(null);
 
   /* ── Service autocomplete ── */
 
   function handleNameChange(value: string) {
     setName(value);
+    if (dupWarning) setDupWarning(null);
     if (mode === 'add' && value.length >= 1) {
       setSuggestions(searchServices(value));
     } else {
@@ -205,8 +209,20 @@ export function SubForm({
 
   /* ── Submit ── */
 
-  function handleSubmit() {
+  function handleSubmit(force = false) {
     if (!validate()) return;
+
+    // Duplicate check on first submit attempt (add mode only)
+    if (mode === 'add' && !force && existingSubscriptions && dupWarning === null) {
+      const trimmedName = name.trim().toLowerCase();
+      const found = existingSubscriptions.find(
+        (s) => s.name.trim().toLowerCase() === trimmedName,
+      );
+      if (found) {
+        setDupWarning(found);
+        return;
+      }
+    }
 
     onSubmit({
       name: name.trim(),
@@ -363,6 +379,37 @@ export function SubForm({
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* ── Duplicate warning ── */}
+      <AnimatePresence>
+        {dupWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="rounded-xl px-3.5 py-3"
+            style={{ background: 'rgba(255,184,0,0.08)', border: '1px solid rgba(255,184,0,0.22)' }}
+          >
+            <p className="text-xs text-warning font-medium mb-1.5">{t('dup.formWarning')}</p>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="text-base">{dupWarning.icon}</span>
+              <span className="text-sm text-text-primary font-medium">{dupWarning.name}</span>
+              <span className="text-xs text-text-muted ml-auto tabular-nums">
+                {dupWarning.price} {CURRENCY_SYMBOLS[dupWarning.currency] ?? dupWarning.currency}
+              </span>
+            </div>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              onClick={() => handleSubmit(true)}
+              className="w-full py-2 rounded-lg text-xs font-semibold text-warning bg-warning/10 active:bg-warning/20 transition-colors"
+            >
+              {t('dup.addAnyway')}
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Price + Currency ── */}
       <motion.div

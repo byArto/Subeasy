@@ -7,8 +7,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 
 /**
  * When the user opens the Mini App while logged in,
- * saves their Telegram chat_id and current language to Supabase
- * so the notification cron can reach them.
+ * saves their Telegram chat_id via server API (bypasses RLS)
+ * and current language to Supabase so the notification cron can reach them.
  */
 export function useSaveTelegramChatId() {
   const { isTelegram, user: tgUser } = useTelegramContext();
@@ -25,13 +25,18 @@ export function useSaveTelegramChatId() {
         ? (localStorage.getItem('neonsub-language') ?? 'ru')
         : 'ru';
 
-    // Save telegram_chat_id to profiles
-    supabase
-      .from('profiles')
-      .upsert({ id: supabaseUser.id, telegram_chat_id: tgUser.id }, { onConflict: 'id' })
-      .then(({ error }) => {
-        if (error) console.warn('[useSaveTelegramChatId] profiles:', error.message);
-      });
+    // Save telegram_chat_id via server endpoint (service_role bypasses RLS)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token) return;
+      fetch('/api/telegram/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ telegram_chat_id: tgUser.id }),
+      }).catch((err) => console.warn('[useSaveTelegramChatId] connect:', err));
+    });
 
     // Save current language to user_settings (only this column, no overwrite of others)
     supabase

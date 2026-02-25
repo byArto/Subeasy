@@ -2,6 +2,14 @@ import type { Subscription, Category, AppSettings } from './types';
 import { convertCurrency, getMonthlyPrice } from './utils';
 import { CURRENCY_SYMBOLS } from './constants';
 
+// ─── Environment ──────────────────────────────────────────────────────────────
+
+function isTelegramWebApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return !!(window as any).Telegram?.WebApp?.initData;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getCategoryName(sub: Subscription, categories: Category[]): string {
@@ -72,6 +80,24 @@ export function exportCSV(
     .map((row) => row.map(escape).join(','))
     .join('\r\n');
 
+  if (isTelegramWebApp()) {
+    // Telegram WKWebView can't open blob: URLs — copy to clipboard instead
+    navigator.clipboard.writeText('\uFEFF' + csv).then(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).Telegram.WebApp.showAlert(
+        isRu
+          ? 'CSV скопирован в буфер обмена. Вставьте в Excel или Google Sheets.'
+          : 'CSV copied to clipboard. Paste into Excel or Google Sheets.',
+      );
+    }).catch(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).Telegram.WebApp.showAlert(
+        isRu ? 'Не удалось скопировать CSV.' : 'Failed to copy CSV.',
+      );
+    });
+    return;
+  }
+
   // UTF-8 BOM — Excel / Numbers on macOS/iOS open Cyrillic correctly
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -94,7 +120,7 @@ export function exportPDF(
   categories: Category[],
   settings: AppSettings,
   lang: string,
-): void {
+): string | void {
   const isRu = lang === 'ru';
   const eurRate = settings.eurExchangeRate ?? 105;
   const sym = CURRENCY_SYMBOLS[settings.displayCurrency] ?? '';
@@ -260,6 +286,11 @@ export function exportPDF(
   </script>
 </body>
 </html>`;
+
+  if (isTelegramWebApp()) {
+    // Telegram WKWebView can't open blob: URLs — return HTML for in-app iframe overlay
+    return html;
+  }
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);

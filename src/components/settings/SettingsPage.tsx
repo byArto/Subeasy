@@ -80,6 +80,7 @@ export function SettingsPage({
 
   const [confirmClear, setConfirmClear] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   let sectionIdx = 0;
@@ -119,9 +120,13 @@ export function SettingsPage({
     exportCSV(subscriptions, categories, settings, lang);
   }
 
-  async function handleExportPdf() {
+  function handleExportPdf() {
     if (!isPro) { onOpenPro(); return; }
-    await exportPDF(subscriptions, categories, settings, lang);
+    const result = exportPDF(subscriptions, categories, settings, lang);
+    if (typeof result === 'string') {
+      // Telegram context: show HTML in in-app iframe overlay
+      setPdfOverlayHtml(result);
+    }
   }
 
   function handleImport() {
@@ -731,6 +736,42 @@ export function SettingsPage({
           </p>
         </div>
       </motion.div>
+
+      {/* ── PDF overlay (Telegram only) ── */}
+      <AnimatePresence>
+        {pdfOverlayHtml && (
+          <motion.div
+            key="pdf-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col bg-black"
+          >
+            {/* Close bar */}
+            <div className="flex items-center justify-between px-4 py-3 bg-surface-2 border-b border-border-subtle shrink-0">
+              <span className="text-sm font-semibold text-text-primary">
+                {lang === 'ru' ? 'Предпросмотр PDF' : 'PDF Preview'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPdfOverlayHtml(null)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted active:bg-surface-4 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* HTML report in iframe */}
+            <iframe
+              srcDoc={pdfOverlayHtml}
+              className="flex-1 w-full border-0"
+              title="PDF Preview"
+              sandbox="allow-scripts"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

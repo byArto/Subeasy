@@ -325,31 +325,19 @@ function BudgetSection({
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={onOpenPro}
-          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left relative overflow-hidden"
+          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left"
         >
-          {/* Blur overlay */}
-          <div className="absolute inset-0 backdrop-blur-[1px] bg-surface-2/60 rounded-2xl z-10 flex flex-col items-center justify-center gap-2 px-6">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🔒</span>
-              <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">PRO</span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">
+              <span className="text-lg">🔒</span>
             </div>
-            <p className="text-sm font-semibold text-text-primary text-center">{t('budget.proLocked.title')}</p>
-            <p className="text-xs text-text-muted text-center">{t('budget.proLocked.desc')}</p>
-            <div className="mt-1 px-4 py-1.5 bg-neon/10 border border-neon/30 rounded-xl">
-              <span className="text-xs font-bold text-neon">Открыть PRO</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text-primary">{t('budget.proLocked.title')}</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{t('budget.proLocked.desc')}</p>
             </div>
-          </div>
-
-          {/* Blurred preview */}
-          <div className="opacity-30 pointer-events-none select-none">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-semibold text-text-primary">5 000 ₽</span>
-              <span className="text-xs text-text-muted">из 8 000 ₽</span>
+            <div className="px-2.5 py-1 bg-neon/10 border border-neon/30 rounded-lg shrink-0">
+              <span className="text-[10px] font-bold text-neon tracking-wider">PRO</span>
             </div>
-            <div className="h-2.5 rounded-full bg-surface-4 overflow-hidden mb-1">
-              <div className="h-full rounded-full bg-neon/50" style={{ width: '62%' }} />
-            </div>
-            <p className="text-xs text-neon mt-2">Осталось 3 000 ₽</p>
           </div>
         </motion.button>
       </div>
@@ -386,33 +374,32 @@ function BudgetSection({
     return (
       <div>
         <SectionHeader title={t('budget.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-neon/40 p-4">
-          <p className="text-xs text-text-muted mb-2">{t('budget.setLimit')}</p>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center bg-surface-3 rounded-xl px-3 gap-1.5 border border-border-subtle">
-              <span className="text-text-muted text-sm">{symbol}</span>
-              <input
-                ref={inputRef}
-                type="number"
-                inputMode="numeric"
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
-                placeholder={t('budget.placeholder')}
-                className="flex-1 bg-transparent py-2.5 text-sm text-text-primary outline-none tabular-nums"
-              />
-            </div>
+        <div className="bg-surface-2 rounded-2xl border border-neon/40 p-4 space-y-3">
+          <div className="flex items-center bg-surface-3 rounded-xl px-3 gap-2 border border-border-subtle">
+            <span className="text-text-muted text-sm shrink-0">{symbol}</span>
+            <input
+              ref={inputRef}
+              type="number"
+              inputMode="numeric"
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+              placeholder={t('budget.placeholder')}
+              className="flex-1 bg-transparent py-3 text-sm text-text-primary outline-none tabular-nums"
+            />
+          </div>
+          <div className="flex gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleSave}
-              className="px-4 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl"
+              className="flex-1 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl"
             >
               {t('budget.save')}
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setEditing(false)}
-              className="px-3 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl"
+              className="px-5 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl border border-border-subtle"
             >
               {t('budget.cancel')}
             </motion.button>

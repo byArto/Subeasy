@@ -224,6 +224,18 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           onSubTap={onSubTap}
         />
       </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SubScoreSection
+          subscriptions={subscriptions}
+          active={active}
+          settings={settings}
+          monthlyTotal={monthlyTotal}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
+          onOpenPro={onOpenPro}
+        />
+      </motion.div>
     </div>
   );
 }
@@ -1439,6 +1451,318 @@ function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: 
       {isForecast && (
         <span className="text-[10px] text-warning ml-1">{t('analytics.forecastTag')}</span>
       )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   СЕКЦИЯ PRO: Sub Score (A–F Grade)
+   ═══════════════════════════════════════ */
+
+const GRADE_COLORS: Record<string, string> = {
+  A: '#00FF41',
+  B: '#82D200',
+  C: '#FFB800',
+  D: '#FF8C00',
+  F: '#FF4444',
+};
+
+interface ScoreFactor {
+  icon: string;
+  nameKey: string;
+  descKey: string;
+  descVars?: Record<string, string | number>;
+  tipKey: string;
+  tipVars?: Record<string, string | number>;
+  pts: number;
+  maxPts: number;
+}
+
+function calcSubScore(
+  subscriptions: Subscription[],
+  active: Subscription[],
+  settings: AppSettings,
+  monthlyTotal: number,
+  displayCurrency: string,
+  exchangeRate: number,
+): { total: number; grade: string; statusKey: string; factors: ScoreFactor[]; worstFactor: ScoreFactor | null } {
+  const factors: ScoreFactor[] = [];
+
+  // ── Factor 1: Budget (25 pts) ──
+  const budget = settings.monthlyBudget ?? 0;
+  let bPts: number; let bDesc: string; let bDescVars: Record<string, string | number> | undefined;
+  let bTip: string; let bTipVars: Record<string, string | number> | undefined;
+  if (budget <= 0) {
+    bPts = 15; bDesc = 'score.factorBudgetNoLimit'; bTip = 'score.tipBudget';
+  } else {
+    const pct = (monthlyTotal / budget) * 100;
+    if (pct <= 80) {
+      bPts = 25; bDesc = 'score.factorBudgetGood'; bDescVars = { pct: Math.round(pct) }; bTip = 'score.tipBudget';
+    } else if (pct <= 100) {
+      bPts = Math.round(15 + ((100 - pct) / 20) * 10);
+      bDesc = 'score.factorBudgetWarn'; bDescVars = { pct: Math.round(pct) }; bTip = 'score.tipBudgetOver';
+    } else {
+      const over = Math.round(pct - 100);
+      bPts = Math.max(0, Math.round(15 - over * 0.5));
+      bDesc = 'score.factorBudgetOver'; bDescVars = { pct: over };
+      bTip = 'score.tipBudgetOver'; bTipVars = { pct: over };
+    }
+  }
+  factors.push({ icon: '💰', nameKey: 'score.factorBudget', descKey: bDesc, descVars: bDescVars, tipKey: bTip, tipVars: bTipVars, pts: bPts, maxPts: 25 });
+
+  // ── Factor 2: Activity (25 pts) ──
+  const inactive = subscriptions.filter((s) => !s.isActive);
+  const aPts = Math.max(0, 25 - inactive.length * 7);
+  factors.push({
+    icon: '😴', nameKey: 'score.factorActive',
+    descKey: inactive.length === 0 ? 'score.factorActiveGood' : 'score.factorActiveBad',
+    descVars: inactive.length > 0 ? { n: inactive.length } : undefined,
+    tipKey: 'score.tipActive', tipVars: inactive.length > 0 ? { n: inactive.length } : undefined,
+    pts: aPts, maxPts: 25,
+  });
+
+  // ── Factor 3: No duplicates (20 pts) ──
+  const catCount = new Map<string, number>();
+  for (const s of active) catCount.set(s.category, (catCount.get(s.category) || 0) + 1);
+  const dupeCats = Array.from(catCount.values()).filter((c) => c >= 2).length;
+  const dPts = Math.max(0, 20 - dupeCats * 10);
+  factors.push({
+    icon: '🔄', nameKey: 'score.factorDupes',
+    descKey: dupeCats === 0 ? 'score.factorDupesGood' : 'score.factorDupesBad',
+    descVars: dupeCats > 0 ? { n: dupeCats } : undefined,
+    tipKey: 'score.tipDupes',
+    pts: dPts, maxPts: 20,
+  });
+
+  // ── Factor 4: Diversification (15 pts) ──
+  let divPts: number; let divDesc: string; let divDescVars: Record<string, string | number> | undefined;
+  if (active.length <= 1) {
+    divPts = 10; divDesc = 'score.factorDiversifyGood';
+  } else {
+    const catSpend = new Map<string, number>();
+    for (const s of active) {
+      const m = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      catSpend.set(s.category, (catSpend.get(s.category) || 0) + m);
+    }
+    const topPct = monthlyTotal > 0
+      ? (Array.from(catSpend.values()).sort((a, b) => b - a)[0] / monthlyTotal) * 100
+      : 0;
+    if (topPct <= 40) {
+      divPts = 15; divDesc = 'score.factorDiversifyGood';
+    } else if (topPct <= 60) {
+      divPts = 10; divDesc = 'score.factorDiversifyBad'; divDescVars = { pct: Math.round(topPct) };
+    } else {
+      divPts = 5; divDesc = 'score.factorDiversifyBad'; divDescVars = { pct: Math.round(topPct) };
+    }
+  }
+  factors.push({
+    icon: '📊', nameKey: 'score.factorDiversify',
+    descKey: divDesc, descVars: divDescVars,
+    tipKey: 'score.tipDiversify',
+    pts: divPts, maxPts: 15,
+  });
+
+  // ── Factor 5: No forgotten trials (10 pts) ──
+  const trials = active.filter((s) => s.cycle === 'trial');
+  const tPts = Math.max(0, 10 - trials.length * 5);
+  factors.push({
+    icon: '🧪', nameKey: 'score.factorTrials',
+    descKey: trials.length === 0 ? 'score.factorTrialsGood' : 'score.factorTrialsBad',
+    descVars: trials.length > 0 ? { n: trials.length } : undefined,
+    tipKey: 'score.tipTrials',
+    pts: tPts, maxPts: 10,
+  });
+
+  // ── Factor 6: Annual bonus (5 pts) ──
+  const annuals = active.filter((s) => s.cycle === 'yearly');
+  const anPts = annuals.length > 0 ? 5 : 0;
+  factors.push({
+    icon: '📅', nameKey: 'score.factorAnnual',
+    descKey: annuals.length > 0 ? 'score.factorAnnualGood' : 'score.factorAnnualNone',
+    tipKey: 'score.tipAnnual',
+    pts: anPts, maxPts: 5,
+  });
+
+  const total = factors.reduce((sum, f) => sum + f.pts, 0);
+  let grade: string; let statusKey: string;
+  if (total >= 90) { grade = 'A'; statusKey = 'score.gradeExcellent'; }
+  else if (total >= 75) { grade = 'B'; statusKey = 'score.gradeGood'; }
+  else if (total >= 60) { grade = 'C'; statusKey = 'score.gradeOk'; }
+  else if (total >= 45) { grade = 'D'; statusKey = 'score.gradeWarn'; }
+  else { grade = 'F'; statusKey = 'score.gradeBad'; }
+
+  const worstFactor = factors
+    .filter((f) => f.pts < f.maxPts)
+    .sort((a, b) => (a.pts / a.maxPts) - (b.pts / b.maxPts))[0] || null;
+
+  return { total, grade, statusKey, factors, worstFactor };
+}
+
+function SubScoreSection({
+  subscriptions,
+  active,
+  settings,
+  monthlyTotal,
+  displayCurrency,
+  exchangeRate,
+  onOpenPro,
+}: {
+  subscriptions: Subscription[];
+  active: Subscription[];
+  settings: AppSettings;
+  monthlyTotal: number;
+  displayCurrency: string;
+  exchangeRate: number;
+  onOpenPro?: () => void;
+}) {
+  const { isPro, loading } = usePro();
+  const { t } = useLanguage();
+
+  if (loading) return null;
+
+  // ── Non-PRO locked card ──
+  if (!isPro) {
+    return (
+      <div>
+        <SectionHeader title={t('score.title')} />
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={onOpenPro}
+          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left outline-none"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">
+              <span className="text-lg">🔒</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text-primary">{t('score.proLocked.title')}</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{t('score.proLocked.desc')}</p>
+            </div>
+            <div className="px-2.5 py-1 rounded-lg shrink-0" style={{ background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)' }}>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: '#f5c842' }}>PRO</span>
+            </div>
+          </div>
+        </motion.button>
+      </div>
+    );
+  }
+
+  // ── Not enough subscriptions ──
+  if (active.length < 4) {
+    return (
+      <div>
+        <SectionHeader title={t('score.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">
+              <span className="text-lg">📊</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-text-primary">{t('score.notEnough')}</p>
+              <p className="text-xs text-text-muted mt-0.5">{t('score.notEnoughDesc', { n: active.length })}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { total, grade, statusKey, factors, worstFactor } = calcSubScore(
+    subscriptions, active, settings, monthlyTotal, displayCurrency, exchangeRate,
+  );
+  const gradeColor = GRADE_COLORS[grade] || '#8888A0';
+  const GRADES = ['F', 'D', 'C', 'B', 'A'];
+
+  return (
+    <div>
+      <SectionHeader title={t('score.title')} />
+      <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+
+        {/* Hero */}
+        <div className="p-4 flex items-center justify-between border-b border-border-subtle">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Sub Score</p>
+              <div className="px-2 py-0.5 rounded-lg" style={{ background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)' }}>
+                <span className="text-[10px] font-bold tracking-wider" style={{ color: '#f5c842' }}>PRO</span>
+              </div>
+            </div>
+            <p className="text-xl font-bold text-text-primary">{t(statusKey)}</p>
+            <p className="text-xs text-text-muted mt-0.5">{total} / 100 {t('score.pts')}</p>
+          </div>
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: `${gradeColor}12`, border: `2px solid ${gradeColor}50` }}
+          >
+            <span className="text-3xl font-black leading-none" style={{ color: gradeColor, textShadow: `0 0 20px ${gradeColor}60` }}>
+              {grade}
+            </span>
+          </div>
+        </div>
+
+        {/* Grade scale */}
+        <div className="px-4 py-3 border-b border-border-subtle">
+          <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">{t('score.scale')}</p>
+          <div className="flex gap-1.5">
+            {GRADES.map((g) => {
+              const isActive = g === grade;
+              const col = GRADE_COLORS[g];
+              return (
+                <div
+                  key={g}
+                  className="flex-1 h-7 rounded-lg flex items-center justify-center text-sm font-bold"
+                  style={{
+                    background: isActive ? `${col}18` : '#1A1A24',
+                    border: `1px solid ${isActive ? col + '50' : 'transparent'}`,
+                    color: isActive ? col : '#55556A',
+                    opacity: isActive ? 1 : 0.45,
+                  }}
+                >
+                  {g}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Factors */}
+        <div className="divide-y divide-border-subtle">
+          {factors.map((f, i) => {
+            const ratio = f.pts / f.maxPts;
+            const fColor = ratio >= 0.8 ? '#00FF41' : ratio >= 0.5 ? '#FFB800' : '#FF4444';
+            return (
+              <div key={i} className="px-4 py-3 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center shrink-0 text-base">
+                  {f.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-text-primary">{t(f.nameKey)}</p>
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-tight">{t(f.descKey, f.descVars)}</p>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-sm font-bold tabular-nums" style={{ color: fColor }}>{f.pts}</span>
+                  <div className="w-10 h-1 rounded-full overflow-hidden" style={{ background: '#252532' }}>
+                    <div className="h-full rounded-full" style={{ width: `${(f.pts / f.maxPts) * 100}%`, background: fColor }} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Tip: how to improve */}
+        {worstFactor && (
+          <div className="px-4 py-3 border-t border-border-subtle flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-base mt-0.5" style={{ background: 'rgba(255,184,0,0.1)' }}>
+              💡
+            </div>
+            <div>
+              <p className="text-xs font-bold" style={{ color: '#FFB800' }}>{t('score.howToImprove')}</p>
+              <p className="text-[11px] text-text-muted mt-0.5 leading-tight">{t(worstFactor.tipKey, worstFactor.tipVars)}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

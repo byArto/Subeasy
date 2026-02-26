@@ -14,24 +14,29 @@ import { pullWorkspace, pullWorkspaceSubscriptions } from '@/lib/sync';
 import type { Workspace, WorkspaceMember, Subscription } from '@/lib/types';
 
 interface WorkspaceContextValue {
-  /** Currently active workspace (null = personal mode) */
+  /** Workspace the user belongs to (null = user has no workspace at all) */
   workspace: Workspace | null;
   members: WorkspaceMember[];
   /** Subscriptions that belong to the active workspace */
   workspaceSubscriptions: Subscription[];
   isOwner: boolean;
+  /**
+   * true  = workspace mode: showing shared subscription pool
+   * false = personal mode: showing own subscriptions (workspace still exists)
+   */
+  isWorkspaceActive: boolean;
   loading: boolean;
-  /** Switch to workspace mode and load its subscriptions */
+  /** Activate workspace mode and load its subscriptions */
   activateWorkspace: (ws: Workspace, members: WorkspaceMember[]) => Promise<void>;
-  /** Go back to personal mode */
+  /** Switch to personal mode. Keeps workspace data — doesn't clear it. */
   switchToPersonal: () => void;
   /** Re-fetch workspace subscriptions from Supabase */
   refreshWorkspaceSubs: () => Promise<void>;
   /** Returns the full invite URL */
   getInviteUrl: () => string;
-  /** Call after creating / joining to reload workspace data */
+  /** Call after creating / joining to reload workspace data and enter workspace mode */
   reloadWorkspace: () => Promise<void>;
-  /** Clear workspace context (on logout / leave) */
+  /** Full clear: workspace data + personal mode + reset loaded flag (use on logout/leave/delete) */
   clearWorkspace: () => void;
 }
 
@@ -44,6 +49,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [workspaceSubscriptions, setWorkspaceSubs] = useState<Subscription[]>([]);
+  const [isWorkspaceActive, setIsWorkspaceActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const loadedForUser = useRef<string | null>(null);
 
@@ -61,9 +67,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceSubs(subs);
   }, [workspace]);
 
+  /**
+   * Activate workspace mode: store data, save to localStorage, load subscriptions.
+   */
   const activateWorkspace = useCallback(async (ws: Workspace, mems: WorkspaceMember[]) => {
     setWorkspace(ws);
     setMembers(mems);
+    setIsWorkspaceActive(true);
     try {
       localStorage.setItem(LS_KEY, ws.id);
     } catch { /* ignore */ }
@@ -71,20 +81,36 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceSubs(subs);
   }, []);
 
+  /**
+   * Switch to personal mode. Keeps workspace + members data so Settings still
+   * shows the owner/member view. Clears workspace subscriptions from memory.
+   */
   const switchToPersonal = useCallback(() => {
-    setWorkspace(null);
-    setMembers([]);
+    setIsWorkspaceActive(false);
     setWorkspaceSubs([]);
     try {
       localStorage.removeItem(LS_KEY);
     } catch { /* ignore */ }
   }, []);
 
+  /**
+   * Full reset: clears everything. Use on logout, leave workspace, delete workspace.
+   */
   const clearWorkspace = useCallback(() => {
-    switchToPersonal();
+    setWorkspace(null);
+    setMembers([]);
+    setWorkspaceSubs([]);
+    setIsWorkspaceActive(false);
     loadedForUser.current = null;
-  }, [switchToPersonal]);
+    try {
+      localStorage.removeItem(LS_KEY);
+    } catch { /* ignore */ }
+  }, []);
 
+  /**
+   * Reload workspace from Supabase (after create or join).
+   * Always enters workspace mode after successful load.
+   */
   const reloadWorkspace = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -117,11 +143,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           } catch { /* ignore */ }
 
           if (wasActive) {
+            // Restore workspace mode
             await activateWorkspace(result.workspace, result.members);
           } else {
-            // Just store workspace data but stay in personal mode
+            // Store workspace data but stay in personal mode
             setWorkspace(result.workspace);
             setMembers(result.members);
+            setIsWorkspaceActive(false);
           }
         }
       } catch (err) {
@@ -134,7 +162,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     autoLoad();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Clear on logout
+  // Clear everything on logout
   useEffect(() => {
     if (!user) {
       clearWorkspace();
@@ -146,6 +174,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     members,
     workspaceSubscriptions,
     isOwner,
+    isWorkspaceActive,
     loading,
     activateWorkspace,
     switchToPersonal,

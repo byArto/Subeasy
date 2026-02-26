@@ -73,9 +73,9 @@ export function SettingsPage({
     workspace,
     members,
     isOwner,
+    isWorkspaceActive,
     loading: wsLoading,
     activateWorkspace,
-    switchToPersonal,
     reloadWorkspace,
     clearWorkspace,
     getInviteUrl,
@@ -269,8 +269,7 @@ export function SettingsPage({
         body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
       });
       if (res.ok) {
-        clearWorkspace();
-        switchToPersonal();
+        clearWorkspace(); // clearWorkspace already resets all state incl. isWorkspaceActive
         setConfirmLeaveWs(false);
       }
     } catch {
@@ -278,7 +277,7 @@ export function SettingsPage({
     } finally {
       setWsActionLoading(false);
     }
-  }, [user, workspace, clearWorkspace, switchToPersonal]);
+  }, [user, workspace, clearWorkspace]);
 
   const handleDeleteWorkspace = useCallback(async () => {
     if (!user || !workspace) return;
@@ -290,8 +289,7 @@ export function SettingsPage({
         body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
       });
       if (res.ok) {
-        clearWorkspace();
-        switchToPersonal();
+        clearWorkspace(); // clearWorkspace already resets all state incl. isWorkspaceActive
         setConfirmDeleteWs(false);
       }
     } catch {
@@ -299,7 +297,7 @@ export function SettingsPage({
     } finally {
       setWsActionLoading(false);
     }
-  }, [user, workspace, clearWorkspace, switchToPersonal]);
+  }, [user, workspace, clearWorkspace]);
 
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
@@ -964,9 +962,27 @@ export function SettingsPage({
                   </button>
                 </div>
 
-                {/* Loading */}
-                {wsLoading && (
-                  <div className="px-4 py-3 text-xs text-text-muted text-center">{lang === 'ru' ? 'Загрузка…' : 'Loading…'}</div>
+                {/* Mode switcher */}
+                {!wsLoading && (
+                  <button
+                    type="button"
+                    onClick={() => isWorkspaceActive
+                      ? undefined // already active — button not shown, see condition below
+                      : activateWorkspace(workspace!, members)
+                    }
+                    className={cn(
+                      'w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold border-t border-border-subtle transition-colors',
+                      isWorkspaceActive
+                        ? 'text-neon'
+                        : 'text-text-secondary active:text-text-primary'
+                    )}
+                  >
+                    {isWorkspaceActive ? (
+                      <>{lang === 'ru' ? '✓ Семейный режим активен' : '✓ Family mode active'}</>
+                    ) : (
+                      <>{lang === 'ru' ? '▶ Включить семейный режим' : '▶ Activate family mode'}</>
+                    )}
+                  </button>
                 )}
 
                 {/* Delete workspace */}

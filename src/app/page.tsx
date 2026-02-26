@@ -131,7 +131,7 @@ export default function Home() {
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
   const { t, lang } = useLanguage();
-  const { workspace, activateWorkspace, reloadWorkspace } = useWorkspace();
+  const { workspace, isWorkspaceActive, activateWorkspace, reloadWorkspace } = useWorkspace();
 
   // Handle ?join=TOKEN invite link
   useEffect(() => {
@@ -276,8 +276,8 @@ export default function Home() {
         hasDanger={activeTab === 'home' ? hasUnreadDanger : false}
       />
 
-      {/* ── Workspace Switcher Banner ── */}
-      {workspace && activeTab === 'home' && (
+      {/* ── Workspace Switcher Banner — only when workspace mode is active ── */}
+      {workspace && isWorkspaceActive && activeTab === 'home' && (
         <WorkspaceBanner workspaceName={workspace.name} lang={lang} />
       )}
 
@@ -713,9 +713,7 @@ function HomeTab({
 
 /* ── Workspace Banner ── */
 function WorkspaceBanner({ workspaceName, lang }: { workspaceName: string; lang: string }) {
-  const { workspace, switchToPersonal, activateWorkspace, members } = useWorkspace();
-
-  if (!workspace) return null;
+  const { members, switchToPersonal } = useWorkspace();
 
   return (
     <motion.div
@@ -725,29 +723,22 @@ function WorkspaceBanner({ workspaceName, lang }: { workspaceName: string; lang:
     >
       <div className="flex items-center gap-2">
         <span className="text-xs">👨‍👩‍👧‍👦</span>
-        <span className="text-xs font-semibold text-text-primary">{workspaceName}</span>
+        <span className="text-xs font-semibold text-neon">{workspaceName}</span>
         <span className="text-[10px] text-text-muted">·</span>
         <span className="text-[10px] text-text-muted">
           {members.length} {lang === 'ru' ? 'уч.' : 'mbr'}
         </span>
       </div>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => activateWorkspace(workspace, members)}
-          className="text-[11px] font-semibold text-neon"
-        >
-          {lang === 'ru' ? 'Семейный' : 'Family'}
-        </button>
-        <span className="text-text-muted text-[10px]">/</span>
-        <button
-          type="button"
-          onClick={switchToPersonal}
-          className="text-[11px] font-semibold text-text-secondary"
-        >
-          {lang === 'ru' ? 'Личный' : 'Personal'}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={switchToPersonal}
+        className="flex items-center gap-1 text-[11px] font-semibold text-text-muted active:text-text-primary transition-colors"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        {lang === 'ru' ? 'Личный режим' : 'Personal mode'}
+      </button>
     </motion.div>
   );
 }

@@ -67,8 +67,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceSubs(subs);
   }, [workspace]);
 
+  // Fetch full members list via service-client API (bypasses RLS)
+  const refreshMembers = useCallback(async (workspaceId: string) => {
+    try {
+      const res = await fetch(`/api/workspace/members?workspaceId=${workspaceId}`);
+      if (!res.ok) return;
+      const rows: { workspace_id: string; user_id: string; role: string; joined_at: string }[] = await res.json();
+      setMembers(rows.map((m) => ({
+        workspaceId: m.workspace_id,
+        userId: m.user_id,
+        role: m.role as 'owner' | 'member',
+        joinedAt: m.joined_at,
+      })));
+    } catch { /* ignore */ }
+  }, []);
+
   /**
-   * Activate workspace mode: store data, save to localStorage, load subscriptions.
+   * Activate workspace mode: store data, save to localStorage, load subscriptions + full members list.
    */
   const activateWorkspace = useCallback(async (ws: Workspace, mems: WorkspaceMember[]) => {
     setWorkspace(ws);
@@ -77,9 +92,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(LS_KEY, ws.id);
     } catch { /* ignore */ }
-    const subs = await pullWorkspaceSubscriptions(ws.id);
+    const [subs] = await Promise.all([
+      pullWorkspaceSubscriptions(ws.id),
+      refreshMembers(ws.id),
+    ]);
     setWorkspaceSubs(subs);
-  }, []);
+  }, [refreshMembers]);
 
   /**
    * Switch to personal mode. Keeps workspace + members data so Settings still

@@ -22,8 +22,8 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { useSync } from '@/hooks/useSync';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
-import { Subscription, Currency } from '@/lib/types';
-import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
+import { Subscription, Currency, DisplayCurrency } from '@/lib/types';
+import { getMonthlyPrice, convertCurrency, getNextPaymentDate, getDaysUntilPayment } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -33,6 +33,8 @@ import { ShareModal } from '@/components/share/ShareModal';
 import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
+import { upsertWorkspaceSubscription, deleteWorkspaceSubscription } from '@/lib/sync';
+import { generateId } from '@/lib/utils';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -131,7 +133,7 @@ export default function Home() {
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
   const { t, lang } = useLanguage();
-  const { workspace, isWorkspaceActive, activateWorkspace, reloadWorkspace } = useWorkspace();
+  const { workspace, isWorkspaceActive, workspaceSubscriptions, refreshWorkspaceSubs, reloadWorkspace } = useWorkspace();
 
   // Handle ?join=TOKEN invite link
   useEffect(() => {
@@ -158,10 +160,6 @@ export default function Home() {
     addSubscription,
     updateSubscription,
     deleteSubscription,
-    getTotalMonthly,
-    getTotalYearly,
-    getActiveSubscriptions,
-    getUpcomingPayments,
   } = useSubscriptions();
   const { categories, setCategories, addCategory, updateCategory, deleteCategory } = useCategories();
   const { settings, setSettings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
@@ -174,6 +172,60 @@ export default function Home() {
   });
 
   const { playSuccess, playDelete, playPaid } = useSound();
+
+  // When workspace mode is active, show workspace pool instead of personal subs
+  const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
+
+  // Workspace-aware CRUD: routes through Supabase when in workspace mode
+  const wsAddSubscription = useCallback(async (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (isWorkspaceActive && workspace && user) {
+      const now = new Date().toISOString();
+      const newSub: Subscription = { ...data, id: generateId(), createdAt: now, updatedAt: now, workspaceId: workspace.id };
+      await upsertWorkspaceSubscription(newSub, workspace.id, user.id);
+      await refreshWorkspaceSubs();
+    } else {
+      addSubscription(data);
+    }
+  }, [isWorkspaceActive, workspace, user, addSubscription, refreshWorkspaceSubs]);
+
+  const wsUpdateSubscription = useCallback(async (id: string, updates: Partial<Subscription>) => {
+    if (isWorkspaceActive && workspace && user) {
+      const sub = workspaceSubscriptions.find((s) => s.id === id);
+      if (sub) {
+        const updated: Subscription = { ...sub, ...updates, updatedAt: new Date().toISOString() };
+        await upsertWorkspaceSubscription(updated, workspace.id, user.id);
+        await refreshWorkspaceSubs();
+      }
+    } else {
+      updateSubscription(id, updates);
+    }
+  }, [isWorkspaceActive, workspace, user, workspaceSubscriptions, updateSubscription, refreshWorkspaceSubs]);
+
+  const wsDeleteSubscription = useCallback(async (id: string) => {
+    if (isWorkspaceActive && workspace) {
+      await deleteWorkspaceSubscription(id);
+      await refreshWorkspaceSubs();
+    } else {
+      deleteSubscription(id);
+    }
+  }, [isWorkspaceActive, workspace, deleteSubscription, refreshWorkspaceSubs]);
+
+  // Computed functions derived from activeSubscriptions (used by HomeTab)
+  const getActiveSubs = useCallback(() => activeSubscriptions.filter((s) => s.isActive), [activeSubscriptions]);
+  const getUpcomingSubs = useCallback((days: number) =>
+    activeSubscriptions
+      .filter((s) => { if (!s.isActive) return false; const d = getDaysUntilPayment(s.nextPaymentDate); return d >= 0 && d <= days; })
+      .sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime()),
+  [activeSubscriptions]);
+  const getTotalMonthlyActive = useCallback((currency: DisplayCurrency, rate: number) => {
+    const total = activeSubscriptions.filter((s) => s.isActive).reduce((sum, sub) => {
+      return sum + convertCurrency(getMonthlyPrice(sub), sub.currency as Currency, currency, rate);
+    }, 0);
+    return Math.round(total * 100) / 100;
+  }, [activeSubscriptions]);
+  const getTotalYearlyActive = useCallback((currency: DisplayCurrency, rate: number) =>
+    Math.round(getTotalMonthlyActive(currency, rate) * 12 * 100) / 100,
+  [getTotalMonthlyActive]);
 
   // Auto exchange rate from CBR
   const {
@@ -195,14 +247,14 @@ export default function Home() {
   }, [autoRate, autoEurRate, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notifications — auto-registers SW + schedules reminders
-  useNotifications(subscriptions, settings);
+  useNotifications(activeSubscriptions, settings);
 
   // Notification read state
   const { isRead, markAsRead, markAllAsRead, cleanup } = useNotificationRead();
   const allNotifications = useMemo(
-    () => generateNotifications(subscriptions, settings.notifyDaysBefore, t, lang),
+    () => generateNotifications(activeSubscriptions, settings.notifyDaysBefore, t, lang),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [subscriptions, settings.notifyDaysBefore, lang],
+    [activeSubscriptions, settings.notifyDaysBefore, lang],
   );
   const unreadCount = useMemo(
     () => allNotifications.filter((n) => !isRead(n.id)).length,
@@ -215,7 +267,7 @@ export default function Home() {
 
   // Cleanup stale read IDs on mount
   useEffect(() => {
-    if (allNotifications.length > 0 || subscriptions.length > 0) {
+    if (allNotifications.length > 0 || activeSubscriptions.length > 0) {
       cleanup(allNotifications.map((n) => n.id));
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -235,23 +287,23 @@ export default function Home() {
 
   const handleMarkPaid = useCallback((sub: Subscription) => {
     const nextDate = getNextPaymentDate(sub.nextPaymentDate, sub.cycle);
-    updateSubscription(sub.id, { nextPaymentDate: nextDate });
+    wsUpdateSubscription(sub.id, { nextPaymentDate: nextDate });
     playPaid();
-  }, [updateSubscription, playPaid]);
+  }, [wsUpdateSubscription, playPaid]);
 
   const handleDeleteSub = useCallback((sub: Subscription) => {
-    deleteSubscription(sub.id);
+    wsDeleteSubscription(sub.id);
     playDelete();
-  }, [deleteSubscription, playDelete]);
+  }, [wsDeleteSubscription, playDelete]);
 
   // Memoized subscription lookups for modals
   const selectedSub = useMemo(
-    () => (selectedSubId ? subscriptions.find((s) => s.id === selectedSubId) : undefined),
-    [selectedSubId, subscriptions]
+    () => (selectedSubId ? activeSubscriptions.find((s) => s.id === selectedSubId) : undefined),
+    [selectedSubId, activeSubscriptions]
   );
   const editingSub = useMemo(
-    () => (editingSubId ? subscriptions.find((s) => s.id === editingSubId) : undefined),
-    [editingSubId, subscriptions]
+    () => (editingSubId ? activeSubscriptions.find((s) => s.id === editingSubId) : undefined),
+    [editingSubId, activeSubscriptions]
   );
 
   // Splash screen
@@ -368,23 +420,23 @@ export default function Home() {
           >
             {activeTab === 'home' && (
               <HomeTab
-                subscriptions={subscriptions}
+                subscriptions={activeSubscriptions}
                 categories={categories}
                 settings={settings}
-                getTotalMonthly={getTotalMonthly}
-                getTotalYearly={getTotalYearly}
-                getActiveSubscriptions={getActiveSubscriptions}
-                getUpcomingPayments={getUpcomingPayments}
+                getTotalMonthly={getTotalMonthlyActive}
+                getTotalYearly={getTotalYearlyActive}
+                getActiveSubscriptions={getActiveSubs}
+                getUpcomingPayments={getUpcomingSubs}
                 onAddTap={openAdd}
                 onSubTap={openDetail}
                 onMarkPaid={handleMarkPaid}
                 onDeleteSub={handleDeleteSub}
-                onDeactivateSub={(id) => updateSubscription(id, { isActive: false })}
+                onDeactivateSub={(id) => wsUpdateSubscription(id, { isActive: false })}
               />
             )}
             {activeTab === 'analytics' && (
               <AnalyticsPage
-                subscriptions={subscriptions}
+                subscriptions={activeSubscriptions}
                 categories={categories}
                 settings={settings}
                 onSubTap={openDetail}
@@ -394,7 +446,7 @@ export default function Home() {
             )}
             {activeTab === 'calendar' && (
               <CalendarPage
-                subscriptions={subscriptions}
+                subscriptions={activeSubscriptions}
                 settings={settings}
                 onSubTap={openDetail}
               />
@@ -409,7 +461,7 @@ export default function Home() {
                 addCategory={addCategory}
                 updateCategory={updateCategory}
                 deleteCategory={deleteCategory}
-                subscriptions={subscriptions}
+                subscriptions={activeSubscriptions}
                 rateLastUpdated={rateLastUpdated}
                 rateIsLoading={rateIsLoading}
                 onRefreshRate={refreshRate}
@@ -429,7 +481,7 @@ export default function Home() {
       {/* Search Panel */}
       <SearchPanel
         open={showSearch}
-        subscriptions={subscriptions}
+        subscriptions={activeSubscriptions}
         categories={categories}
         onClose={() => setShowSearch(false)}
         onSelectSubscription={openDetail}
@@ -438,7 +490,7 @@ export default function Home() {
       {/* Notification Panel */}
       <NotificationPanel
         open={showNotifications}
-        subscriptions={subscriptions}
+        subscriptions={activeSubscriptions}
         notifyDaysBefore={settings.notifyDaysBefore}
         onClose={() => setShowNotifications(false)}
         isRead={isRead}
@@ -455,16 +507,16 @@ export default function Home() {
         <SubForm
           mode="add"
           categories={categories}
-          existingSubscriptions={subscriptions}
-          onSubmit={(data) => {
-            addSubscription(data);
+          existingSubscriptions={activeSubscriptions}
+          onSubmit={async (data) => {
+            await wsAddSubscription(data);
             playSuccess();
             closeAdd();
           }}
           onAddCategory={addCategory}
           onClose={closeAdd}
           settings={settings}
-          currentMonthlyTotal={getTotalMonthly(settings.displayCurrency, settings.exchangeRate)}
+          currentMonthlyTotal={getTotalMonthlyActive(settings.displayCurrency, settings.exchangeRate)}
         />
       </Modal>
 
@@ -487,10 +539,10 @@ export default function Home() {
             }}
             onMarkPaid={() => handleMarkPaid(selectedSub)}
             onToggleActive={() => {
-              updateSubscription(selectedSub.id, { isActive: !selectedSub.isActive });
+              wsUpdateSubscription(selectedSub.id, { isActive: !selectedSub.isActive });
             }}
             onDelete={() => {
-              deleteSubscription(selectedSub.id);
+              wsDeleteSubscription(selectedSub.id);
               playDelete();
               closeDetail();
             }}
@@ -509,13 +561,13 @@ export default function Home() {
             mode="edit"
             initialData={editingSub}
             categories={categories}
-            onSubmit={(data) => {
-              updateSubscription(editingSubId!, data);
+            onSubmit={async (data) => {
+              await wsUpdateSubscription(editingSubId!, data);
               playSuccess();
               closeEdit();
             }}
-            onDelete={() => {
-              deleteSubscription(editingSubId!);
+            onDelete={async () => {
+              await wsDeleteSubscription(editingSubId!);
               playDelete();
               closeEdit();
             }}

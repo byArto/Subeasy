@@ -227,17 +227,39 @@ export function SettingsPage({
         body: JSON.stringify({ name: wsName.trim(), userId: user.id }),
       });
       const data = await res.json();
+
+      if (res.status === 409) {
+        // Workspace already exists — load it (e.g. after page refresh before state loaded)
+        await reloadWorkspace();
+        return;
+      }
+
       if (!res.ok) {
         setWsError(data.error ?? (lang === 'ru' ? 'Ошибка создания' : 'Creation failed'));
         return;
       }
-      await reloadWorkspace();
+
+      // Build workspace state directly from API response — avoids RLS-dependent pullWorkspace
+      const ws = {
+        id: data.id as string,
+        name: wsName.trim(),
+        ownerId: user.id,
+        inviteToken: data.inviteToken as string,
+        createdAt: new Date().toISOString(),
+      };
+      const ownerMember = {
+        workspaceId: data.id as string,
+        userId: user.id,
+        role: 'owner' as const,
+        joinedAt: new Date().toISOString(),
+      };
+      await activateWorkspace(ws, [ownerMember]);
     } catch {
       setWsError(lang === 'ru' ? 'Сетевая ошибка' : 'Network error');
     } finally {
       setWsCreating(false);
     }
-  }, [user, wsName, lang, reloadWorkspace]);
+  }, [user, wsName, lang, reloadWorkspace, activateWorkspace]);
 
   const handleCopyInvite = useCallback(async () => {
     const url = getInviteUrl();

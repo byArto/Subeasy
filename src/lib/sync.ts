@@ -237,31 +237,45 @@ export async function pullWorkspace(userId: string): Promise<{
 } | null> {
   const client = supabase();
 
-  // Find workspace_members record for this user
+  // Step 1: Find user's own membership row.
+  // Simple equality — no recursive RLS (requires SQL fix: members_select_own policy).
   const { data: memberRows, error: mErr } = await client
     .from('workspace_members')
     .select('workspace_id, role, joined_at')
     .eq('user_id', userId)
     .limit(1);
 
-  if (mErr || !memberRows || memberRows.length === 0) return null;
+  if (mErr) {
+    console.warn('[sync] pullWorkspace membership error:', mErr.message, mErr.code);
+    return null;
+  }
+  if (!memberRows || memberRows.length === 0) return null;
 
   const workspaceId = memberRows[0].workspace_id;
 
-  // Fetch workspace details
+  // Step 2: Fetch workspace details
   const { data: ws, error: wsErr } = await client
     .from('workspaces')
     .select('id, name, owner_id, invite_token, created_at')
     .eq('id', workspaceId)
     .single();
 
-  if (wsErr || !ws) return null;
+  if (wsErr) {
+    console.warn('[sync] pullWorkspace workspace error:', wsErr.message, wsErr.code);
+    return null;
+  }
+  if (!ws) return null;
 
-  // Fetch all members of this workspace
-  const { data: allMembers } = await client
+  // Step 3: Fetch members — with simplified RLS each user sees only their own row.
+  // With a security definer function or broader policy, all members become visible.
+  const { data: allMembers, error: allMembersErr } = await client
     .from('workspace_members')
     .select('workspace_id, user_id, role, joined_at')
     .eq('workspace_id', workspaceId);
+
+  if (allMembersErr) {
+    console.warn('[sync] pullWorkspace allMembers error:', allMembersErr.message);
+  }
 
   const members: WorkspaceMember[] = (allMembers ?? []).map((m) => ({
     workspaceId: m.workspace_id,

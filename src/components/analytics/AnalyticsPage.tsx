@@ -325,7 +325,7 @@ function BudgetSection({
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={onOpenPro}
-          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left"
+          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left outline-none"
         >
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">

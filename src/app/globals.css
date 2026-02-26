@@ -291,9 +291,11 @@ button, a, [role="button"] {
 }
 
 /* ── Focus visible ── */
-:focus-visible {
-  outline: 1px solid rgba(0, 255, 65, 0.5);
-  outline-offset: 2px;
+@layer base {
+  :focus-visible {
+    outline: 1px solid rgba(0, 255, 65, 0.5);
+    outline-offset: 2px;
+  }
 }
 
 /* ═══════════════════════════════════════════════

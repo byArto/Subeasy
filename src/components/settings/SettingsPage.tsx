@@ -870,8 +870,8 @@ function BudgetLimitSetting({
               <p className="text-sm font-semibold text-text-primary">{t('budget.proLocked.title')}</p>
               <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{t('budget.proLocked.desc')}</p>
             </div>
-            <div className="px-2.5 py-1 bg-neon/10 border border-neon/30 rounded-lg shrink-0">
-              <span className="text-[10px] font-bold text-neon tracking-wider">PRO</span>
+            <div className="px-2.5 py-1 rounded-lg shrink-0" style={{ background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)' }}>
+              <span className="text-[10px] font-bold tracking-wider" style={{ color: '#f5c842' }}>PRO</span>
             </div>
           </motion.button>
         ) : editing ? (
@@ -887,7 +887,7 @@ function BudgetLimitSetting({
                 onChange={(e) => setInputVal(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
                 placeholder={t('budget.placeholder')}
-                className="flex-1 bg-transparent py-3 text-sm text-text-primary outline-none tabular-nums"
+                className="flex-1 bg-transparent py-3 text-sm text-text-primary outline-none focus:outline-none focus-visible:outline-none tabular-nums"
               />
             </div>
             <div className="flex gap-2">

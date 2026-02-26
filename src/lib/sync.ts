@@ -148,9 +148,10 @@ export async function syncSettings(
   localSettings: AppSettings
 ): Promise<AppSettings> {
   const remote = await pullSettings(userId);
-  // Remote wins if exists, otherwise push local
+  // Remote wins for synced fields, but preserve local-only fields
+  // (monthlyBudget is not stored in Supabase yet)
   if (remote) {
-    return remote;
+    return { ...remote, monthlyBudget: localSettings.monthlyBudget };
   }
   await pushSettings(userId, localSettings);
   return localSettings;

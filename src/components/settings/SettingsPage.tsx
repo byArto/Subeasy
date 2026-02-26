@@ -861,41 +861,42 @@ function BudgetLimitSetting({
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={onOpenPro}
-            className="w-full flex items-center justify-between gap-3"
+            className="w-full flex items-center gap-3"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🔒</span>
-              <div className="text-left">
-                <p className="text-sm font-semibold text-text-primary">{t('budget.proLocked.title')}</p>
-                <p className="text-xs text-text-muted mt-0.5">{t('budget.proLocked.desc')}</p>
-              </div>
+            <div className="w-9 h-9 rounded-xl bg-surface-3 flex items-center justify-center shrink-0">
+              <span className="text-base">🔒</span>
             </div>
-            <span className="text-xs font-bold text-neon shrink-0">PRO</span>
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-text-primary">{t('budget.proLocked.title')}</p>
+              <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{t('budget.proLocked.desc')}</p>
+            </div>
+            <div className="px-2.5 py-1 bg-neon/10 border border-neon/30 rounded-lg shrink-0">
+              <span className="text-[10px] font-bold text-neon tracking-wider">PRO</span>
+            </div>
           </motion.button>
         ) : editing ? (
           /* Edit mode */
           <div className="space-y-3">
-            <p className="text-xs text-text-muted">{t('budget.setLimit')}</p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center bg-surface-3 rounded-xl px-3 gap-1.5 border border-border-subtle">
-                <span className="text-text-muted text-sm">₽</span>
-                <input
-                  ref={inputRef}
-                  type="number"
-                  inputMode="numeric"
-                  value={inputVal}
-                  onChange={(e) => setInputVal(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
-                  placeholder={t('budget.placeholder')}
-                  className="flex-1 bg-transparent py-2.5 text-sm text-text-primary outline-none tabular-nums"
-                />
-              </div>
+            <div className="flex items-center bg-surface-3 rounded-xl px-3 gap-2 border border-border-subtle">
+              <span className="text-text-muted text-sm shrink-0">₽</span>
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="numeric"
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+                placeholder={t('budget.placeholder')}
+                className="flex-1 bg-transparent py-3 text-sm text-text-primary outline-none tabular-nums"
+              />
+            </div>
+            <div className="flex gap-2">
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleSave}
-                className="px-4 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl">
+                className="flex-1 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl">
                 {t('budget.save')}
               </motion.button>
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setEditing(false)}
-                className="px-3 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl">
+                className="px-5 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl border border-border-subtle">
                 {t('budget.cancel')}
               </motion.button>
             </div>

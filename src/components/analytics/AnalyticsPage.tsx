@@ -374,7 +374,7 @@ function BudgetSection({
     return (
       <div>
         <SectionHeader title={t('budget.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-neon/40 p-4 space-y-3">
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-3">
           <div className="flex items-center bg-surface-3 rounded-xl px-3 gap-2 border border-border-subtle">
             <span className="text-text-muted text-sm shrink-0">{symbol}</span>
             <input

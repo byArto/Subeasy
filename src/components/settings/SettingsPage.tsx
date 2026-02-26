@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn, sanitizeUrl } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { useTheme, Theme } from '@/components/providers/ThemeProvider';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { exportCSV, exportPDF } from '@/lib/export';
 import { Button } from '@/components/ui';
 
@@ -68,6 +69,17 @@ export function SettingsPage({
   const { lang, setLang, t } = useLanguage();
   const { isPro } = usePro();
   const { theme, setTheme } = useTheme();
+  const {
+    workspace,
+    members,
+    isOwner,
+    loading: wsLoading,
+    activateWorkspace,
+    switchToPersonal,
+    reloadWorkspace,
+    clearWorkspace,
+    getInviteUrl,
+  } = useWorkspace();
   const [langOpen, setLangOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -82,6 +94,15 @@ export function SettingsPage({
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Family Plan states ──
+  const [wsName, setWsName] = useState('Family');
+  const [wsCreating, setWsCreating] = useState(false);
+  const [wsError, setWsError] = useState('');
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const [confirmLeaveWs, setConfirmLeaveWs] = useState(false);
+  const [confirmDeleteWs, setConfirmDeleteWs] = useState(false);
+  const [wsActionLoading, setWsActionLoading] = useState(false);
 
   let sectionIdx = 0;
 
@@ -192,6 +213,93 @@ export function SettingsPage({
     setNewCatEmoji('📦');
     setShowNewCat(false);
   }
+
+  // ── Family Plan handlers ──
+
+  const handleCreateWorkspace = useCallback(async () => {
+    if (!user || !wsName.trim()) return;
+    setWsCreating(true);
+    setWsError('');
+    try {
+      const res = await fetch('/api/workspace/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: wsName.trim(), userId: user.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWsError(data.error ?? (lang === 'ru' ? 'Ошибка создания' : 'Creation failed'));
+        return;
+      }
+      await reloadWorkspace();
+    } catch {
+      setWsError(lang === 'ru' ? 'Сетевая ошибка' : 'Network error');
+    } finally {
+      setWsCreating(false);
+    }
+  }, [user, wsName, lang, reloadWorkspace]);
+
+  const handleCopyInvite = useCallback(async () => {
+    const url = getInviteUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch {
+      // Fallback for environments without clipboard API
+      const inp = document.createElement('input');
+      inp.value = url;
+      document.body.appendChild(inp);
+      inp.select();
+      document.execCommand('copy');
+      document.body.removeChild(inp);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    }
+  }, [getInviteUrl]);
+
+  const handleLeaveWorkspace = useCallback(async () => {
+    if (!user || !workspace) return;
+    setWsActionLoading(true);
+    try {
+      const res = await fetch('/api/workspace/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
+      });
+      if (res.ok) {
+        clearWorkspace();
+        switchToPersonal();
+        setConfirmLeaveWs(false);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setWsActionLoading(false);
+    }
+  }, [user, workspace, clearWorkspace, switchToPersonal]);
+
+  const handleDeleteWorkspace = useCallback(async () => {
+    if (!user || !workspace) return;
+    setWsActionLoading(true);
+    try {
+      const res = await fetch('/api/workspace/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
+      });
+      if (res.ok) {
+        clearWorkspace();
+        switchToPersonal();
+        setConfirmDeleteWs(false);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setWsActionLoading(false);
+    }
+  }, [user, workspace, clearWorkspace, switchToPersonal]);
 
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
@@ -724,7 +832,242 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 7. О приложении ── */}
+      {/* ── 7. Семейный план ── */}
+      {user && (
+        <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+          <SectionHeader title={lang === 'ru' ? 'Семейный план' : 'Family Plan'} />
+          <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+
+            {/* Locked — not PRO */}
+            {!isPro && !workspace && (
+              <div className="p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">👨‍👩‍👧‍👦</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-text-primary">
+                        {lang === 'ru' ? 'Общий доступ к подпискам' : 'Shared subscriptions'}
+                      </span>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: '#f5c842', background: 'rgba(245,200,66,0.12)', border: '1px solid rgba(245,200,66,0.3)', padding: '2px 7px', borderRadius: 7 }}>PRO</span>
+                    </div>
+                    <p className="text-[11px] text-text-muted leading-relaxed">
+                      {lang === 'ru'
+                        ? 'До 6 человек видят один общий список подписок'
+                        : 'Up to 6 people share one subscription list'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={onOpenPro}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold"
+                  style={{ background: 'rgba(245,200,66,0.12)', color: '#f5c842', border: '1px solid rgba(245,200,66,0.25)' }}
+                >
+                  {lang === 'ru' ? '👑 Получить PRO' : '👑 Get PRO'}
+                </button>
+              </div>
+            )}
+
+            {/* PRO but no workspace — create form */}
+            {isPro && !workspace && (
+              <div className="p-4 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">👨‍👩‍👧‍👦</span>
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary mb-0.5">
+                      {lang === 'ru' ? 'Создать семейный план' : 'Create family plan'}
+                    </p>
+                    <p className="text-[11px] text-text-muted">
+                      {lang === 'ru' ? 'Пригласи до 5 человек по ссылке' : 'Invite up to 5 people via link'}
+                    </p>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={wsName}
+                  onChange={(e) => setWsName(e.target.value)}
+                  placeholder={lang === 'ru' ? 'Название (напр. Семья)' : 'Name (e.g. Family)'}
+                  maxLength={40}
+                  className="w-full bg-surface-3 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-text-primary placeholder:text-text-muted outline-none"
+                />
+                {wsError && (
+                  <p className="text-[11px] text-danger">{wsError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCreateWorkspace}
+                  disabled={wsCreating || !wsName.trim()}
+                  className="w-full py-2.5 rounded-xl text-sm font-bold bg-neon text-surface disabled:opacity-50"
+                >
+                  {wsCreating
+                    ? (lang === 'ru' ? 'Создаём…' : 'Creating…')
+                    : (lang === 'ru' ? 'Создать' : 'Create')}
+                </button>
+              </div>
+            )}
+
+            {/* Has workspace — Owner view */}
+            {workspace && isOwner && (
+              <div className="flex flex-col">
+                {/* Workspace name + invite link */}
+                <div className="px-4 py-3.5 border-b border-border-subtle">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">{workspace.name}</p>
+                      <p className="text-[11px] text-text-muted">
+                        {lang === 'ru' ? `${members.length} из 6 участников` : `${members.length} of 6 members`}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ background: 'rgba(0,255,65,0.1)', color: '#00FF41' }}>
+                      {lang === 'ru' ? 'Владелец' : 'Owner'}
+                    </span>
+                  </div>
+
+                  {/* Members list */}
+                  {members.length > 0 && (
+                    <div className="flex flex-col gap-1.5 mb-3">
+                      {members.map((m) => (
+                        <div key={m.userId} className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-surface-3 flex items-center justify-center text-xs font-bold text-text-muted">
+                            {m.userId === workspace.ownerId ? '👑' : '👤'}
+                          </div>
+                          <span className="text-xs text-text-secondary">
+                            {m.userId === user.id
+                              ? (lang === 'ru' ? 'Вы' : 'You')
+                              : m.email ?? m.userId.slice(0, 8) + '…'}
+                          </span>
+                          {m.role === 'owner' && (
+                            <span className="text-[10px] text-text-muted">{lang === 'ru' ? '(владелец)' : '(owner)'}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Invite button */}
+                  <button
+                    type="button"
+                    onClick={handleCopyInvite}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border border-border-subtle bg-surface-3 text-text-primary active:bg-surface-4 transition-colors"
+                  >
+                    {inviteCopied ? (
+                      <>
+                        <span className="text-neon">✓</span>
+                        <span className="text-neon">{lang === 'ru' ? 'Ссылка скопирована!' : 'Link copied!'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        {lang === 'ru' ? 'Скопировать ссылку-приглашение' : 'Copy invite link'}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Loading */}
+                {wsLoading && (
+                  <div className="px-4 py-3 text-xs text-text-muted text-center">{lang === 'ru' ? 'Загрузка…' : 'Loading…'}</div>
+                )}
+
+                {/* Delete workspace */}
+                <AnimatePresence mode="wait">
+                  {!confirmDeleteWs ? (
+                    <motion.button
+                      key="delete-btn"
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setConfirmDeleteWs(true)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                    >
+                      <span className="text-sm text-danger font-medium">
+                        {lang === 'ru' ? 'Удалить семейный план' : 'Delete family plan'}
+                      </span>
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      key="delete-confirm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="px-4 py-3.5 space-y-2.5"
+                    >
+                      <p className="text-xs text-danger font-medium">
+                        {lang === 'ru'
+                          ? 'Подписки не удалятся, но пул станет недоступен для всех. Точно удалить?'
+                          : 'Subscriptions won\'t be deleted, but the pool will be inaccessible for everyone. Confirm?'}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmDeleteWs(false)}>
+                          {t('common.cancel')}
+                        </Button>
+                        <Button fullWidth variant="danger" size="sm" onClick={handleDeleteWorkspace} disabled={wsActionLoading}>
+                          {wsActionLoading ? '…' : (lang === 'ru' ? 'Удалить' : 'Delete')}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Has workspace — Member view */}
+            {workspace && !isOwner && (
+              <div className="flex flex-col">
+                <div className="px-4 py-3.5 border-b border-border-subtle">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">{workspace.name}</p>
+                      <p className="text-[11px] text-text-muted">
+                        {lang === 'ru' ? `${members.length} участников` : `${members.length} members`}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ background: 'rgba(136,136,160,0.1)', color: '#8888A0' }}>
+                      {lang === 'ru' ? 'Участник' : 'Member'}
+                    </span>
+                  </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {!confirmLeaveWs ? (
+                    <motion.button
+                      key="leave-btn"
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setConfirmLeaveWs(true)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                    >
+                      <span className="text-sm text-danger font-medium">
+                        {lang === 'ru' ? 'Покинуть семейный план' : 'Leave family plan'}
+                      </span>
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      key="leave-confirm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="px-4 py-3.5 space-y-2.5"
+                    >
+                      <p className="text-xs text-danger font-medium">
+                        {lang === 'ru' ? 'Точно покинуть? Подписки останутся в общем пуле.' : 'Confirm leave? Subscriptions will stay in the shared pool.'}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLeaveWs(false)}>
+                          {t('common.cancel')}
+                        </Button>
+                        <Button fullWidth variant="danger" size="sm" onClick={handleLeaveWorkspace} disabled={wsActionLoading}>
+                          {wsActionLoading ? '…' : (lang === 'ru' ? 'Покинуть' : 'Leave')}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
+          </div>
+        </motion.div>
+      )}
+
+      {/* ── 8. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.about.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-6 flex flex-col items-center gap-3">

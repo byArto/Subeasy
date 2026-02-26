@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase';
-import type { Subscription, Category, AppSettings } from '@/lib/types';
+import type { Subscription, Category, AppSettings, Workspace, WorkspaceMember } from '@/lib/types';
 
 const supabase = () => createClient();
 
@@ -180,6 +180,7 @@ function dbToSubscription(row: any): Subscription {
     isActive: row.is_active ?? true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.workspace_id ? { workspaceId: row.workspace_id } : {}),
   };
 }
 
@@ -223,4 +224,106 @@ function categoryToDb(c: Category, userId: string) {
     emoji: c.emoji,
     color: c.color,
   };
+}
+
+/* ═══════════════════════════════════════
+   Workspace
+   ═══════════════════════════════════════ */
+
+/** Pull workspace where user is owner or member */
+export async function pullWorkspace(userId: string): Promise<{
+  workspace: Workspace;
+  members: WorkspaceMember[];
+} | null> {
+  const client = supabase();
+
+  // Find workspace_members record for this user
+  const { data: memberRows, error: mErr } = await client
+    .from('workspace_members')
+    .select('workspace_id, role, joined_at')
+    .eq('user_id', userId)
+    .limit(1);
+
+  if (mErr || !memberRows || memberRows.length === 0) return null;
+
+  const workspaceId = memberRows[0].workspace_id;
+
+  // Fetch workspace details
+  const { data: ws, error: wsErr } = await client
+    .from('workspaces')
+    .select('id, name, owner_id, invite_token, created_at')
+    .eq('id', workspaceId)
+    .single();
+
+  if (wsErr || !ws) return null;
+
+  // Fetch all members of this workspace
+  const { data: allMembers } = await client
+    .from('workspace_members')
+    .select('workspace_id, user_id, role, joined_at')
+    .eq('workspace_id', workspaceId);
+
+  const members: WorkspaceMember[] = (allMembers ?? []).map((m) => ({
+    workspaceId: m.workspace_id,
+    userId: m.user_id,
+    role: m.role as 'owner' | 'member',
+    joinedAt: m.joined_at,
+  }));
+
+  return {
+    workspace: {
+      id: ws.id,
+      name: ws.name,
+      ownerId: ws.owner_id,
+      inviteToken: ws.invite_token,
+      createdAt: ws.created_at,
+    },
+    members,
+  };
+}
+
+/** Pull subscriptions that belong to a workspace */
+export async function pullWorkspaceSubscriptions(workspaceId: string): Promise<Subscription[]> {
+  const { data, error } = await supabase()
+    .from('subscriptions')
+    .select('*')
+    .eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.warn('[sync] pullWorkspaceSubscriptions error:', error.message);
+    return [];
+  }
+
+  return (data ?? []).map(dbToSubscription);
+}
+
+/**
+ * Upsert a single subscription into a workspace.
+ * We use upsert (not delete-all) to avoid overwriting other members' data.
+ */
+export async function upsertWorkspaceSubscription(
+  sub: Subscription,
+  workspaceId: string,
+  userId: string
+): Promise<void> {
+  const row = {
+    ...subscriptionToDb(sub, userId),
+    workspace_id: workspaceId,
+  };
+
+  const { error } = await supabase()
+    .from('subscriptions')
+    .upsert(row, { onConflict: 'id' });
+
+  if (error) console.warn('[sync] upsertWorkspaceSubscription error:', error.message);
+}
+
+/** Delete a single workspace subscription by id */
+export async function deleteWorkspaceSubscription(subId: string): Promise<void> {
+  const { error } = await supabase()
+    .from('subscriptions')
+    .delete()
+    .eq('id', subId);
+
+  if (error) console.warn('[sync] deleteWorkspaceSubscription error:', error.message);
 }

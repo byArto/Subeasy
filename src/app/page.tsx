@@ -21,6 +21,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { useSync } from '@/hooks/useSync';
+import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { Subscription, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate } from '@/lib/utils';
 import { SearchPanel } from '@/components/search/SearchPanel';
@@ -86,6 +87,9 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
+  const [joinToken, setJoinToken] = useState<string | null>(null);
+  const [joinWorkspaceName, setJoinWorkspaceName] = useState('');
+  const [joinLoading, setJoinLoading] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
@@ -127,6 +131,22 @@ export default function Home() {
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
   const { t, lang } = useLanguage();
+  const { workspace, activateWorkspace, reloadWorkspace } = useWorkspace();
+
+  // Handle ?join=TOKEN invite link
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('join');
+    if (!token) return;
+
+    // Remove param from URL without reload
+    const url = new URL(window.location.href);
+    url.searchParams.delete('join');
+    window.history.replaceState({}, '', url.toString());
+
+    setJoinToken(token);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Save Telegram chat_id to Supabase for push notifications
   useSaveTelegramChatId();
@@ -255,6 +275,86 @@ export default function Home() {
         notificationCount={activeTab === 'home' ? unreadCount : 0}
         hasDanger={activeTab === 'home' ? hasUnreadDanger : false}
       />
+
+      {/* ── Workspace Switcher Banner ── */}
+      {workspace && activeTab === 'home' && (
+        <WorkspaceBanner workspaceName={workspace.name} lang={lang} />
+      )}
+
+      {/* ── Join Invite Dialog ── */}
+      <AnimatePresence>
+        {joinToken && user && (
+          <motion.div
+            key="join-dialog"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)' }}
+          >
+            <motion.div
+              initial={{ y: 60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="w-full max-w-[390px] bg-surface-2 rounded-2xl border border-border-subtle p-5 flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">👨‍👩‍👧‍👦</span>
+                <div>
+                  <p className="text-sm font-bold text-text-primary">
+                    {lang === 'ru' ? 'Приглашение в семейный план' : 'Family plan invite'}
+                  </p>
+                  {joinWorkspaceName && (
+                    <p className="text-[11px] text-text-muted">{joinWorkspaceName}</p>
+                  )}
+                </div>
+              </div>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                {lang === 'ru'
+                  ? 'Вас приглашают в общий список подписок. Вы будете видеть и редактировать подписки всей группы.'
+                  : 'You\'re invited to a shared subscription list. You\'ll see and edit subscriptions for the whole group.'}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setJoinToken(null)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-surface-3 text-text-secondary"
+                >
+                  {lang === 'ru' ? 'Отклонить' : 'Decline'}
+                </button>
+                <button
+                  type="button"
+                  disabled={joinLoading}
+                  onClick={async () => {
+                    if (!joinToken || !user) return;
+                    setJoinLoading(true);
+                    try {
+                      const res = await fetch('/api/workspace/join', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: joinToken, userId: user.id }),
+                      });
+                      const data = await res.json();
+                      if (res.ok) {
+                        setJoinWorkspaceName(data.workspaceName ?? '');
+                        await reloadWorkspace();
+                        setJoinToken(null);
+                      }
+                    } catch { /* ignore */ }
+                    finally { setJoinLoading(false); }
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-neon text-surface disabled:opacity-50"
+                >
+                  {joinLoading
+                    ? (lang === 'ru' ? 'Присоединяемся…' : 'Joining…')
+                    : (lang === 'ru' ? 'Присоединиться' : 'Join')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
         <AnimatePresence mode="sync" initial={false}>
@@ -608,6 +708,47 @@ function HomeTab({
         exchangeRate={exchangeRate}
       />
     </div>
+  );
+}
+
+/* ── Workspace Banner ── */
+function WorkspaceBanner({ workspaceName, lang }: { workspaceName: string; lang: string }) {
+  const { workspace, switchToPersonal, activateWorkspace, members } = useWorkspace();
+
+  if (!workspace) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center justify-between px-5 py-2 bg-surface-2 border-b border-border-subtle"
+    >
+      <div className="flex items-center gap-2">
+        <span className="text-xs">👨‍👩‍👧‍👦</span>
+        <span className="text-xs font-semibold text-text-primary">{workspaceName}</span>
+        <span className="text-[10px] text-text-muted">·</span>
+        <span className="text-[10px] text-text-muted">
+          {members.length} {lang === 'ru' ? 'уч.' : 'mbr'}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => activateWorkspace(workspace, members)}
+          className="text-[11px] font-semibold text-neon"
+        >
+          {lang === 'ru' ? 'Семейный' : 'Family'}
+        </button>
+        <span className="text-text-muted text-[10px]">/</span>
+        <button
+          type="button"
+          onClick={switchToPersonal}
+          className="text-[11px] font-semibold text-text-secondary"
+        >
+          {lang === 'ru' ? 'Личный' : 'Personal'}
+        </button>
+      </div>
+    </motion.div>
   );
 }
 

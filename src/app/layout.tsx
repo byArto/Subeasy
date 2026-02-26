@@ -5,6 +5,7 @@ import { LanguageProvider } from '@/components/providers/LanguageProvider';
 import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import { ProProvider } from '@/components/providers/ProProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { WorkspaceProvider } from '@/components/providers/WorkspaceProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -115,9 +116,11 @@ export default function RootLayout({
             <LanguageProvider>
               <AuthProvider>
                 <ProProvider>
-                  <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-                    {children}
-                  </div>
+                  <WorkspaceProvider>
+                    <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+                      {children}
+                    </div>
+                  </WorkspaceProvider>
                 </ProProvider>
               </AuthProvider>
             </LanguageProvider>

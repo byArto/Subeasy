@@ -19,6 +19,23 @@ export interface Subscription {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  workspaceId?: string; // если подписка принадлежит workspace
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  ownerId: string;
+  inviteToken: string;
+  createdAt: string;
+}
+
+export interface WorkspaceMember {
+  workspaceId: string;
+  userId: string;
+  role: 'owner' | 'member';
+  joinedAt: string;
+  email?: string; // для отображения в UI
 }
 
 export interface Category {

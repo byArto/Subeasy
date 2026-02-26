@@ -31,7 +31,7 @@ function formatRelativeDate(days: number, t: TFunc): string {
   return t('dashboard.inDays', { days });
 }
 
-const INITIAL_VISIBLE = 3;
+const INITIAL_VISIBLE = 1;
 
 export function UpcomingPayments({
   subscriptions,

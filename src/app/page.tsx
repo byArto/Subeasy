@@ -480,7 +480,7 @@ function HomeTab({
     [getTotalYearly, displayCurrency, exchangeRate]
   );
   const active = useMemo(() => getActiveSubscriptions(), [getActiveSubscriptions]);
-  const upcoming = useMemo(() => getUpcomingPayments(7), [getUpcomingPayments]);
+  const upcoming = useMemo(() => getUpcomingPayments(3), [getUpcomingPayments]);
 
   // Insight IDs for badges
   const mostExpensiveId = useMemo(() => {

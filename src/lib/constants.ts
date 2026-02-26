@@ -32,6 +32,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   useManualRate: false,
   notificationsEnabled: true,
   notifyDaysBefore: 3,
+  monthlyBudget: 0,
 };
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {

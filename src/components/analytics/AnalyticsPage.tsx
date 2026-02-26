@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   PieChart,
@@ -20,6 +20,7 @@ import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { usePro } from '@/components/providers/ProProvider';
 
 /* ── Props ── */
 
@@ -28,6 +29,8 @@ interface AnalyticsPageProps {
   categories: Category[];
   settings: AppSettings;
   onSubTap?: (sub: Subscription) => void;
+  onOpenPro?: () => void;
+  onUpdateSettings?: (updates: Partial<AppSettings>) => void;
 }
 
 /* ── Stagger ── */
@@ -104,7 +107,7 @@ function formatDuration(days: number, t: TFunc): string {
 
 /* ── Component ── */
 
-export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }: AnalyticsPageProps) {
+export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, onOpenPro, onUpdateSettings }: AnalyticsPageProps) {
   const { t } = useLanguage();
   const { displayCurrency, exchangeRate } = settings;
   const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
@@ -143,6 +146,20 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }:
           monthlyTotalAlt={monthlyTotalAlt}
           symbol={symbol}
           altSymbol={altSymbol}
+        />
+      </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <BudgetSection
+          monthlyTotal={monthlyTotal}
+          settings={settings}
+          symbol={symbol}
+          onOpenPro={onOpenPro}
+          onUpdateSettings={onUpdateSettings}
+          categories={categories}
+          active={active}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
         />
       </motion.div>
 
@@ -207,6 +224,316 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap }:
           onSubTap={onSubTap}
         />
       </motion.div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   СЕКЦИЯ PRO: Бюджетный лимит
+   ═══════════════════════════════════════ */
+
+interface CategorySpend {
+  name: string;
+  emoji: string;
+  color: string;
+  value: number;
+  pct: number;
+}
+
+function BudgetSection({
+  monthlyTotal,
+  settings,
+  symbol,
+  onOpenPro,
+  onUpdateSettings,
+  categories,
+  active,
+  displayCurrency,
+  exchangeRate,
+}: {
+  monthlyTotal: number;
+  settings: AppSettings;
+  symbol: string;
+  onOpenPro?: () => void;
+  onUpdateSettings?: (updates: Partial<AppSettings>) => void;
+  categories: Category[];
+  active: Subscription[];
+  displayCurrency: string;
+  exchangeRate: number;
+}) {
+  const { t } = useLanguage();
+  const { isPro, loading } = usePro();
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const budget = settings.monthlyBudget ?? 0;
+  const pct = budget > 0 ? Math.min((monthlyTotal / budget) * 100, 999) : 0;
+  const remaining = budget - monthlyTotal;
+  const isOver = remaining < 0;
+
+  const barColor =
+    pct >= 100 ? '#FF4444' :
+    pct >= 90  ? '#FF6B00' :
+    pct >= 70  ? '#FFB800' :
+    '#00FF41';
+
+  const topCategories = useMemo<CategorySpend[]>(() => {
+    if (active.length === 0) return [];
+    const map = new Map<string, number>();
+    for (const s of active) {
+      const monthly = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      map.set(s.category, (map.get(s.category) || 0) + monthly);
+    }
+    const result: CategorySpend[] = [];
+    for (const [catId, value] of map) {
+      const cat = categories.find((c) => c.id === catId);
+      result.push({
+        name: cat ? (DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name) : t('analytics.other'),
+        emoji: cat?.emoji || '📦',
+        color: cat?.color || '#8E8E93',
+        value: Math.round(value),
+        pct: monthlyTotal > 0 ? Math.round((value / monthlyTotal) * 100) : 0,
+      });
+    }
+    return result.sort((a, b) => b.value - a.value).slice(0, 3);
+  }, [active, categories, displayCurrency, exchangeRate, monthlyTotal, t]);
+
+  useEffect(() => {
+    if (editing) {
+      setInputVal(budget > 0 ? String(budget) : '');
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [editing, budget]);
+
+  const handleSave = () => {
+    const val = parseFloat(inputVal.replace(',', '.'));
+    if (!isNaN(val) && val >= 0) {
+      onUpdateSettings?.({ monthlyBudget: Math.round(val) });
+    }
+    setEditing(false);
+  };
+
+  // While PRO status is loading — nothing
+  if (loading) return null;
+
+  // ── Non-PRO locked card ──
+  if (!isPro) {
+    return (
+      <div>
+        <SectionHeader title={t('budget.title')} />
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={onOpenPro}
+          className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left relative overflow-hidden"
+        >
+          {/* Blur overlay */}
+          <div className="absolute inset-0 backdrop-blur-[1px] bg-surface-2/60 rounded-2xl z-10 flex flex-col items-center justify-center gap-2 px-6">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🔒</span>
+              <span className="text-xs font-bold text-text-secondary uppercase tracking-widest">PRO</span>
+            </div>
+            <p className="text-sm font-semibold text-text-primary text-center">{t('budget.proLocked.title')}</p>
+            <p className="text-xs text-text-muted text-center">{t('budget.proLocked.desc')}</p>
+            <div className="mt-1 px-4 py-1.5 bg-neon/10 border border-neon/30 rounded-xl">
+              <span className="text-xs font-bold text-neon">Открыть PRO</span>
+            </div>
+          </div>
+
+          {/* Blurred preview */}
+          <div className="opacity-30 pointer-events-none select-none">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-text-primary">5 000 ₽</span>
+              <span className="text-xs text-text-muted">из 8 000 ₽</span>
+            </div>
+            <div className="h-2.5 rounded-full bg-surface-4 overflow-hidden mb-1">
+              <div className="h-full rounded-full bg-neon/50" style={{ width: '62%' }} />
+            </div>
+            <p className="text-xs text-neon mt-2">Осталось 3 000 ₽</p>
+          </div>
+        </motion.button>
+      </div>
+    );
+  }
+
+  // ── PRO: budget not set ──
+  if (budget === 0 && !editing) {
+    return (
+      <div>
+        <SectionHeader title={t('budget.title')} />
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => setEditing(true)}
+          className="w-full bg-surface-2 rounded-2xl border border-dashed border-neon/30 p-4 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-neon/10 flex items-center justify-center">
+              <span className="text-lg">🎯</span>
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-text-primary">{t('budget.notSet')}</p>
+              <p className="text-xs text-text-muted mt-0.5">{t('budget.setLimit')}</p>
+            </div>
+          </div>
+          <span className="text-neon text-lg">+</span>
+        </motion.button>
+      </div>
+    );
+  }
+
+  // ── PRO: inline edit mode ──
+  if (editing) {
+    return (
+      <div>
+        <SectionHeader title={t('budget.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-neon/40 p-4">
+          <p className="text-xs text-text-muted mb-2">{t('budget.setLimit')}</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center bg-surface-3 rounded-xl px-3 gap-1.5 border border-border-subtle">
+              <span className="text-text-muted text-sm">{symbol}</span>
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="numeric"
+                value={inputVal}
+                onChange={(e) => setInputVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+                placeholder={t('budget.placeholder')}
+                className="flex-1 bg-transparent py-2.5 text-sm text-text-primary outline-none tabular-nums"
+              />
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleSave}
+              className="px-4 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl"
+            >
+              {t('budget.save')}
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setEditing(false)}
+              className="px-3 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl"
+            >
+              {t('budget.cancel')}
+            </motion.button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── PRO: budget set — full view ──
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2 pl-1 pr-1">
+        <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest">
+          {t('budget.title')}
+        </h3>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setEditing(true)}
+          className="text-[11px] font-semibold text-neon"
+        >
+          {t('budget.edit')}
+        </motion.button>
+      </div>
+
+      <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-3">
+        {/* Amount row */}
+        <div className="flex items-end justify-between">
+          <div>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={String(Math.round(monthlyTotal))}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className="text-2xl font-display font-bold tabular-nums"
+                style={{ color: barColor }}
+              >
+                {formatAmount(Math.round(monthlyTotal))}
+                <span className="text-sm ml-1 opacity-70">{symbol}</span>
+              </motion.p>
+            </AnimatePresence>
+            <p className="text-xs text-text-muted mt-0.5">
+              {t('budget.spent', { budget: formatAmount(budget), symbol })}
+            </p>
+          </div>
+
+          {/* Status badge */}
+          <div className={cn(
+            'px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wide',
+            pct >= 100 ? 'bg-danger/15 text-danger' :
+            pct >= 90  ? 'bg-orange-500/15 text-orange-400' :
+            pct >= 70  ? 'bg-warning/15 text-warning' :
+            'bg-neon/10 text-neon',
+          )}>
+            {pct >= 100 ? t('budget.status.over') :
+             pct >= 90  ? t('budget.status.danger') :
+             pct >= 70  ? t('budget.status.warning') :
+             t('budget.status.safe')}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-3 rounded-full bg-surface-4 overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(pct, 100)}%` }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            className="h-full rounded-full relative"
+            style={{
+              backgroundColor: barColor,
+              boxShadow: `0 0 8px ${barColor}60`,
+            }}
+          >
+            {pct >= 95 && pct < 100 && (
+              <motion.span
+                animate={{ opacity: [1, 0.4, 1] }}
+                transition={{ repeat: Infinity, duration: 1.2 }}
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: barColor }}
+              />
+            )}
+          </motion.div>
+        </div>
+
+        {/* Remaining / over */}
+        <p className={cn('text-xs font-semibold', isOver ? 'text-danger' : 'text-neon')}>
+          {isOver
+            ? t('budget.over', { amount: formatAmount(Math.round(Math.abs(remaining))), symbol })
+            : t('budget.remaining', { amount: formatAmount(Math.round(remaining)), symbol })}
+        </p>
+
+        {/* Top categories */}
+        {topCategories.length > 0 && (
+          <div className="pt-2 border-t border-border-subtle space-y-2">
+            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest">
+              {t('budget.topCategories')}
+            </p>
+            {topCategories.map((cat) => (
+              <div key={cat.name} className="flex items-center gap-2">
+                <span className="text-sm shrink-0">{cat.emoji}</span>
+                <div className="flex-1 h-1.5 rounded-full bg-surface-4 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${cat.pct}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  />
+                </div>
+                <span className="text-[11px] text-text-secondary tabular-nums shrink-0 w-16 text-right">
+                  {formatAmount(cat.value)} {symbol}
+                </span>
+                <span className="text-[10px] text-text-muted tabular-nums w-7 text-right shrink-0">
+                  {cat.pct}%
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

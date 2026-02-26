@@ -288,6 +288,8 @@ export default function Home() {
                 categories={categories}
                 settings={settings}
                 onSubTap={openDetail}
+                onOpenPro={() => setShowProModal(true)}
+                onUpdateSettings={updateSettings}
               />
             )}
             {activeTab === 'calendar' && (
@@ -361,6 +363,8 @@ export default function Home() {
           }}
           onAddCategory={addCategory}
           onClose={closeAdd}
+          settings={settings}
+          currentMonthlyTotal={getTotalMonthly(settings.displayCurrency, settings.exchangeRate)}
         />
       </Modal>
 

@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { Subscription, Currency, BillingCycle, Category } from '@/lib/types';
-import { cn, sanitizeUrl } from '@/lib/utils';
+import { Subscription, Currency, BillingCycle, Category, AppSettings } from '@/lib/types';
+import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -92,6 +92,8 @@ interface SubFormProps {
   onDelete?: () => void;
   onAddCategory: (cat: Omit<Category, 'id'>) => void;
   onClose: () => void;
+  settings?: AppSettings;
+  currentMonthlyTotal?: number;
 }
 
 interface FormErrors {
@@ -123,6 +125,8 @@ export function SubForm({
   onDelete,
   onAddCategory,
   onClose,
+  settings,
+  currentMonthlyTotal,
 }: SubFormProps) {
   const { t } = useLanguage();
 
@@ -157,12 +161,14 @@ export function SubForm({
   const [suggestions, setSuggestions] = useState<ServiceTemplate[]>([]);
   const [showExtra, setShowExtra] = useState(mode === 'edit');
   const [dupWarning, setDupWarning] = useState<Subscription | null>(null);
+  const [budgetOverBy, setBudgetOverBy] = useState<number | null>(null);
 
   /* ── Service autocomplete ── */
 
   function handleNameChange(value: string) {
     setName(value);
     if (dupWarning) setDupWarning(null);
+    if (budgetOverBy !== null) setBudgetOverBy(null);
     if (mode === 'add' && value.length >= 1) {
       setSuggestions(searchServices(value));
     } else {
@@ -220,6 +226,18 @@ export function SubForm({
       );
       if (found) {
         setDupWarning(found);
+        return;
+      }
+    }
+
+    // Budget check on add mode only
+    if (mode === 'add' && !force && settings && (settings.monthlyBudget ?? 0) > 0 && budgetOverBy === null) {
+      const newMonthly = getMonthlyPrice({ price: parseFloat(price) || 0, currency, cycle } as Subscription);
+      const newInDisplay = convertCurrency(newMonthly, currency, settings.displayCurrency, settings.exchangeRate);
+      const total = (currentMonthlyTotal ?? 0) + newInDisplay;
+      const overBy = total - settings.monthlyBudget!;
+      if (overBy > 0) {
+        setBudgetOverBy(Math.round(overBy));
         return;
       }
     }
@@ -406,6 +424,35 @@ export function SubForm({
               className="w-full py-2 rounded-lg text-xs font-semibold text-warning bg-warning/10 active:bg-warning/20 transition-colors"
             >
               {t('dup.addAnyway')}
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Budget over-limit warning ── */}
+      <AnimatePresence>
+        {budgetOverBy !== null && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="rounded-xl px-3.5 py-3"
+            style={{ background: 'rgba(255,68,68,0.08)', border: '1px solid rgba(255,68,68,0.22)' }}
+          >
+            <p className="text-xs text-danger font-medium mb-2.5">
+              {t('budget.alert.desc', {
+                amount: budgetOverBy.toLocaleString('ru-RU'),
+                symbol: CURRENCY_SYMBOLS[settings?.displayCurrency ?? 'RUB'] ?? '₽',
+              })}
+            </p>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              onClick={() => { setBudgetOverBy(null); handleSubmit(true); }}
+              className="w-full py-2 rounded-lg text-xs font-semibold text-danger bg-danger/10 active:bg-danger/20 transition-colors"
+            >
+              {t('budget.alert.add')}
             </motion.button>
           </motion.div>
         )}

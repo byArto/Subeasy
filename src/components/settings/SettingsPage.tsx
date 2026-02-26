@@ -426,7 +426,18 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 3. Звуки ── */}
+      {/* ── 3. Бюджетный лимит (PRO) ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <BudgetLimitSetting
+          settings={settings}
+          updateSettings={updateSettings}
+          isPro={isPro}
+          onOpenPro={onOpenPro}
+          t={t}
+        />
+      </motion.div>
+
+      {/* ── 4. Звуки ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.sounds.title')} />
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
@@ -806,6 +817,125 @@ function SectionHeader({ title }: { title: string }) {
     <h3 className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-2 pl-1">
       {title}
     </h3>
+  );
+}
+
+/* ── Budget Limit Setting (PRO) ── */
+
+function BudgetLimitSetting({
+  settings,
+  updateSettings,
+  isPro,
+  onOpenPro,
+  t,
+}: {
+  settings: AppSettings;
+  updateSettings: (u: Partial<AppSettings>) => void;
+  isPro: boolean;
+  onOpenPro: () => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [inputVal, setInputVal] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const budget = settings.monthlyBudget ?? 0;
+
+  function startEdit() {
+    setInputVal(budget > 0 ? String(budget) : '');
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }
+
+  function handleSave() {
+    const val = parseFloat(inputVal.replace(',', '.'));
+    if (!isNaN(val) && val >= 0) updateSettings({ monthlyBudget: Math.round(val) });
+    setEditing(false);
+  }
+
+  return (
+    <>
+      <SectionHeader title={t('budget.title')} />
+      <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
+        {!isPro ? (
+          /* Locked */
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={onOpenPro}
+            className="w-full flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🔒</span>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-text-primary">{t('budget.proLocked.title')}</p>
+                <p className="text-xs text-text-muted mt-0.5">{t('budget.proLocked.desc')}</p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-neon shrink-0">PRO</span>
+          </motion.button>
+        ) : editing ? (
+          /* Edit mode */
+          <div className="space-y-3">
+            <p className="text-xs text-text-muted">{t('budget.setLimit')}</p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 flex items-center bg-surface-3 rounded-xl px-3 gap-1.5 border border-border-subtle">
+                <span className="text-text-muted text-sm">₽</span>
+                <input
+                  ref={inputRef}
+                  type="number"
+                  inputMode="numeric"
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setEditing(false); }}
+                  placeholder={t('budget.placeholder')}
+                  className="flex-1 bg-transparent py-2.5 text-sm text-text-primary outline-none tabular-nums"
+                />
+              </div>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={handleSave}
+                className="px-4 py-2.5 bg-neon text-surface text-sm font-bold rounded-xl">
+                {t('budget.save')}
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setEditing(false)}
+                className="px-3 py-2.5 bg-surface-3 text-text-secondary text-sm font-semibold rounded-xl">
+                {t('budget.cancel')}
+              </motion.button>
+            </div>
+          </div>
+        ) : budget === 0 ? (
+          /* Not set */
+          <motion.button whileTap={{ scale: 0.97 }} onClick={startEdit}
+            className="w-full flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🎯</span>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-text-primary">{t('budget.notSet')}</p>
+                <p className="text-xs text-text-muted mt-0.5">{t('budget.setLimit')}</p>
+              </div>
+            </div>
+            <span className="text-neon text-lg">+</span>
+          </motion.button>
+        ) : (
+          /* Budget set */
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-text-primary tabular-nums">
+                {budget.toLocaleString('ru-RU')} ₽
+              </p>
+              <p className="text-xs text-text-muted mt-0.5">{t('budget.title')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <motion.button whileTap={{ scale: 0.95 }} onClick={() => updateSettings({ monthlyBudget: 0 })}
+                className="px-3 py-1.5 bg-danger/10 text-danger text-xs font-semibold rounded-xl">
+                ✕
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.95 }} onClick={startEdit}
+                className="px-3 py-1.5 bg-surface-3 text-text-secondary text-xs font-semibold rounded-xl border border-border-subtle">
+                {t('budget.edit')}
+              </motion.button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

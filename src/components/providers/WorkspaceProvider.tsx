@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { pullWorkspace, pullWorkspaceSubscriptions } from '@/lib/sync';
+import { pullWorkspaceSubscriptions } from '@/lib/sync';
 import type { Workspace, WorkspaceMember, Subscription } from '@/lib/types';
 
 interface WorkspaceContextValue {
@@ -126,14 +126,30 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Reload workspace from Supabase (after create or join).
+   * Fetch workspace via API (service client, bypasses RLS entirely).
+   * Used as the primary load method — no dependency on browser RLS policies.
+   */
+  const fetchWorkspaceViaApi = useCallback(async (userId: string) => {
+    try {
+      const res = await fetch(`/api/workspace/mine?userId=${userId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data || !data.workspace) return null;
+      return data as { workspace: Workspace; members: WorkspaceMember[] };
+    } catch {
+      return null;
+    }
+  }, []);
+
+  /**
+   * Reload workspace from server (after create or join).
    * Always enters workspace mode after successful load.
    */
   const reloadWorkspace = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const result = await pullWorkspace(user.id);
+      const result = await fetchWorkspaceViaApi(user.id);
       if (result) {
         await activateWorkspace(result.workspace, result.members);
       }
@@ -142,7 +158,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user, activateWorkspace]);
+  }, [user, activateWorkspace, fetchWorkspaceViaApi]);
 
   // On login: auto-load workspace if user belongs to one
   useEffect(() => {
@@ -152,7 +168,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     async function autoLoad() {
       setLoading(true);
       try {
-        const result = await pullWorkspace(user!.id);
+        // Use API endpoint (service client) — immune to RLS issues
+        const result = await fetchWorkspaceViaApi(user!.id);
         if (result) {
           // Check if user was previously in workspace mode
           let wasActive = false;

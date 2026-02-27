@@ -42,7 +42,7 @@ interface WorkspaceContextValue {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 const LS_KEY = 'neonsub-active-workspace-id';
-const POLL_INTERVAL_MS = 30_000; // refresh workspace subs every 30s when active
+const POLL_INTERVAL_MS = 60_000; // refresh workspace subs every 60s when active
 
 /** Fetch workspace subscriptions via service-client API (bypasses RLS for all members) */
 async function fetchWorkspaceSubs(workspaceId: string): Promise<Subscription[]> {

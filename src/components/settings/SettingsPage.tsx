@@ -1160,6 +1160,25 @@ export function SettingsPage({
                   </div>
                 </div>
 
+                {/* Mode switcher — member */}
+                {!wsLoading && (
+                  <button
+                    type="button"
+                    onClick={() => !isWorkspaceActive ? activateWorkspace(workspace!, members) : undefined}
+                    className={cn(
+                      'w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold border-b border-border-subtle transition-colors',
+                      isWorkspaceActive
+                        ? 'text-neon'
+                        : 'text-text-secondary active:text-text-primary'
+                    )}
+                  >
+                    {isWorkspaceActive
+                      ? <>{lang === 'ru' ? '✓ Семейный режим активен' : '✓ Family mode active'}</>
+                      : <>{lang === 'ru' ? '▶ Включить семейный режим' : '▶ Activate family mode'}</>
+                    }
+                  </button>
+                )}
+
                 <AnimatePresence mode="wait">
                   {!confirmLeaveWs ? (
                     <motion.button

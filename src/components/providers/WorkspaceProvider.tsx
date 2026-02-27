@@ -204,21 +204,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         // Use API endpoint (service client) — immune to RLS issues
         const result = await fetchWorkspaceViaApi(user!.id);
         if (result) {
-          // Check if user was previously in workspace mode
-          let wasActive = false;
-          try {
-            wasActive = localStorage.getItem(LS_KEY) === result.workspace.id;
-          } catch { /* ignore */ }
-
-          if (wasActive) {
-            // Restore workspace mode (loads subs via service-client API)
-            await activateWorkspace(result.workspace, result.members);
-          } else {
-            // Store workspace data but stay in personal mode
-            setWorkspace(result.workspace);
-            setMembers(result.members);
-            setIsWorkspaceActive(false);
-          }
+          // Always activate workspace mode on load — stays active until user explicitly
+          // switches to personal mode. localStorage is no longer used for mode restoration.
+          await activateWorkspace(result.workspace, result.members);
         }
       } catch (err) {
         console.warn('[WorkspaceProvider] autoLoad error:', err);

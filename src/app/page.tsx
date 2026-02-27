@@ -33,7 +33,6 @@ import { ShareModal } from '@/components/share/ShareModal';
 import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
-import { upsertWorkspaceSubscription, deleteWorkspaceSubscription } from '@/lib/sync';
 import { generateId } from '@/lib/utils';
 
 
@@ -177,12 +176,16 @@ export default function Home() {
   // When workspace mode is active, show workspace pool instead of personal subs
   const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
 
-  // Workspace-aware CRUD: routes through Supabase when in workspace mode
+  // Workspace-aware CRUD: routes through service-client API (bypasses RLS)
   const wsAddSubscription = useCallback(async (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (isWorkspaceActive && workspace && user) {
       const now = new Date().toISOString();
       const newSub: Subscription = { ...data, id: generateId(), createdAt: now, updatedAt: now, workspaceId: workspace.id };
-      await upsertWorkspaceSubscription(newSub, workspace.id, user.id);
+      await fetch('/api/workspace/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: newSub, workspaceId: workspace.id, userId: user.id }),
+      });
       await refreshWorkspaceSubs();
     } else {
       addSubscription(data);
@@ -194,7 +197,11 @@ export default function Home() {
       const sub = workspaceSubscriptions.find((s) => s.id === id);
       if (sub) {
         const updated: Subscription = { ...sub, ...updates, updatedAt: new Date().toISOString() };
-        await upsertWorkspaceSubscription(updated, workspace.id, user.id);
+        await fetch('/api/workspace/subscriptions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription: updated, workspaceId: workspace.id, userId: user.id }),
+        });
         await refreshWorkspaceSubs();
       }
     } else {
@@ -204,7 +211,7 @@ export default function Home() {
 
   const wsDeleteSubscription = useCallback(async (id: string) => {
     if (isWorkspaceActive && workspace) {
-      await deleteWorkspaceSubscription(id);
+      await fetch(`/api/workspace/subscriptions?id=${id}`, { method: 'DELETE' });
       await refreshWorkspaceSubs();
     } else {
       deleteSubscription(id);

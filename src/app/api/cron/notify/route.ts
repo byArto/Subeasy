@@ -39,6 +39,7 @@ function dateLabel(daysUntil: number, isoDate: string, isRu: boolean): string {
     day: 'numeric',
     month: 'long',
   });
+  if (daysUntil === 0) return isRu ? `Сегодня, <b>${formatted}</b>` : `Today, <b>${formatted}</b>`;
   if (daysUntil === 1) return isRu ? `Завтра, <b>${formatted}</b>` : `Tomorrow, <b>${formatted}</b>`;
   if (daysUntil === 2) return isRu ? `Послезавтра, <b>${formatted}</b>` : `Day after tomorrow, <b>${formatted}</b>`;
   return isRu
@@ -49,8 +50,7 @@ function dateLabel(daysUntil: number, isoDate: string, isRu: boolean): string {
 function buildMessage(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subs: any[],
-  targetDate: string,
-  daysUntil: number,
+  todayStr: string,
   displayCurrency: string,
   usdRate: number,
   eurRate: number,
@@ -58,26 +58,47 @@ function buildMessage(
 ): string {
   const isRu = lang === 'ru';
   const sym = CURRENCY_SYMBOLS[displayCurrency] ?? displayCurrency;
-
   const header = isRu ? '🔔 <b>SubEasy · Напоминание</b>' : '🔔 <b>SubEasy · Reminder</b>';
-  const when = dateLabel(daysUntil, targetDate, isRu);
+
+  // Group by next_payment_date (already sorted ascending from DB)
+  const groups = new Map<string, typeof subs>();
+  for (const sub of subs) {
+    const date = sub.next_payment_date as string;
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date)!.push(sub);
+  }
 
   let total = 0;
-  const rows = subs.map((sub) => {
-    const converted = convertPrice(sub.price, sub.currency, displayCurrency, usdRate, eurRate);
-    total += converted;
-    const approx = sub.currency !== displayCurrency ? '~' : '';
-    const amount = converted >= 10 ? Math.round(converted) : converted.toFixed(2);
-    const cycle = cycleStr(sub.cycle, isRu);
-    return `${sub.icon} ${sub.name}  <b>${approx}${amount} ${sym}${cycle}</b>`;
-  });
+  const sections: string[] = [];
+  const todayMs = new Date(todayStr + 'T00:00:00Z').getTime();
+
+  for (const [dateStr, dateSubs] of groups) {
+    const days = Math.round((new Date(dateStr + 'T00:00:00Z').getTime() - todayMs) / 86_400_000);
+    const label = dateLabel(days, dateStr, isRu);
+
+    const rows = dateSubs.map((sub) => {
+      const converted = convertPrice(sub.price, sub.currency, displayCurrency, usdRate, eurRate);
+      total += converted;
+      const approx = sub.currency !== displayCurrency ? '~' : '';
+      const amount = converted >= 10 ? Math.round(converted) : converted.toFixed(2);
+      const cycle = cycleStr(sub.cycle, isRu);
+      return `${sub.icon} ${sub.name}  <b>${approx}${amount} ${sym}${cycle}</b>`;
+    });
+
+    sections.push(`${label}:\n${rows.join('\n')}`);
+  }
 
   const totalStr = total >= 10 ? Math.round(total) : total.toFixed(2);
   const totalLine = isRu
     ? `💸 Итого: <b>${totalStr} ${sym}</b>`
     : `💸 Total: <b>${totalStr} ${sym}</b>`;
 
-  return [header, '', when + ':', '', ...rows, '', totalLine].join('\n');
+  const lines = [header, ''];
+  for (const section of sections) {
+    lines.push(section, '');
+  }
+  lines.push(totalLine);
+  return lines.join('\n');
 }
 
 async function sendTelegramMessage(chatId: number, text: string, lang: string) {
@@ -119,6 +140,7 @@ export async function GET(req: NextRequest) {
   // Today at midnight UTC
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
+  const todayStr = today.toISOString().split('T')[0];
 
   let sent = 0;
   let skipped = 0;
@@ -149,28 +171,30 @@ export async function GET(req: NextRequest) {
 
           if (!settings?.notifications_enabled) { skipped++; return; }
 
-          const daysUntil    = settings.notify_days_before ?? 3;
-          const displayCur   = settings.display_currency ?? 'RUB';
-          const usdRate      = Number(settings.exchange_rate ?? 96);
-          const eurRate      = Number(settings.eur_exchange_rate ?? 105);
-          const lang         = settings.lang ?? 'ru';
+          const daysUntil  = settings.notify_days_before ?? 3;
+          const displayCur = settings.display_currency ?? 'RUB';
+          const usdRate    = Number(settings.exchange_rate ?? 96);
+          const eurRate    = Number(settings.eur_exchange_rate ?? 105);
+          const lang       = settings.lang ?? 'ru';
 
-          // Target payment date
+          // Window end date
           const target = new Date(today);
           target.setUTCDate(today.getUTCDate() + daysUntil);
           const targetDateStr = target.toISOString().split('T')[0];
 
-          // Subscriptions due on that date
+          // All subscriptions due within [today, today + daysUntil]
           const { data: subs } = await supabase
             .from('subscriptions')
-            .select('name, icon, price, currency, cycle')
+            .select('name, icon, price, currency, cycle, next_payment_date')
             .eq('user_id', profile.id)
             .eq('is_active', true)
-            .eq('next_payment_date', targetDateStr);
+            .gte('next_payment_date', todayStr)
+            .lte('next_payment_date', targetDateStr)
+            .order('next_payment_date', { ascending: true });
 
           if (!subs || subs.length === 0) { skipped++; return; }
 
-          const text = buildMessage(subs, targetDateStr, daysUntil, displayCur, usdRate, eurRate, lang);
+          const text = buildMessage(subs, todayStr, displayCur, usdRate, eurRate, lang);
           const res = await sendTelegramMessage(Number(profile.telegram_chat_id), text, lang);
 
           if (res.ok) sent++;

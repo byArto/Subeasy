@@ -10,7 +10,6 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
-import { pullWorkspaceSubscriptions } from '@/lib/sync';
 import type { Workspace, WorkspaceMember, Subscription } from '@/lib/types';
 
 interface WorkspaceContextValue {
@@ -30,7 +29,7 @@ interface WorkspaceContextValue {
   activateWorkspace: (ws: Workspace, members: WorkspaceMember[]) => Promise<void>;
   /** Switch to personal mode. Keeps workspace data — doesn't clear it. */
   switchToPersonal: () => void;
-  /** Re-fetch workspace subscriptions from Supabase */
+  /** Re-fetch workspace subscriptions via API (service client, bypasses RLS) */
   refreshWorkspaceSubs: () => Promise<void>;
   /** Returns the full invite URL */
   getInviteUrl: () => string;
@@ -43,6 +42,38 @@ interface WorkspaceContextValue {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 const LS_KEY = 'neonsub-active-workspace-id';
+const POLL_INTERVAL_MS = 30_000; // refresh workspace subs every 30s when active
+
+/** Fetch workspace subscriptions via service-client API (bypasses RLS for all members) */
+async function fetchWorkspaceSubs(workspaceId: string): Promise<Subscription[]> {
+  try {
+    const res = await fetch(`/api/workspace/subscriptions?workspaceId=${workspaceId}`);
+    if (!res.ok) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rows: any[] = await res.json();
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      price: Number(row.price),
+      currency: row.currency,
+      category: row.category,
+      cycle: row.cycle,
+      nextPaymentDate: row.next_payment_date,
+      startDate: row.start_date,
+      paymentMethod: row.payment_method ?? '',
+      notes: row.notes ?? '',
+      color: row.color ?? '#00FF41',
+      icon: row.icon ?? '📦',
+      managementUrl: row.management_url ?? '',
+      isActive: row.is_active ?? true,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      workspaceId: row.workspace_id,
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -61,12 +92,6 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return `${base}?join=${workspace.inviteToken}`;
   }, [workspace]);
 
-  const refreshWorkspaceSubs = useCallback(async () => {
-    if (!workspace) return;
-    const subs = await pullWorkspaceSubscriptions(workspace.id);
-    setWorkspaceSubs(subs);
-  }, [workspace]);
-
   // Fetch full members list via service-client API (bypasses RLS)
   const refreshMembers = useCallback(async (workspaceId: string) => {
     try {
@@ -82,8 +107,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
   }, []);
 
+  /** Re-fetch workspace subs via service-client API (all members can call this) */
+  const refreshWorkspaceSubs = useCallback(async () => {
+    if (!workspace) return;
+    const subs = await fetchWorkspaceSubs(workspace.id);
+    setWorkspaceSubs(subs);
+  }, [workspace]);
+
   /**
-   * Activate workspace mode: store data, save to localStorage, load subscriptions + full members list.
+   * Activate workspace mode: save to localStorage, load subs + members via service-client API.
    */
   const activateWorkspace = useCallback(async (ws: Workspace, mems: WorkspaceMember[]) => {
     setWorkspace(ws);
@@ -92,8 +124,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(LS_KEY, ws.id);
     } catch { /* ignore */ }
+    // Load subs and full members list in parallel (service client — no RLS issues)
     const [subs] = await Promise.all([
-      pullWorkspaceSubscriptions(ws.id),
+      fetchWorkspaceSubs(ws.id),
       refreshMembers(ws.id),
     ]);
     setWorkspaceSubs(subs);
@@ -178,7 +211,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           } catch { /* ignore */ }
 
           if (wasActive) {
-            // Restore workspace mode
+            // Restore workspace mode (loads subs via service-client API)
             await activateWorkspace(result.workspace, result.members);
           } else {
             // Store workspace data but stay in personal mode
@@ -196,6 +229,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
     autoLoad();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll workspace subscriptions every 30s when workspace mode is active
+  useEffect(() => {
+    if (!isWorkspaceActive || !workspace) return;
+    const timer = setInterval(async () => {
+      const subs = await fetchWorkspaceSubs(workspace.id);
+      setWorkspaceSubs(subs);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [isWorkspaceActive, workspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Clear everything on logout
   useEffect(() => {

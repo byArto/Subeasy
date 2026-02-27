@@ -11,7 +11,8 @@ export async function pullSubscriptions(userId: string): Promise<Subscription[]>
   const { data, error } = await supabase()
     .from('subscriptions')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .is('workspace_id', null); // personal only — exclude workspace subs
 
   if (error) {
     console.warn('[sync] pullSubscriptions error:', error.message);
@@ -22,13 +23,15 @@ export async function pullSubscriptions(userId: string): Promise<Subscription[]>
 }
 
 export async function pushSubscriptions(userId: string, subs: Subscription[]): Promise<void> {
-  // Delete all user's subscriptions and re-insert (simple full sync)
   const client = supabase();
-  await client.from('subscriptions').delete().eq('user_id', userId);
+  // Only delete personal subs (workspace_id IS NULL) — never touch workspace subs
+  await client.from('subscriptions').delete().eq('user_id', userId).is('workspace_id', null);
 
-  if (subs.length === 0) return;
+  // Only push personal subs (no workspaceId)
+  const personalSubs = subs.filter((s) => !s.workspaceId);
+  if (personalSubs.length === 0) return;
 
-  const rows = subs.map((s) => subscriptionToDb(s, userId));
+  const rows = personalSubs.map((s) => subscriptionToDb(s, userId));
   const { error } = await client.from('subscriptions').insert(rows);
 
   if (error) console.warn('[sync] pushSubscriptions error:', error.message);
@@ -38,19 +41,18 @@ export async function syncSubscriptions(
   userId: string,
   localSubs: Subscription[]
 ): Promise<Subscription[]> {
-  const remoteSubs = await pullSubscriptions(userId);
+  const remoteSubs = await pullSubscriptions(userId); // already personal-only
 
-  // Merge: remote wins for same id, add local-only items
+  // Merge: remote wins for same id, add local-only personal items
   const remoteMap = new Map(remoteSubs.map((s) => [s.id, s]));
   const merged = [...remoteSubs];
 
-  for (const local of localSubs) {
+  for (const local of localSubs.filter((s) => !s.workspaceId)) {
     if (!remoteMap.has(local.id)) {
       merged.push(local);
     }
   }
 
-  // Push merged result
   await pushSubscriptions(userId, merged);
   return merged;
 }

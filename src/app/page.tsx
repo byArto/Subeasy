@@ -404,7 +404,7 @@ export default function Home() {
                         } else if (msg.includes('another workspace')) {
                           setJoinError(lang === 'ru' ? 'Вы уже состоите в другом семейном плане. Сначала покиньте его.' : 'You\'re already in another plan. Leave it first.');
                         } else if (msg.includes('full')) {
-                          setJoinError(lang === 'ru' ? 'Семейный план заполнен (макс. 6)' : 'Plan is full (max 6)');
+                          setJoinError(lang === 'ru' ? 'Семейный план заполнен (макс. 5)' : 'Plan is full (max 5)');
                         } else if (msg.includes('Invalid')) {
                           setJoinError(lang === 'ru' ? 'Ссылка недействительна' : 'Invalid invite link');
                         } else {
@@ -810,7 +810,7 @@ function WorkspaceBanner({ workspaceName, lang }: { workspaceName: string; lang:
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
-        {lang === 'ru' ? 'Личный режим' : 'Personal mode'}
+        {lang === 'ru' ? '→ Перейти в личный режим' : '→ Personal mode'}
       </button>
     </motion.div>
   );

@@ -53,8 +53,8 @@ export async function POST(req: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', workspace.id);
 
-    if ((count ?? 0) >= 6) {
-      return NextResponse.json({ error: 'Workspace is full (max 6 members)' }, { status: 409 });
+    if ((count ?? 0) >= 5) {
+      return NextResponse.json({ error: 'Workspace is full (max 5 members)' }, { status: 409 });
     }
 
     // Ensure user has a profile row (required by FK constraint workspace_members_user_id_fkey).

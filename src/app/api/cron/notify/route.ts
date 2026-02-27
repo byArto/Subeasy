@@ -77,6 +77,10 @@ function buildMessage(
     const label = dateLabel(days, dateStr, isRu);
 
     const rows = dateSubs.map((sub) => {
+      if (sub.cycle === 'trial') {
+        const trialLabel = isRu ? 'FREE (пробный заканчивается)' : 'FREE (trial ending)';
+        return `⏰ ${sub.icon} ${sub.name}  <b>${trialLabel}</b>`;
+      }
       const converted = convertPrice(sub.price, sub.currency, displayCurrency, usdRate, eurRate);
       total += converted;
       const approx = sub.currency !== displayCurrency ? '~' : '';

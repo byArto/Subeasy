@@ -92,6 +92,7 @@ export default function Home() {
   const [joinToken, setJoinToken] = useState<string | null>(null);
   const [joinWorkspaceName, setJoinWorkspaceName] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
+  const [joinError, setJoinError] = useState('');
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
@@ -367,10 +368,13 @@ export default function Home() {
                   ? 'Вас приглашают в общий список подписок. Вы будете видеть и редактировать подписки всей группы.'
                   : 'You\'re invited to a shared subscription list. You\'ll see and edit subscriptions for the whole group.'}
               </p>
+              {joinError && (
+                <p className="text-[12px] text-red-400 font-medium">{joinError}</p>
+              )}
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setJoinToken(null)}
+                  onClick={() => { setJoinToken(null); setJoinError(''); }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-surface-3 text-text-secondary"
                 >
                   {lang === 'ru' ? 'Отклонить' : 'Decline'}
@@ -381,6 +385,7 @@ export default function Home() {
                   onClick={async () => {
                     if (!joinToken || !user) return;
                     setJoinLoading(true);
+                    setJoinError('');
                     try {
                       const res = await fetch('/api/workspace/join', {
                         method: 'POST',
@@ -392,9 +397,23 @@ export default function Home() {
                         setJoinWorkspaceName(data.workspaceName ?? '');
                         await reloadWorkspace();
                         setJoinToken(null);
+                      } else {
+                        const msg = data?.error ?? '';
+                        if (msg === 'Already owner') {
+                          setJoinError(lang === 'ru' ? 'Вы владелец этого плана' : 'You own this plan');
+                        } else if (msg.includes('full')) {
+                          setJoinError(lang === 'ru' ? 'Семейный план заполнен (макс. 6)' : 'Plan is full (max 6)');
+                        } else if (msg.includes('Invalid')) {
+                          setJoinError(lang === 'ru' ? 'Ссылка недействительна' : 'Invalid invite link');
+                        } else {
+                          setJoinError(lang === 'ru' ? 'Ошибка. Попробуйте ещё раз' : 'Error. Please try again');
+                        }
                       }
-                    } catch { /* ignore */ }
-                    finally { setJoinLoading(false); }
+                    } catch {
+                      setJoinError(lang === 'ru' ? 'Нет соединения' : 'No connection');
+                    } finally {
+                      setJoinLoading(false);
+                    }
                   }}
                   className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-neon text-surface disabled:opacity-50"
                 >

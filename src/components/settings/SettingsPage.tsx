@@ -12,6 +12,8 @@ import { usePro } from '@/components/providers/ProProvider';
 import { useTheme, Theme } from '@/components/providers/ThemeProvider';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { exportCSV, exportPDF } from '@/lib/export';
+import { upsertWorkspaceSubscription } from '@/lib/sync';
+import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
 
 /* ── Props ── */
@@ -103,6 +105,9 @@ export function SettingsPage({
   const [confirmLeaveWs, setConfirmLeaveWs] = useState(false);
   const [confirmDeleteWs, setConfirmDeleteWs] = useState(false);
   const [wsActionLoading, setWsActionLoading] = useState(false);
+  // Migrate dialog: shown after workspace creation when user has personal subs
+  const [pendingWsData, setPendingWsData] = useState<{ ws: Workspace; member: WorkspaceMember } | null>(null);
+  const [migrateLoading, setMigrateLoading] = useState(false);
 
   let sectionIdx = 0;
 
@@ -240,26 +245,54 @@ export function SettingsPage({
       }
 
       // Build workspace state directly from API response — avoids RLS-dependent pullWorkspace
-      const ws = {
+      const ws: Workspace = {
         id: data.id as string,
         name: wsName.trim(),
         ownerId: user.id,
         inviteToken: data.inviteToken as string,
         createdAt: new Date().toISOString(),
       };
-      const ownerMember = {
+      const ownerMember: WorkspaceMember = {
         workspaceId: data.id as string,
         userId: user.id,
-        role: 'owner' as const,
+        role: 'owner',
         joinedAt: new Date().toISOString(),
       };
-      await activateWorkspace(ws, [ownerMember]);
+
+      const activeSubs = subscriptions.filter((s) => s.isActive);
+      if (activeSubs.length > 0) {
+        // Ask user whether to migrate personal subscriptions
+        setPendingWsData({ ws, member: ownerMember });
+      } else {
+        // No personal subs — activate directly
+        await activateWorkspace(ws, [ownerMember]);
+      }
     } catch {
       setWsError(lang === 'ru' ? 'Сетевая ошибка' : 'Network error');
     } finally {
       setWsCreating(false);
     }
-  }, [user, wsName, lang, reloadWorkspace, activateWorkspace]);
+  }, [user, wsName, lang, subscriptions, reloadWorkspace, activateWorkspace]);
+
+  const handleMigrate = useCallback(async (migrate: boolean) => {
+    if (!pendingWsData) return;
+    const { ws, member } = pendingWsData;
+    setMigrateLoading(true);
+    try {
+      if (migrate) {
+        const activeSubs = subscriptions.filter((s) => s.isActive);
+        await Promise.all(
+          activeSubs.map((sub) =>
+            upsertWorkspaceSubscription({ ...sub, workspaceId: ws.id }, ws.id, member.userId)
+          )
+        );
+      }
+      await activateWorkspace(ws, [member]);
+    } finally {
+      setMigrateLoading(false);
+      setPendingWsData(null);
+    }
+  }, [pendingWsData, subscriptions, activateWorkspace]);
 
   const handleCopyInvite = useCallback(async () => {
     const url = getInviteUrl();
@@ -321,8 +354,71 @@ export function SettingsPage({
     }
   }, [user, workspace, clearWorkspace]);
 
+  const activeSubs = subscriptions.filter((s) => s.isActive);
+
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
+
+      {/* ── Migrate subscriptions dialog ── */}
+      <AnimatePresence>
+        {pendingWsData && (
+          <motion.div
+            key="migrate-dialog"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-5"
+            style={{ background: 'rgba(0,0,0,0.75)' }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="w-full max-w-[360px] bg-surface-2 rounded-2xl border border-border-subtle p-5 flex flex-col gap-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">📦</span>
+                <div>
+                  <p className="text-sm font-bold text-text-primary">
+                    {lang === 'ru' ? 'Перенести подписки?' : 'Move subscriptions?'}
+                  </p>
+                  <p className="text-[11px] text-text-muted">
+                    {lang === 'ru'
+                      ? `У вас ${activeSubs.length} активных подписок`
+                      : `You have ${activeSubs.length} active subscriptions`}
+                  </p>
+                </div>
+              </div>
+              <p className="text-[13px] text-text-secondary leading-relaxed">
+                {lang === 'ru'
+                  ? 'Скопировать ваши личные подписки в семейный план? Они останутся и в личном режиме.'
+                  : 'Copy your personal subscriptions to the family plan? They will remain in personal mode too.'}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={migrateLoading}
+                  onClick={() => handleMigrate(false)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-surface-3 text-text-secondary disabled:opacity-50"
+                >
+                  {lang === 'ru' ? 'Начать с нуля' : 'Start empty'}
+                </button>
+                <button
+                  type="button"
+                  disabled={migrateLoading}
+                  onClick={() => handleMigrate(true)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-neon text-surface disabled:opacity-50"
+                >
+                  {migrateLoading
+                    ? (lang === 'ru' ? 'Переносим…' : 'Moving…')
+                    : (lang === 'ru' ? 'Перенести' : 'Move')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── PRO Plan Banner ── */}
       <div

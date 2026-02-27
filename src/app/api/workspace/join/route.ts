@@ -27,17 +27,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already owner' }, { status: 409 });
     }
 
-    // Check if already a member
-    const { data: existing } = await supabase
+    // Check if user is already in ANY workspace (not just this one)
+    const { data: anyMembership } = await supabase
       .from('workspace_members')
       .select('workspace_id')
-      .eq('workspace_id', workspace.id)
       .eq('user_id', userId)
+      .limit(1)
       .maybeSingle();
 
-    if (existing) {
-      // Already a member — return workspace data (idempotent)
-      return NextResponse.json({ workspaceId: workspace.id, workspaceName: workspace.name });
+    if (anyMembership) {
+      if (anyMembership.workspace_id === workspace.id) {
+        // Already in THIS workspace — idempotent success
+        return NextResponse.json({ workspaceId: workspace.id, workspaceName: workspace.name });
+      }
+      // Already in a DIFFERENT workspace
+      return NextResponse.json(
+        { error: 'Already in another workspace' },
+        { status: 409 }
+      );
     }
 
     // Check member limit (max 6 total including owner)
@@ -57,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     if (memberError) {
       console.error('[workspace/join] member insert error:', memberError);
-      return NextResponse.json({ error: 'Failed to join workspace' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to join', detail: memberError.message }, { status: 500 });
     }
 
     return NextResponse.json({ workspaceId: workspace.id, workspaceName: workspace.name });

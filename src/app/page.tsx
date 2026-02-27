@@ -401,6 +401,8 @@ export default function Home() {
                         const msg = data?.error ?? '';
                         if (msg === 'Already owner') {
                           setJoinError(lang === 'ru' ? 'Вы владелец этого плана' : 'You own this plan');
+                        } else if (msg.includes('another workspace')) {
+                          setJoinError(lang === 'ru' ? 'Вы уже состоите в другом семейном плане. Сначала покиньте его.' : 'You\'re already in another plan. Leave it first.');
                         } else if (msg.includes('full')) {
                           setJoinError(lang === 'ru' ? 'Семейный план заполнен (макс. 6)' : 'Plan is full (max 6)');
                         } else if (msg.includes('Invalid')) {

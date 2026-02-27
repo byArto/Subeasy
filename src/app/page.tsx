@@ -408,8 +408,7 @@ export default function Home() {
                         } else if (msg.includes('Invalid')) {
                           setJoinError(lang === 'ru' ? 'Ссылка недействительна' : 'Invalid invite link');
                         } else {
-                          // Show raw error detail for debugging
-                          setJoinError(`Ошибка: ${data?.detail ?? data?.error ?? 'неизвестно'}`);
+                          setJoinError(lang === 'ru' ? 'Ошибка. Попробуйте ещё раз' : 'Error. Please try again');
                         }
                       }
                     } catch {

@@ -57,6 +57,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Workspace is full (max 6 members)' }, { status: 409 });
     }
 
+    // Ensure user has a profile row (required by FK constraint workspace_members_user_id_fkey).
+    // OTP email users sometimes don't get a profile auto-created if the trigger didn't fire.
+    await supabase
+      .from('profiles')
+      .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
+
     // Insert member
     const { error: memberError } = await supabase
       .from('workspace_members')

@@ -415,6 +415,8 @@ const dict: Translations = {
   'settings.notifications.remindBefore': { ru: 'Напоминать за', en: 'Remind before' },
   'settings.notifications.daySuffix': { ru: 'д', en: 'd' },
   'settings.notifications.hint': { ru: 'Вы получите push-уведомление перед каждым платежом', en: 'You will get a push notification before each payment' },
+  'settings.notifications.denied': { ru: 'Уведомления заблокированы браузером. Разрешите их в настройках сайта (🔒 рядом с адресом).', en: 'Notifications are blocked by the browser. Allow them in site settings (🔒 next to the address bar).' },
+  'settings.notifications.unsupported': { ru: 'Push-уведомления не поддерживаются в этом браузере.', en: 'Push notifications are not supported in this browser.' },
 
   'settings.sounds.title': { ru: 'Звуки', en: 'Sounds' },
   'settings.sounds.effects': { ru: 'Звуковые эффекты', en: 'Sound effects' },

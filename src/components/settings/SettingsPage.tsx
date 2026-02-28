@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn, sanitizeUrl } from '@/lib/utils';
-import { requestNotificationPermission } from '@/lib/notifications';
+import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
 import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -98,6 +98,7 @@ export function SettingsPage({
 
   const [confirmClear, setConfirmClear] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [notifError, setNotifError] = useState<string | null>(null);
   const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
   const [pdfSending, setPdfSending] = useState(false);
   const [pdfSendResult, setPdfSendResult] = useState<'ok' | 'error' | null>(null);
@@ -122,10 +123,22 @@ export function SettingsPage({
   /* ── Handlers ── */
 
   async function handleToggleNotifications() {
+    setNotifError(null);
     if (!settings.notificationsEnabled) {
+      const permission = getNotificationPermission();
+      if (permission === 'unsupported') {
+        setNotifError(t('settings.notifications.unsupported'));
+        return;
+      }
+      if (permission === 'denied') {
+        setNotifError(t('settings.notifications.denied'));
+        return;
+      }
       const granted = await requestNotificationPermission();
       if (granted) {
         updateSettings({ notificationsEnabled: true });
+      } else {
+        setNotifError(t('settings.notifications.denied'));
       }
     } else {
       updateSettings({ notificationsEnabled: false });
@@ -654,6 +667,20 @@ export function SettingsPage({
               onToggle={handleToggleNotifications}
             />
           </div>
+
+          {/* Permission error */}
+          <AnimatePresence>
+            {notifError && (
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-[12px] text-amber-400 leading-snug"
+              >
+                {notifError}
+              </motion.p>
+            )}
+          </AnimatePresence>
 
           {/* Days selector */}
           {settings.notificationsEnabled && (

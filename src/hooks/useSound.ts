@@ -30,5 +30,8 @@ export function useSound() {
     playDelete: useCallback(() => soundEngine.remove(), []),
     playTabSwitch: useCallback(() => soundEngine.tabSwitch(), []),
     playPaid: useCallback(() => soundEngine.paid(), []),
+    playError: useCallback(() => soundEngine.error(), []),
+    playToggleOn: useCallback(() => soundEngine.toggleOn(), []),
+    playToggleOff: useCallback(() => soundEngine.toggleOff(), []),
   };
 }

@@ -171,7 +171,7 @@ export default function Home() {
     setSettings,
   });
 
-  const { playSuccess, playDelete, playPaid } = useSound();
+  const { playSuccess, playDelete, playPaid, playToggleOn, playToggleOff } = useSound();
 
   // When workspace mode is active, show workspace pool instead of personal subs
   const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
@@ -567,7 +567,9 @@ export default function Home() {
             }}
             onMarkPaid={() => handleMarkPaid(selectedSub)}
             onToggleActive={() => {
-              wsUpdateSubscription(selectedSub.id, { isActive: !selectedSub.isActive });
+              const willBeActive = !selectedSub.isActive;
+              wsUpdateSubscription(selectedSub.id, { isActive: willBeActive });
+              willBeActive ? playToggleOn() : playToggleOff();
             }}
             onDelete={() => {
               // Close first so the modal never renders with a missing sub (blank flash)

@@ -2,6 +2,7 @@ const STORAGE_KEY = 'neonsub-sounds-enabled';
 
 class SoundEngine {
   private ctx: AudioContext | null = null;
+  private compressor: DynamicsCompressorNode | null = null;
   private enabled: boolean = false;
 
   constructor() {
@@ -10,7 +11,6 @@ class SoundEngine {
       if (stored !== null) {
         this.enabled = stored === 'true';
       }
-      // Default is false (off) — no localStorage entry means sounds disabled
     }
   }
 
@@ -19,6 +19,14 @@ class SoundEngine {
     try {
       if (!this.ctx) {
         this.ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        // Compressor for consistent loudness across all sounds
+        this.compressor = this.ctx.createDynamicsCompressor();
+        this.compressor.threshold.value = -18;
+        this.compressor.knee.value = 6;
+        this.compressor.ratio.value = 4;
+        this.compressor.attack.value = 0.003;
+        this.compressor.release.value = 0.1;
+        this.compressor.connect(this.ctx.destination);
       }
       if (this.ctx.state === 'suspended') {
         this.ctx.resume();
@@ -27,6 +35,11 @@ class SoundEngine {
     } catch {
       return null;
     }
+  }
+
+  private get output(): AudioNode | null {
+    this.getContext();
+    return this.compressor;
   }
 
   setEnabled(enabled: boolean) {
@@ -40,194 +53,251 @@ class SoundEngine {
     return this.enabled;
   }
 
-  /** Мягкий тактильный клик — два гармоника с быстрым затуханием */
+  /** Tap — тёплый физический клик кнопки */
   tap() {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    const out = this.output;
+    if (!ctx || !out) return;
     const t = ctx.currentTime;
 
-    // Fundamental — мягкий тон
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.frequency.value = 880;
-    osc1.type = 'sine';
-    gain1.gain.setValueAtTime(0.06, t);
-    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-    osc1.start(t);
-    osc1.stop(t + 0.06);
+    // Main tone at E5 — warm mid-range
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(out);
+    osc.type = 'sine';
+    osc.frequency.value = 659;
+    gain.gain.setValueAtTime(0.06, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+    osc.start(t);
+    osc.stop(t + 0.06);
 
-    // Harmonic — добавляет "тело"
+    // Subtle harmonic for body
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.frequency.value = 1760;
+    gain2.connect(out);
     osc2.type = 'sine';
+    osc2.frequency.value = 988; // B5 — adds warmth
     gain2.gain.setValueAtTime(0.02, t);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
     osc2.start(t);
-    osc2.stop(t + 0.04);
+    osc2.stop(t + 0.035);
   }
 
-  /** Success — мелодичный восходящий аккорд (C-E-G) */
+  /** Success — восходящий аккорд Em: E5 → G5 → B5 (ощущение завершённости) */
   success() {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    const out = this.output;
+    if (!ctx || !out) return;
     const t = ctx.currentTime;
 
-    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
-    const delays = [0, 0.07, 0.14];
-    const durations = [0.25, 0.22, 0.30];
+    const notes = [
+      { freq: 659.25, delay: 0,    dur: 0.22 }, // E5
+      { freq: 783.99, delay: 0.09, dur: 0.22 }, // G5
+      { freq: 987.77, delay: 0.17, dur: 0.28 }, // B5
+    ];
 
-    notes.forEach((freq, i) => {
+    notes.forEach(({ freq, delay, dur }) => {
+      const s = t + delay;
+
+      // Main tone
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
+      gain.connect(out);
       osc.type = 'sine';
-      const start = t + delays[i];
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.08 - i * 0.01, start + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, start + durations[i]);
-      osc.start(start);
-      osc.stop(start + durations[i]);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, s);
+      gain.gain.linearRampToValueAtTime(0.055, s + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.001, s + dur);
+      osc.start(s);
+      osc.stop(s + dur + 0.01);
 
-      // Subtle octave shimmer
+      // Octave shimmer — adds bell-like quality
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.connect(gain2);
-      gain2.connect(ctx.destination);
-      osc2.frequency.value = freq * 2;
+      gain2.connect(out);
       osc2.type = 'sine';
-      gain2.gain.setValueAtTime(0, start);
-      gain2.gain.linearRampToValueAtTime(0.015, start + 0.02);
-      gain2.gain.exponentialRampToValueAtTime(0.001, start + durations[i] * 0.7);
-      osc2.start(start);
-      osc2.stop(start + durations[i]);
+      osc2.frequency.value = freq * 2;
+      gain2.gain.setValueAtTime(0, s);
+      gain2.gain.linearRampToValueAtTime(0.01, s + 0.012);
+      gain2.gain.exponentialRampToValueAtTime(0.001, s + dur * 0.55);
+      osc2.start(s);
+      osc2.stop(s + dur * 0.6);
     });
   }
 
-  /** Delete — мягкий нисходящий "вуш" с шумовой текстурой */
+  /** Remove — нисходящий тон B4→G4 (ощущение "ушло") */
   remove() {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    const out = this.output;
+    if (!ctx || !out) return;
     const t = ctx.currentTime;
 
-    // Тональная часть — нисходящий sweep
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(440, t);
-    osc.frequency.exponentialRampToValueAtTime(120, t + 0.25);
+    gain.connect(out);
     osc.type = 'sine';
-    gain.gain.setValueAtTime(0.08, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    osc.frequency.setValueAtTime(494, t);               // B4
+    osc.frequency.exponentialRampToValueAtTime(392, t + 0.18); // G4
+    gain.gain.setValueAtTime(0.055, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
     osc.start(t);
-    osc.stop(t + 0.25);
+    osc.stop(t + 0.24);
 
-    // Мягкий шум для текстуры
-    const bufferSize = ctx.sampleRate * 0.2;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.5;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    const noiseGain = ctx.createGain();
-    const noiseFilter = ctx.createBiquadFilter();
-    noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.setValueAtTime(2000, t);
-    noiseFilter.frequency.exponentialRampToValueAtTime(200, t + 0.2);
-    noise.connect(noiseFilter);
-    noiseFilter.connect(noiseGain);
-    noiseGain.connect(ctx.destination);
-    noiseGain.gain.setValueAtTime(0.03, t);
-    noiseGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-    noise.start(t);
-    noise.stop(t + 0.2);
+    // Harmonic shadow
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(out);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(988, t);
+    osc2.frequency.exponentialRampToValueAtTime(784, t + 0.12);
+    gain2.gain.setValueAtTime(0.018, t);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    osc2.start(t);
+    osc2.stop(t + 0.15);
   }
 
-  /** Tab switch — кристальный мини-"пинг" */
+  /** Tab switch — едва слышимый переход */
   tabSwitch() {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    const out = this.output;
+    if (!ctx || !out) return;
     const t = ctx.currentTime;
 
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 1046.5; // C6
+    gain.connect(out);
     osc.type = 'sine';
-    gain.gain.setValueAtTime(0.03, t);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    osc.frequency.value = 880; // A5
+    gain.gain.setValueAtTime(0.028, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.065);
     osc.start(t);
-    osc.stop(t + 0.05);
-
-    // Ghost harmonic
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.frequency.value = 2093; // C7
-    osc2.type = 'sine';
-    gain2.gain.setValueAtTime(0.008, t);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-    osc2.start(t);
-    osc2.stop(t + 0.03);
+    osc.stop(t + 0.07);
   }
 
-  /** Mark paid — позитивный "ка-чинг" как звук монетки */
+  /** Paid — G5→C6 восходящий "чинг" как подтверждение платежа */
   paid() {
     if (!this.enabled) return;
     const ctx = this.getContext();
-    if (!ctx) return;
+    const out = this.output;
+    if (!ctx || !out) return;
     const t = ctx.currentTime;
 
-    // Металлический тон 1
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.frequency.value = 1318.5; // E6
-    osc1.type = 'sine';
-    gain1.gain.setValueAtTime(0.1, t);
-    gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-    osc1.start(t);
-    osc1.stop(t + 0.3);
+    const notes = [
+      { freq: 783.99, delay: 0,    dur: 0.26 }, // G5
+      { freq: 1046.5, delay: 0.08, dur: 0.32 }, // C6
+    ];
 
-    // Металлический тон 2 — выше, с задержкой
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.frequency.value = 2637; // E7
-    osc2.type = 'sine';
-    gain2.gain.setValueAtTime(0.06, t + 0.05);
-    gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-    osc2.start(t + 0.05);
-    osc2.stop(t + 0.25);
+    notes.forEach(({ freq, delay, dur }, i) => {
+      const s = t + delay;
+      const vol = 0.065 - i * 0.01;
 
-    // Shimmer
-    const osc3 = ctx.createOscillator();
-    const gain3 = ctx.createGain();
-    osc3.connect(gain3);
-    gain3.connect(ctx.destination);
-    osc3.frequency.value = 3951; // B7
-    osc3.type = 'sine';
-    gain3.gain.setValueAtTime(0.02, t + 0.08);
-    gain3.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-    osc3.start(t + 0.08);
-    osc3.stop(t + 0.2);
+      // Main tone
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(out);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, s);
+      gain.gain.linearRampToValueAtTime(vol, s + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, s + dur);
+      osc.start(s);
+      osc.stop(s + dur + 0.01);
+
+      // Perfect 5th harmonic — bell-like quality
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(out);
+      osc2.type = 'sine';
+      osc2.frequency.value = freq * 1.5;
+      gain2.gain.setValueAtTime(0, s);
+      gain2.gain.linearRampToValueAtTime(vol * 0.25, s + 0.008);
+      gain2.gain.exponentialRampToValueAtTime(0.001, s + dur * 0.45);
+      osc2.start(s);
+      osc2.stop(s + dur * 0.5);
+    });
+  }
+
+  /** Error — два мягких нисходящих тона A4→F#4 ("упс", не тревога) */
+  error() {
+    if (!this.enabled) return;
+    const ctx = this.getContext();
+    const out = this.output;
+    if (!ctx || !out) return;
+    const t = ctx.currentTime;
+
+    const pulses = [
+      { freq: 440, delay: 0 },    // A4
+      { freq: 370, delay: 0.13 }, // F#4
+    ];
+
+    pulses.forEach(({ freq, delay }) => {
+      const s = t + delay;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(out);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.05, s);
+      gain.gain.exponentialRampToValueAtTime(0.001, s + 0.1);
+      osc.start(s);
+      osc.stop(s + 0.12);
+    });
+  }
+
+  /** Toggle ON — восходящий мягкий блип A4→E5 */
+  toggleOn() {
+    if (!this.enabled) return;
+    const ctx = this.getContext();
+    const out = this.output;
+    if (!ctx || !out) return;
+    const t = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(out);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.linearRampToValueAtTime(659, t + 0.09); // A4 → E5
+    gain.gain.setValueAtTime(0.05, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
+
+  /** Toggle OFF — нисходящий мягкий блип E5→A4 */
+  toggleOff() {
+    if (!this.enabled) return;
+    const ctx = this.getContext();
+    const out = this.output;
+    if (!ctx || !out) return;
+    const t = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(out);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(659, t);
+    osc.frequency.linearRampToValueAtTime(440, t + 0.09); // E5 → A4
+    gain.gain.setValueAtTime(0.05, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+    osc.start(t);
+    osc.stop(t + 0.12);
   }
 }
 

@@ -570,9 +570,10 @@ export default function Home() {
               wsUpdateSubscription(selectedSub.id, { isActive: !selectedSub.isActive });
             }}
             onDelete={() => {
+              // Close first so the modal never renders with a missing sub (blank flash)
+              closeDetail();
               wsDeleteSubscription(selectedSub.id);
               playDelete();
-              closeDetail();
             }}
           />
         )}
@@ -595,9 +596,11 @@ export default function Home() {
               closeEdit();
             }}
             onDelete={async () => {
-              await wsDeleteSubscription(editingSubId!);
-              playDelete();
+              // Close first so the modal never renders with a missing sub (blank flash)
+              const idToDelete = editingSubId!;
               closeEdit();
+              await wsDeleteSubscription(idToDelete);
+              playDelete();
             }}
             onAddCategory={addCategory}
             onClose={closeEdit}

@@ -42,6 +42,8 @@ interface WorkspaceContextValue {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 const LS_KEY = 'neonsub-active-workspace-id';
+/** Persists the user's last chosen mode: 'workspace' | 'personal' */
+const MODE_KEY = 'neonsub-workspace-mode';
 const POLL_INTERVAL_MS = 60_000; // refresh workspace subs every 60s when active
 
 /** Fetch workspace subscriptions via service-client API (bypasses RLS for all members) */
@@ -123,6 +125,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setIsWorkspaceActive(true);
     try {
       localStorage.setItem(LS_KEY, ws.id);
+      localStorage.setItem(MODE_KEY, 'workspace');
     } catch { /* ignore */ }
     // Load subs and full members list in parallel (service client — no RLS issues)
     const [subs] = await Promise.all([
@@ -141,6 +144,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaceSubs([]);
     try {
       localStorage.removeItem(LS_KEY);
+      localStorage.setItem(MODE_KEY, 'personal');
     } catch { /* ignore */ }
   }, []);
 
@@ -155,6 +159,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     loadedForUser.current = null;
     try {
       localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(MODE_KEY);
     } catch { /* ignore */ }
   }, []);
 
@@ -201,12 +206,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     async function autoLoad() {
       setLoading(true);
       try {
-        // Use API endpoint (service client) — immune to RLS issues
         const result = await fetchWorkspaceViaApi(user!.id);
         if (result) {
-          // Always activate workspace mode on load — stays active until user explicitly
-          // switches to personal mode. localStorage is no longer used for mode restoration.
-          await activateWorkspace(result.workspace, result.members);
+          const savedMode = localStorage.getItem(MODE_KEY);
+          if (savedMode === 'personal') {
+            // User explicitly switched to personal last time — restore that choice.
+            // Load workspace metadata (needed for Settings) but don't enter workspace mode.
+            setWorkspace(result.workspace);
+            setMembers(result.members);
+            setIsWorkspaceActive(false);
+          } else {
+            // Default (new user or last session was workspace mode) — activate workspace.
+            await activateWorkspace(result.workspace, result.members);
+          }
         }
       } catch (err) {
         console.warn('[WorkspaceProvider] autoLoad error:', err);

@@ -1244,7 +1244,7 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── PDF overlay (Telegram only) ── */}
+      {/* ── PDF overlay (Telegram + mobile browsers) ── */}
       <AnimatePresence>
         {pdfOverlayHtml && (
           <motion.div

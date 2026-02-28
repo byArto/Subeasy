@@ -10,6 +10,11 @@ function isTelegramWebApp(): boolean {
   return !!(window as any).Telegram?.WebApp?.initData;
 }
 
+function isMobileBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function getCategoryName(sub: Subscription, categories: Category[]): string {
@@ -287,8 +292,9 @@ export function exportPDF(
 </body>
 </html>`;
 
-  if (isTelegramWebApp()) {
-    // Telegram WKWebView can't open blob: URLs — return HTML for in-app iframe overlay
+  if (isTelegramWebApp() || isMobileBrowser()) {
+    // Telegram WKWebView can't open blob: URLs; mobile browsers can't save blob: tabs —
+    // return HTML string so the caller shows the in-app overlay with a Share button
     return html;
   }
 

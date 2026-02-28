@@ -33,6 +33,43 @@ function formatRelativeDate(days: number, t: TFunc): string {
 
 const INITIAL_VISIBLE = 1;
 
+function PaymentItem({
+  sub,
+  onSubTap,
+  t,
+}: {
+  sub: Subscription;
+  onSubTap?: (sub: Subscription) => void;
+  t: TFunc;
+}) {
+  const days = getDaysUntilPayment(sub.nextPaymentDate);
+  const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
+
+  return (
+    <motion.button
+      key={sub.id}
+      whileTap={{ scale: 0.98 }}
+      onClick={() => onSubTap?.(sub)}
+      className="w-full flex items-center gap-3 py-2.5 px-1 text-left active:bg-surface-2 rounded-lg transition-colors overflow-hidden"
+    >
+      <span className={cn('w-2 h-2 rounded-full shrink-0', getDotColor(days))} />
+      <span className="text-sm shrink-0">
+        <ServiceLogo name={sub.name} emoji={sub.icon} size={18} />
+      </span>
+      <span className="flex-1 text-sm text-text-primary font-medium truncate">
+        {sub.name}
+      </span>
+      <span className={cn('text-xs shrink-0', days <= 2 ? 'text-danger font-semibold' : 'text-text-muted')}>
+        {formatRelativeDate(days, t)}
+      </span>
+      <span className="text-sm text-text-primary font-semibold tabular-nums shrink-0">
+        {Math.round(sub.price).toLocaleString('ru-RU')}
+        <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
+      </span>
+    </motion.button>
+  );
+}
+
 export function UpcomingPayments({
   subscriptions,
   currency: _currency,
@@ -44,8 +81,9 @@ export function UpcomingPayments({
   const [showAll, setShowAll] = useState(false);
 
   const allItems = subscriptions.slice(0, maxItems);
-  const visibleItems = showAll ? allItems : allItems.slice(0, INITIAL_VISIBLE);
-  const hiddenCount = allItems.length - INITIAL_VISIBLE;
+  const visibleItems = allItems.slice(0, INITIAL_VISIBLE);
+  const extraItems = allItems.slice(INITIAL_VISIBLE);
+  const hiddenCount = extraItems.length;
 
   if (allItems.length === 0) return null;
 
@@ -61,39 +99,28 @@ export function UpcomingPayments({
 
       {/* Payment list */}
       <div className="space-y-1">
-        <AnimatePresence initial={false}>
-          {visibleItems.map((sub, i) => {
-            const days = getDaysUntilPayment(sub.nextPaymentDate);
-            const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
+        {/* Always-visible first item */}
+        {visibleItems.map((sub) => (
+          <PaymentItem key={sub.id} sub={sub} onSubTap={onSubTap} t={t} />
+        ))}
 
-            return (
-              <motion.button
-                key={sub.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ delay: i < INITIAL_VISIBLE ? i * 0.05 : 0, type: 'spring', stiffness: 300, damping: 30 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onSubTap?.(sub)}
-                className="w-full flex items-center gap-3 py-2.5 px-1 text-left active:bg-surface-2 rounded-lg transition-colors overflow-hidden"
-              >
-                <span className={cn('w-2 h-2 rounded-full shrink-0', getDotColor(days))} />
-                <span className="text-sm shrink-0">
-                  <ServiceLogo name={sub.name} emoji={sub.icon} size={18} />
-                </span>
-                <span className="flex-1 text-sm text-text-primary font-medium truncate">
-                  {sub.name}
-                </span>
-                <span className={cn('text-xs shrink-0', days <= 2 ? 'text-danger font-semibold' : 'text-text-muted')}>
-                  {formatRelativeDate(days, t)}
-                </span>
-                <span className="text-sm text-text-primary font-semibold tabular-nums shrink-0">
-                  {Math.round(sub.price).toLocaleString('ru-RU')}
-                  <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
-                </span>
-              </motion.button>
-            );
-          })}
+        {/* Extra items — wrapped in ONE container so only one height animation runs */}
+        <AnimatePresence initial={false}>
+          {showAll && extraItems.length > 0 && (
+            <motion.div
+              key="extra"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+              style={{ overflow: 'hidden' }}
+              className="space-y-1"
+            >
+              {extraItems.map((sub) => (
+                <PaymentItem key={sub.id} sub={sub} onSubTap={onSubTap} t={t} />
+              ))}
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Show more / less */}

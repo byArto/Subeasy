@@ -11,7 +11,9 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { useTheme, Theme } from '@/components/providers/ThemeProvider';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { exportCSV, exportPDF } from '@/lib/export';
+import { createClient } from '@/lib/supabase';
 import { upsertWorkspaceSubscription } from '@/lib/sync';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
@@ -67,6 +69,7 @@ export function SettingsPage({
   onOpenPro,
 }: SettingsPageProps) {
   const { user, signOut, setSkipAuth } = useAuth();
+  const { isTelegram } = useTelegramContext();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const { lang, setLang, t } = useLanguage();
   const { isPro } = usePro();
@@ -95,6 +98,8 @@ export function SettingsPage({
   const [confirmClear, setConfirmClear] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
+  const [pdfSending, setPdfSending] = useState(false);
+  const [pdfSendResult, setPdfSendResult] = useState<'ok' | 'error' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Family Plan states ──
@@ -150,8 +155,40 @@ export function SettingsPage({
     if (!isPro) { onOpenPro(); return; }
     const result = exportPDF(subscriptions, categories, settings, lang);
     if (typeof result === 'string') {
-      // Telegram context: show HTML in in-app iframe overlay
       setPdfOverlayHtml(result);
+    }
+  }
+
+  async function handleTelegramSendReport() {
+    if (!pdfOverlayHtml || pdfSending) return;
+    setPdfSending(true);
+    setPdfSendResult(null);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('No session');
+
+      const res = await fetch('/api/telegram/sendReport', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ html: pdfOverlayHtml }),
+      });
+
+      if (res.ok) {
+        setPdfSendResult('ok');
+        setTimeout(() => setPdfSendResult(null), 3000);
+      } else {
+        setPdfSendResult('error');
+        setTimeout(() => setPdfSendResult(null), 3000);
+      }
+    } catch {
+      setPdfSendResult('error');
+      setTimeout(() => setPdfSendResult(null), 3000);
+    } finally {
+      setPdfSending(false);
     }
   }
 
@@ -1268,11 +1305,15 @@ export function SettingsPage({
               <span className="text-sm font-semibold text-text-primary">
                 {lang === 'ru' ? 'Отчёт' : 'Report'}
               </span>
-              {/* Share / Save button */}
+              {/* Save / Share button */}
               <button
                 type="button"
                 onClick={() => {
-                  const html = pdfOverlayHtml;
+                  if (isTelegram) {
+                    handleTelegramSendReport();
+                    return;
+                  }
+                  const html = pdfOverlayHtml!;
                   const filename = `subeasy-${new Date().toISOString().split('T')[0]}.html`;
                   const file = new File([html], filename, { type: 'text/html' });
                   if (navigator.canShare?.({ files: [file] })) {
@@ -1281,15 +1322,40 @@ export function SettingsPage({
                     navigator.share({ title: 'SubEasy Report', text: html }).catch(() => {});
                   }
                 }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-neon active:bg-surface-4 transition-colors"
+                disabled={pdfSending}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-neon active:bg-surface-4 transition-colors disabled:opacity-50"
                 title={lang === 'ru' ? 'Сохранить / Поделиться' : 'Save / Share'}
               >
-                {/* Share icon */}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                  <polyline points="16 6 12 2 8 6" />
-                  <line x1="12" y1="2" x2="12" y2="15" />
-                </svg>
+                {pdfSending ? (
+                  /* Spinner */
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
+                  </svg>
+                ) : pdfSendResult === 'ok' ? (
+                  /* Checkmark */
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : pdfSendResult === 'error' ? (
+                  /* X */
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6 6 18M6 6l12 12" />
+                  </svg>
+                ) : (
+                  /* Share/Send icon — Telegram arrow when in tg, upload arrow on mobile */
+                  isTelegram ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 2 11 13" />
+                      <path d="M22 2 15 22 11 13 2 9l20-7z" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                    </svg>
+                  )
+                )}
               </button>
             </div>
             {/* HTML report in iframe */}

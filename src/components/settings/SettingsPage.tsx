@@ -126,8 +126,9 @@ export function SettingsPage({
     setNotifError(null);
     if (!settings.notificationsEnabled) {
       const permission = getNotificationPermission();
-      if (permission === 'unsupported') {
-        setNotifError(t('settings.notifications.unsupported'));
+      // In Telegram Mini App or unsupported browser — enable in-app notifications directly
+      if (isTelegram || permission === 'unsupported') {
+        updateSettings({ notificationsEnabled: true });
         return;
       }
       if (permission === 'denied') {

@@ -85,6 +85,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [isWorkspaceActive, setIsWorkspaceActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const loadedForUser = useRef<string | null>(null);
+  // Read MODE_KEY synchronously at render time — before any effect can clear localStorage.
+  // This survives the logout-watcher effect that runs on initial mount with user=null.
+  const savedModeOnMount = useRef<string | null>(
+    typeof window !== 'undefined' ? localStorage.getItem(MODE_KEY) : null
+  );
+  // Track previous user id so we can distinguish "initial null" from "actual logout"
+  const prevUserIdRef = useRef<string | null>(null);
 
   const isOwner = !!(workspace && user && workspace.ownerId === user.id);
 
@@ -208,15 +215,19 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       try {
         const result = await fetchWorkspaceViaApi(user!.id);
         if (result) {
-          const savedMode = localStorage.getItem(MODE_KEY);
+          // Use the value captured synchronously at render time (before any effect
+          // could clear localStorage — specifically the logout-watcher on initial null).
+          const savedMode = savedModeOnMount.current;
           if (savedMode === 'personal') {
-            // User explicitly switched to personal last time — restore that choice.
-            // Load workspace metadata (needed for Settings) but don't enter workspace mode.
+            // Restore personal mode: load workspace metadata (needed for Settings UI)
+            // but do NOT enter workspace mode.
             setWorkspace(result.workspace);
             setMembers(result.members);
             setIsWorkspaceActive(false);
+            // Re-persist explicitly so the value survives any future clearWorkspace calls
+            try { localStorage.setItem(MODE_KEY, 'personal'); } catch { /* ignore */ }
           } else {
-            // Default (new user or last session was workspace mode) — activate workspace.
+            // Default (new user, or last session was workspace mode) — activate workspace.
             await activateWorkspace(result.workspace, result.members);
           }
         }
@@ -240,11 +251,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(timer);
   }, [isWorkspaceActive, workspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Clear everything on logout
+  // Clear everything on logout — but NOT on the initial mount where user is still loading.
+  // prevUserIdRef distinguishes "user was authenticated and then logged out" from
+  // "user is null because auth hasn't resolved yet on first render".
   useEffect(() => {
-    if (!user) {
+    if (!user && prevUserIdRef.current !== null) {
       clearWorkspace();
     }
+    prevUserIdRef.current = user?.id ?? null;
   }, [user, clearWorkspace]);
 
   const value: WorkspaceContextValue = {

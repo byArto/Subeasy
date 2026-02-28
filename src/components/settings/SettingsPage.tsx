@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn, sanitizeUrl } from '@/lib/utils';
@@ -100,6 +101,8 @@ export function SettingsPage({
   const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
   const [pdfSending, setPdfSending] = useState(false);
   const [pdfSendResult, setPdfSendResult] = useState<'ok' | 'error' | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Family Plan states ──
@@ -394,6 +397,7 @@ export function SettingsPage({
   const activeSubs = subscriptions.filter((s) => s.isActive);
 
   return (
+    <>
     <div className="space-y-6 px-5 pt-2 pb-4">
 
       {/* ── Migrate subscriptions dialog ── */}
@@ -1281,7 +1285,12 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── PDF overlay (Telegram + mobile browsers) ── */}
+    </div>
+
+    {/* ── PDF overlay — rendered via portal into document.body so it escapes
+        any intermediate stacking context created by Framer Motion's opacity
+        animation on the tab container (fixed+z-index gets "trapped" otherwise) ── */}
+    {isMounted && createPortal(
       <AnimatePresence>
         {pdfOverlayHtml && (
           <motion.div
@@ -1289,10 +1298,13 @@ export function SettingsPage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col bg-black"
+            className="fixed inset-0 z-[200] flex flex-col bg-black"
           >
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-4 py-3 bg-surface-2 border-b border-border-subtle shrink-0">
+            {/* Top bar — sits above Telegram safe area */}
+            <div
+              className="flex items-center justify-between px-4 bg-surface-2 border-b border-border-subtle shrink-0"
+              style={{ paddingTop: `calc(var(--tg-top-inset, 0px) + 12px)`, paddingBottom: '12px' }}
+            >
               <button
                 type="button"
                 onClick={() => setPdfOverlayHtml(null)}
@@ -1327,34 +1339,28 @@ export function SettingsPage({
                 title={lang === 'ru' ? 'Сохранить / Поделиться' : 'Save / Share'}
               >
                 {pdfSending ? (
-                  /* Spinner */
                   <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeLinecap="round" />
                   </svg>
                 ) : pdfSendResult === 'ok' ? (
-                  /* Checkmark */
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 ) : pdfSendResult === 'error' ? (
-                  /* X */
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18M6 6l12 12" />
                   </svg>
+                ) : isTelegram ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 2 11 13" />
+                    <path d="M22 2 15 22 11 13 2 9l20-7z" />
+                  </svg>
                 ) : (
-                  /* Share/Send icon — Telegram arrow when in tg, upload arrow on mobile */
-                  isTelegram ? (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 2 11 13" />
-                      <path d="M22 2 15 22 11 13 2 9l20-7z" />
-                    </svg>
-                  ) : (
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                      <polyline points="16 6 12 2 8 6" />
-                      <line x1="12" y1="2" x2="12" y2="15" />
-                    </svg>
-                  )
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
                 )}
               </button>
             </div>
@@ -1367,8 +1373,10 @@ export function SettingsPage({
             />
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
+      </AnimatePresence>,
+      document.body
+    )}
+    </>
   );
 }
 

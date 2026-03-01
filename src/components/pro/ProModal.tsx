@@ -9,49 +9,51 @@ import { createClient } from '@/lib/supabase';
 
 type Plan = 'monthly' | 'yearly' | 'lifetime';
 
+const PLAN_CONFIG = {
+  monthly:  { stars: 249,  strikethru: 349,  labelRu: 'Месяц',    labelEn: 'Month',    periodRu: '/мес', periodEn: '/mo' },
+  yearly:   { stars: 1799, strikethru: 2988, labelRu: 'Год',       labelEn: 'Year',     periodRu: '/год', periodEn: '/yr', badgeRu: 'Выгода −40%', badgeEn: 'Save −40%' },
+  lifetime: { stars: 2999, strikethru: 4999, labelRu: 'Навсегда',  labelEn: 'Lifetime', periodRu: '',     periodEn: '' },
+} as const;
+
 const FEATURES = [
   {
-    icon: '🤖',
-    ru: { name: 'AI инсайты', desc: '«Тратишь на стриминг больше среднего» и другие умные подсказки' },
-    en: { name: 'AI Insights', desc: '"You spend more on streaming than average" and other smart tips' },
-  },
-  {
     icon: '👨‍👩‍👧',
-    ru: { name: 'Семейный план', desc: 'Совместный доступ и разделение расходов до 6 человек' },
-    en: { name: 'Family Plan', desc: 'Shared access and split expenses for up to 6 people' },
+    ru: { name: 'Семейный план', desc: 'Совместный доступ и расходы до 6 человек' },
+    en: { name: 'Family Plan', desc: 'Shared access and expenses for up to 6 people' },
+    live: true,
   },
   {
     icon: '🔔',
-    ru: { name: 'Telegram-уведомления', desc: 'Напоминания прямо в чат с кнопками действий' },
-    en: { name: 'Telegram Notifications', desc: 'Reminders in chat with quick action buttons' },
+    ru: { name: 'Telegram-уведомления', desc: 'Напоминание за 1–7 дней до списания' },
+    en: { name: 'Telegram Notifications', desc: 'Reminder 1–7 days before payment' },
+    live: true,
   },
   {
-    icon: '💱',
-    ru: { name: 'Мультивалюта', desc: 'EUR, GBP, TRY, KZT, AMD — всё в одном месте' },
-    en: { name: 'Multi-currency', desc: 'EUR, GBP, TRY, KZT, AMD — all in one place' },
-  },
-  {
-    icon: '📈',
-    ru: { name: 'История цен', desc: 'Видишь когда и насколько выросла цена подписки' },
-    en: { name: 'Price History', desc: 'See when and how much a subscription price changed' },
-  },
-  {
-    icon: '🗂',
-    ru: { name: 'Архив подписок', desc: 'Отменённые подписки хранятся — история всегда под рукой' },
-    en: { name: 'Subscription Archive', desc: 'Cancelled subscriptions stay saved — history always available' },
+    icon: '📊',
+    ru: { name: 'Бюджетный лимит', desc: 'Контроль расходов с прогресс-баром' },
+    en: { name: 'Budget Limit', desc: 'Expense control with progress bar' },
+    live: true,
   },
   {
     icon: '🎨',
-    ru: { name: 'Визуальные темы', desc: 'Акцентные цвета интерфейса и светлая тема' },
-    en: { name: 'Visual Themes', desc: 'Interface accent colors and light theme' },
+    ru: { name: 'Новые цветовые палитры', desc: 'Акцентные цвета и темы оформления' },
+    en: { name: 'New Color Palettes', desc: 'Accent colors and UI themes' },
+    live: false,
   },
-];
-
-const PLAN_CONFIG = {
-  monthly:  { stars: 249,  labelRu: 'Месяц',    labelEn: 'Month',    periodRu: '/мес',   periodEn: '/mo' },
-  yearly:   { stars: 1799, labelRu: 'Год',       labelEn: 'Year',     periodRu: '/год',   periodEn: '/yr', badgeRu: 'Выгода −40%', badgeEn: 'Save −40%' },
-  lifetime: { stars: 2999, labelRu: 'Навсегда',  labelEn: 'Lifetime', periodRu: '',       periodEn: '' },
-} as const;
+  {
+    icon: '📄',
+    ru: { name: 'PDF / CSV экспорт', desc: 'Выгрузка всех подписок в файл' },
+    en: { name: 'PDF / CSV Export', desc: 'Export all subscriptions to a file' },
+    live: false,
+  },
+  {
+    icon: '🤖',
+    ru: { name: 'AI аудит', desc: 'Найдёт дубли и скрытые переплаты' },
+    en: { name: 'AI Audit', desc: 'Finds duplicates and hidden overpayments' },
+    live: false,
+    dimmed: true,
+  },
+] as const;
 
 export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { lang } = useLanguage();
@@ -91,21 +93,16 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         return;
       }
 
-      // Open Telegram Stars payment UI
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const webApp = (window as any).Telegram?.WebApp;
       if (webApp?.openInvoice) {
         webApp.openInvoice(data.url, (status: string) => {
           if (status === 'paid') {
             setPaid(true);
-            // Refresh PRO status after short delay so webhook has time to fire
-            setTimeout(() => {
-              refreshProStatus();
-            }, 1500);
+            setTimeout(() => { refreshProStatus(); }, 1500);
           }
         });
       } else {
-        // Fallback: open invoice link directly (non-Mini App context)
         window.open(data.url, '_blank');
       }
     } catch {
@@ -153,179 +150,64 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
             }}
           >
             {/* Drag handle */}
-            <div
-              style={{
-                width: 40,
-                height: 4,
-                background: 'rgba(255,255,255,0.15)',
-                borderRadius: 2,
-                margin: '12px auto 0',
-              }}
-            />
+            <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '12px auto 0' }} />
 
-            {/* Header */}
-            <div style={{ padding: '20px 24px 0', textAlign: 'center' }}>
-              <span style={{ fontSize: 44, display: 'block', marginBottom: 10 }}>👑</span>
-
-              <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                <span style={{ color: '#f5c842' }}>Sub</span>Easy <span style={{ color: '#f5c842' }}>PRO</span>
-              </h2>
-
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', marginTop: 6, marginBottom: 0 }}>
-                {isRu ? 'Максимум контроля над подписками' : 'Full control over your subscriptions'}
-              </p>
-
-              {/* Status badge */}
-              <div
-                style={{
-                  marginTop: 12,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'rgba(245,200,66,0.1)',
-                  border: '1px solid rgba(245,200,66,0.25)',
-                  borderRadius: 20,
-                  padding: '5px 12px',
-                }}
-              >
-                <motion.span
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#f5c842',
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#f5c842' }}>
-                  {isRu ? 'Telegram Stars · Мгновенная активация' : 'Telegram Stars · Instant activation'}
-                </span>
-              </div>
-            </div>
-
-            {/* Features list */}
-            <div style={{ padding: '20px 20px 0' }}>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: 'rgba(255,255,255,0.3)',
-                  marginBottom: 12,
-                  marginTop: 0,
-                }}
-              >
-                {isRu ? 'Что входит в PRO' : "What's included in PRO"}
-              </p>
-
-              {FEATURES.map((f) => (
-                <div
-                  key={f.en.name}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 12,
-                    padding: 12,
-                    background: '#1e1e1e',
-                    borderRadius: 14,
-                    marginBottom: 8,
-                  }}
+            <AnimatePresence mode="wait">
+              {paid ? (
+                /* ── Success screen ── */
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  style={{ textAlign: 'center', padding: '40px 20px calc(env(safe-area-inset-bottom, 20px) + 20px)' }}
                 >
-                  <div
+                  <div style={{ fontSize: 56, marginBottom: 14 }}>🎉</div>
+                  <p style={{ fontSize: 20, fontWeight: 900, margin: '0 0 8px' }}>
+                    {isRu ? 'PRO активирован!' : 'PRO activated!'}
+                  </p>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '0 0 28px' }}>
+                    {isRu ? 'Все функции уже доступны' : 'All features are now available'}
+                  </p>
+                  <button
+                    onClick={onClose}
                     style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      background: '#262626',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 19,
-                      flexShrink: 0,
+                      background: 'linear-gradient(135deg, #f5c842, #e8a800)',
+                      color: '#0e0e0e',
+                      fontSize: 16,
+                      fontWeight: 900,
+                      width: '100%',
+                      padding: 16,
+                      borderRadius: 14,
+                      border: 'none',
+                      cursor: 'pointer',
                     }}
                   >
-                    {f.icon}
+                    {isRu ? 'Отлично!' : 'Awesome!'}
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+
+                  {/* ── Emotional hook ── */}
+                  <div style={{ padding: '20px 20px 0', textAlign: 'center' }}>
+                    <span style={{ fontSize: 42, display: 'block', marginBottom: 10 }}>💸</span>
+                    <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 8px', lineHeight: 1.2 }}>
+                      {isRu ? 'Сколько ты теряешь прямо сейчас?' : 'How much are you losing right now?'}
+                    </h2>
+                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, lineHeight: 1.55 }}>
+                      {isRu
+                        ? <>Пользователи SubEasy PRO находят в среднем <span style={{ color: '#00FF41', fontWeight: 700 }}>2–3 забытые подписки</span> на сумму <span style={{ color: '#00FF41', fontWeight: 700 }}>~2 400₽/мес</span></>
+                        : <>SubEasy PRO users find on average <span style={{ color: '#00FF41', fontWeight: 700 }}>2–3 forgotten subscriptions</span> worth <span style={{ color: '#00FF41', fontWeight: 700 }}>~$30/mo</span></>}
+                    </p>
                   </div>
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>
-                      {isRu ? f.ru.name : f.en.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: 'rgba(255,255,255,0.45)',
-                        marginTop: 2,
-                        lineHeight: 1.45,
-                      }}
-                    >
-                      {isRu ? f.ru.desc : f.en.desc}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer — plan selector + buy button */}
-            <div style={{ padding: '20px 20px env(safe-area-inset-bottom, 20px)' }}>
-              <AnimatePresence mode="wait">
-                {paid ? (
-                  /* Success screen */
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    style={{
-                      textAlign: 'center',
-                      padding: '24px 0',
-                    }}
-                  >
-                    <div style={{ fontSize: 52, marginBottom: 12 }}>🎉</div>
-                    <p style={{ fontSize: 18, fontWeight: 800, margin: '0 0 6px' }}>
-                      {isRu ? 'PRO активирован!' : 'PRO activated!'}
-                    </p>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '0 0 20px' }}>
-                      {isRu ? 'Все функции уже доступны' : 'All features are now available'}
-                    </p>
-                    <button
-                      onClick={onClose}
-                      style={{
-                        background: 'linear-gradient(135deg, #f5c842, #e8a800)',
-                        color: '#0e0e0e',
-                        fontSize: 15,
-                        fontWeight: 800,
-                        width: '100%',
-                        padding: 16,
-                        borderRadius: 14,
-                        border: 'none',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isRu ? 'Отлично!' : 'Awesome!'}
-                    </button>
-                  </motion.div>
-                ) : isTelegram ? (
-                  /* Stars payment UI */
-                  <motion.div key="payment" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    {/* Plan selector */}
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: '0.1em',
-                        textTransform: 'uppercase',
-                        color: 'rgba(255,255,255,0.3)',
-                        margin: '0 0 10px',
-                      }}
-                    >
+                  {/* ── Plan selector ── */}
+                  <div style={{ padding: '16px 16px 0' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 10px' }}>
                       {isRu ? 'Выберите план' : 'Choose plan'}
                     </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                       {(Object.keys(PLAN_CONFIG) as Plan[]).map((plan) => {
                         const cfg = PLAN_CONFIG[plan];
                         const isSelected = selectedPlan === plan;
@@ -344,39 +226,42 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'center',
-                              gap: 2,
+                              gap: 1,
                               position: 'relative',
                               transition: 'border-color 0.15s, background 0.15s',
                             }}
                           >
                             {hasBadge && (
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  top: -8,
-                                  left: '50%',
-                                  transform: 'translateX(-50%)',
-                                  background: '#f5c842',
-                                  color: '#0e0e0e',
-                                  fontSize: 9,
-                                  fontWeight: 800,
-                                  borderRadius: 6,
-                                  padding: '2px 5px',
-                                  whiteSpace: 'nowrap',
-                                  letterSpacing: '0.03em',
-                                }}
-                              >
+                              <div style={{
+                                position: 'absolute',
+                                top: -8,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                                background: '#f5c842',
+                                color: '#0e0e0e',
+                                fontSize: 8,
+                                fontWeight: 900,
+                                borderRadius: 6,
+                                padding: '2px 5px',
+                                whiteSpace: 'nowrap',
+                                letterSpacing: '0.03em',
+                              }}>
                                 {isRu ? (cfg as { badgeRu: string }).badgeRu : (cfg as { badgeEn: string }).badgeEn}
                               </div>
                             )}
-                            <span style={{ fontSize: 11, fontWeight: 700, color: isSelected ? '#f5c842' : 'rgba(255,255,255,0.7)' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: isSelected ? '#f5c842' : 'rgba(255,255,255,0.6)' }}>
                               {isRu ? cfg.labelRu : cfg.labelEn}
                             </span>
-                            <span style={{ fontSize: 16, fontWeight: 800, color: isSelected ? '#f5c842' : '#fff' }}>
-                              ⭐ {cfg.stars}
+                            {/* Crossed-out original price */}
+                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', textDecoration: 'line-through' }}>
+                              {cfg.strikethru}⭐
+                            </span>
+                            {/* Actual price */}
+                            <span style={{ fontSize: 17, fontWeight: 900, color: isSelected ? '#f5c842' : '#fff', lineHeight: 1 }}>
+                              {cfg.stars}⭐
                             </span>
                             {cfg.periodRu && (
-                              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                              <span style={{ fontSize: 9, color: isSelected ? 'rgba(245,200,66,0.5)' : 'rgba(255,255,255,0.3)' }}>
                                 {isRu ? cfg.periodRu : cfg.periodEn}
                               </span>
                             )}
@@ -387,83 +272,151 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
                     {/* Error */}
                     {error && (
-                      <p style={{ fontSize: 12, color: '#ff6b6b', textAlign: 'center', margin: '0 0 10px' }}>
+                      <p style={{ fontSize: 12, color: '#ff6b6b', textAlign: 'center', margin: '10px 0 0' }}>
                         {error}
                       </p>
                     )}
 
-                    {/* Buy button */}
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      onClick={handleBuy}
-                      disabled={loading}
-                      style={{
-                        background: loading ? 'rgba(245,200,66,0.4)' : 'linear-gradient(135deg, #f5c842, #e8a800)',
-                        color: '#0e0e0e',
-                        fontSize: 15,
-                        fontWeight: 800,
-                        width: '100%',
-                        padding: 16,
-                        borderRadius: 14,
-                        border: 'none',
-                        cursor: loading ? 'not-allowed' : 'pointer',
-                        display: 'block',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {loading
-                        ? (isRu ? 'Загрузка…' : 'Loading…')
-                        : `⭐ ${isRu ? 'Купить PRO' : 'Buy PRO'} · ${PLAN_CONFIG[selectedPlan].stars} ${isRu ? 'звёзд' : 'Stars'}`}
-                    </motion.button>
-
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', margin: '10px 0 0' }}>
-                      {isRu ? 'Оплата через Telegram Stars · Мгновенная активация' : 'Payment via Telegram Stars · Instant activation'}
-                    </p>
-                  </motion.div>
-                ) : (
-                  /* Not in Telegram — show instruction */
-                  <motion.div key="not-telegram" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <div
-                      style={{
-                        background: '#1e1e1e',
-                        borderRadius: 14,
-                        padding: '16px',
-                        textAlign: 'center',
-                        marginBottom: 12,
-                      }}
-                    >
-                      <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>📱</span>
-                      <p style={{ fontSize: 14, fontWeight: 700, margin: '0 0 6px' }}>
-                        {isRu ? 'Оплата через Telegram' : 'Pay via Telegram'}
-                      </p>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', margin: 0, lineHeight: 1.5 }}>
-                        {isRu
-                          ? 'Откройте SubEasy через Telegram-бота, чтобы оплатить звёздами'
-                          : 'Open SubEasy via Telegram bot to pay with Stars'}
-                      </p>
+                    {/* CTA */}
+                    <div style={{ marginTop: 12 }}>
+                      {isTelegram ? (
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={handleBuy}
+                          disabled={loading}
+                          style={{
+                            background: loading ? 'rgba(245,200,66,0.4)' : 'linear-gradient(135deg, #f5c842, #e8a800)',
+                            color: '#0e0e0e',
+                            fontSize: 15,
+                            fontWeight: 900,
+                            width: '100%',
+                            padding: 16,
+                            borderRadius: 14,
+                            border: 'none',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            display: 'block',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          {loading
+                            ? (isRu ? 'Загрузка…' : 'Loading…')
+                            : `⭐ ${isRu ? 'Купить PRO' : 'Buy PRO'} · ${PLAN_CONFIG[selectedPlan].stars} ${isRu ? 'звёзд' : 'Stars'}`}
+                        </motion.button>
+                      ) : (
+                        <div style={{ background: '#1e1e1e', borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
+                          <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>📱</span>
+                          <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 4px' }}>
+                            {isRu ? 'Оплата через Telegram' : 'Pay via Telegram'}
+                          </p>
+                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.5 }}>
+                            {isRu
+                              ? 'Откройте SubEasy через Telegram-бота, чтобы оплатить звёздами'
+                              : 'Open SubEasy via Telegram bot to pay with Stars'}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    <button
-                      onClick={onClose}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'rgba(255,255,255,0.35)',
-                        fontSize: 13,
-                        fontWeight: 500,
-                        width: '100%',
-                        padding: 12,
-                        cursor: 'pointer',
-                        display: 'block',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      {isRu ? 'Закрыть' : 'Close'}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: '8px 0 0' }}>
+                      {isRu ? 'Мгновенная активация · Telegram Stars' : 'Instant activation · Telegram Stars'}
+                    </p>
+                  </div>
+
+                  {/* ── Divider ── */}
+                  <div style={{ margin: '16px 16px 0', height: 1, background: 'rgba(255,255,255,0.07)' }} />
+
+                  {/* ── What you get ── */}
+                  <div style={{ padding: '14px 16px calc(env(safe-area-inset-bottom, 20px) + 20px)' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 12px' }}>
+                      {isRu ? 'Что получите' : 'What you get'}
+                    </p>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {FEATURES.map((f) => {
+                        const isDimmed = 'dimmed' in f && f.dimmed;
+                        return (
+                          <div
+                            key={f.en.name}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 12,
+                              background: f.live
+                                ? 'rgba(0,255,65,0.05)'
+                                : isDimmed ? 'rgba(255,255,255,0.02)' : '#1e1e1e',
+                              border: f.live
+                                ? '1px solid rgba(0,255,65,0.14)'
+                                : isDimmed ? '1px dashed rgba(255,255,255,0.07)' : '1px solid rgba(255,255,255,0.06)',
+                              borderRadius: 12,
+                              padding: '10px 12px',
+                              opacity: isDimmed ? 0.55 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: isDimmed ? 'rgba(255,255,255,0.5)' : '#fff' }}>
+                                {isRu ? f.ru.name : f.en.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1, lineHeight: 1.4 }}>
+                                {isRu ? f.ru.desc : f.en.desc}
+                              </div>
+                            </div>
+                            {f.live ? (
+                              <span style={{
+                                flexShrink: 0,
+                                fontSize: 9,
+                                fontWeight: 800,
+                                color: '#00FF41',
+                                background: 'rgba(0,255,65,0.1)',
+                                border: '1px solid rgba(0,255,65,0.2)',
+                                borderRadius: 6,
+                                padding: '2px 6px',
+                                letterSpacing: '0.03em',
+                              }}>
+                                ✓ {isRu ? 'Сейчас' : 'Live'}
+                              </span>
+                            ) : (
+                              <span style={{
+                                flexShrink: 0,
+                                fontSize: 9,
+                                fontWeight: 800,
+                                color: isDimmed ? 'rgba(255,255,255,0.3)' : '#f5c842',
+                                background: isDimmed ? 'rgba(255,255,255,0.05)' : 'rgba(245,200,66,0.08)',
+                                border: `1px solid ${isDimmed ? 'rgba(255,255,255,0.08)' : 'rgba(245,200,66,0.2)'}`,
+                                borderRadius: 6,
+                                padding: '2px 6px',
+                                letterSpacing: '0.03em',
+                              }}>
+                                {isRu ? 'Скоро' : 'Soon'}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {!paid && (
+                      <button
+                        onClick={onClose}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'rgba(255,255,255,0.25)',
+                          fontSize: 13,
+                          width: '100%',
+                          padding: '14px 0 0',
+                          cursor: 'pointer',
+                          display: 'block',
+                          textAlign: 'center',
+                        }}
+                      >
+                        {isRu ? 'Закрыть' : 'Close'}
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </>
       )}

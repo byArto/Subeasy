@@ -44,7 +44,7 @@ export function ProBadge({ onOpen }: { onOpen: () => void }) {
           flexShrink: 0,
         }}
       />
-      {lang === 'ru' ? 'PRO скоро' : 'PRO soon'}
+      {lang === 'ru' ? 'Стать PRO' : 'Go PRO'}
     </motion.div>
   );
 }

@@ -38,13 +38,13 @@ const FEATURES = [
     icon: '🎨',
     ru: { name: 'Новые цветовые палитры', desc: 'Акцентные цвета и темы оформления' },
     en: { name: 'New Color Palettes', desc: 'Accent colors and UI themes' },
-    live: false,
+    live: true,
   },
   {
     icon: '📄',
     ru: { name: 'PDF / CSV экспорт', desc: 'Выгрузка всех подписок в файл' },
     en: { name: 'PDF / CSV Export', desc: 'Export all subscriptions to a file' },
-    live: false,
+    live: true,
   },
   {
     icon: '🤖',
@@ -190,7 +190,10 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
 
                   {/* ── Emotional hook ── */}
                   <div style={{ padding: '20px 20px 0', textAlign: 'center' }}>
-                    <span style={{ fontSize: 42, display: 'block', marginBottom: 10 }}>💸</span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(245,200,66,0.1)', border: '1.5px solid rgba(245,200,66,0.3)', borderRadius: 20, padding: '6px 16px', marginBottom: 14 }}>
+                      <span style={{ fontSize: 15 }}>👑</span>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: '#f5c842', letterSpacing: '0.06em' }}>SubEasy PRO</span>
+                    </div>
                     <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 8px', lineHeight: 1.2 }}>
                       {isRu ? 'Сколько ты теряешь прямо сейчас?' : 'How much are you losing right now?'}
                     </h2>
@@ -253,7 +256,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                               {isRu ? cfg.labelRu : cfg.labelEn}
                             </span>
                             {/* Crossed-out original price */}
-                            <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.25)', textDecoration: 'line-through' }}>
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textDecoration: 'line-through' }}>
                               {cfg.strikethru}⭐
                             </span>
                             {/* Actual price */}
@@ -285,6 +288,8 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                           onClick={handleBuy}
                           disabled={loading}
                           style={{
+                            position: 'relative',
+                            overflow: 'hidden',
                             background: loading ? 'rgba(245,200,66,0.4)' : 'linear-gradient(135deg, #f5c842, #e8a800)',
                             color: '#0e0e0e',
                             fontSize: 15,
@@ -298,9 +303,27 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                             boxSizing: 'border-box',
                           }}
                         >
-                          {loading
-                            ? (isRu ? 'Загрузка…' : 'Loading…')
-                            : `⭐ ${isRu ? 'Купить PRO' : 'Buy PRO'} · ${PLAN_CONFIG[selectedPlan].stars} ${isRu ? 'звёзд' : 'Stars'}`}
+                          {/* Shimmer sweep */}
+                          {!loading && (
+                            <motion.div
+                              animate={{ x: ['-120%', '220%'] }}
+                              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '45%',
+                                height: '100%',
+                                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          )}
+                          <span style={{ position: 'relative', zIndex: 1 }}>
+                            {loading
+                              ? (isRu ? 'Загрузка…' : 'Loading…')
+                              : `⭐ ${isRu ? 'Купить PRO' : 'Buy PRO'} · ${PLAN_CONFIG[selectedPlan].stars} ${isRu ? 'звёзд' : 'Stars'}`}
+                          </span>
                         </motion.button>
                       ) : (
                         <div style={{ background: '#1e1e1e', borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>

@@ -499,7 +499,7 @@ export function SettingsPage({
           </span>
         </div>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
-          👑 {lang === 'ru' ? 'PRO скоро →' : 'PRO soon →'}
+          👑 {lang === 'ru' ? 'Получить PRO →' : 'Get PRO →'}
         </span>
       </div>
 

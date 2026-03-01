@@ -7,20 +7,26 @@ const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET!;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Calculate pro_until based on plan payload.
+ * Calculate pro_until based on plan payload, extending from `base` if still active.
  * Returns null for lifetime (no expiry).
  */
-function calcProUntil(payload: string): string | null {
+function calcProUntil(payload: string, currentProUntil: string | null): string | null {
+  if (payload === 'pro_lifetime') return null;
+
+  // Start from the later of: now OR current expiry (so early renewal doesn't lose days)
   const now = new Date();
+  const base = currentProUntil && new Date(currentProUntil) > now
+    ? new Date(currentProUntil)
+    : now;
+
   if (payload === 'pro_monthly') {
-    now.setDate(now.getDate() + 30);
-    return now.toISOString();
+    base.setDate(base.getDate() + 30);
+    return base.toISOString();
   }
   if (payload === 'pro_yearly') {
-    now.setDate(now.getDate() + 365);
-    return now.toISOString();
+    base.setDate(base.getDate() + 365);
+    return base.toISOString();
   }
-  // pro_lifetime → no expiry
   return null;
 }
 
@@ -71,7 +77,7 @@ export async function POST(req: NextRequest) {
     // Find SubEasy user by linked telegram_chat_id
     const { data: profile, error: lookupError } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, pro_until')
       .eq('telegram_chat_id', telegramUserId)
       .maybeSingle();
 
@@ -87,7 +93,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const proUntil = calcProUntil(payload);
+    const proUntil = calcProUntil(payload, profile.pro_until ?? null);
 
     const { error: updateError } = await supabase
       .from('profiles')

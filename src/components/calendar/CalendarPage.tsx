@@ -23,7 +23,6 @@ import { Subscription, AppSettings, Currency } from '@/lib/types';
 import { convertCurrency, cn } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
-import { soundEngine } from '@/lib/sounds';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Props ── */
@@ -157,14 +156,12 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
     setDirection(1);
     setCurrentMonth((m) => addMonths(m, 1));
     setSelectedDay(null);
-    soundEngine.tap();
   }, []);
 
   const goPrev = useCallback(() => {
     setDirection(-1);
     setCurrentMonth((m) => subMonths(m, 1));
     setSelectedDay(null);
-    soundEngine.tap();
   }, []);
 
   const goToday = useCallback(() => {
@@ -172,24 +169,20 @@ export function CalendarPage({ subscriptions, settings, onSubTap }: CalendarPage
     setDirection(0);
     setCurrentMonth(now);
     setSelectedDay(now);
-    soundEngine.tap();
   }, []);
 
   const handleTitleTap = useCallback(() => {
     setShowYearPicker((p) => !p);
-    soundEngine.tap();
   }, []);
 
   const pickMonth = useCallback((monthIdx: number) => {
     setCurrentMonth(new Date(currentMonth.getFullYear(), monthIdx, 1));
     setSelectedDay(null);
     setShowYearPicker(false);
-    soundEngine.tap();
   }, [currentMonth]);
 
   const pickYear = useCallback((yr: number) => {
     setCurrentMonth(new Date(yr, currentMonth.getMonth(), 1));
-    soundEngine.tap();
   }, [currentMonth]);
 
   if (subscriptions.length === 0) {
@@ -446,10 +439,7 @@ function CalendarGrid({
               key={day.toISOString()}
               type="button"
               whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                soundEngine.tap();
-                onSelectDay(day);
-              }}
+              onClick={() => onSelectDay(day)}
               className={cn(
                 'relative flex flex-col items-center justify-center aspect-square rounded-xl transition-colors',
                 !inMonth && 'opacity-30',

@@ -6,7 +6,6 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Category, AppSettings, Subscription } from '@/lib/types';
 import { cn, sanitizeUrl } from '@/lib/utils';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
-import { useSound } from '@/hooks/useSound';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
@@ -40,11 +39,11 @@ interface SettingsPageProps {
 /* ── Stagger ── */
 
 const sectionVariants = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 8 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.08, type: 'spring' as const, stiffness: 300, damping: 30 },
+    transition: { delay: Math.min(i * 0.04, 0.2), type: 'spring' as const, stiffness: 400, damping: 35 },
   }),
 };
 
@@ -71,7 +70,6 @@ export function SettingsPage({
 }: SettingsPageProps) {
   const { user, signOut, setSkipAuth } = useAuth();
   const { isTelegram } = useTelegramContext();
-  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSound();
   const { lang, setLang, t } = useLanguage();
   const { isPro } = usePro();
   const { theme, setTheme } = useTheme();
@@ -728,23 +726,6 @@ export function SettingsPage({
           onOpenPro={onOpenPro}
           t={t}
         />
-      </motion.div>
-
-      {/* ── 4. Звуки ── */}
-      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title={t('settings.sounds.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="text-sm text-text-primary font-medium">{t('settings.sounds.effects')}</span>
-              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.sounds.hint')}</p>
-            </div>
-            <NeonToggle
-              value={soundEnabled}
-              onToggle={() => setSoundEnabled(!soundEnabled)}
-            />
-          </div>
-        </div>
       </motion.div>
 
       {/* ── 4. Категории ── */}

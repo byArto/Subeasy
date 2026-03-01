@@ -9,7 +9,6 @@ import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { haptic } from '@/lib/haptic';
-import { soundEngine } from '@/lib/sounds';
 
 /* ── Types ── */
 
@@ -174,8 +173,6 @@ function useCountUp(target: number, duration = 800) {
     const start = performance.now();
     const from = 0;
 
-    soundEngine.startCountTick(duration);
-
     function tick(now: number) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
@@ -189,10 +186,7 @@ function useCountUp(target: number, duration = 800) {
     }
 
     raf.current = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf.current);
-      soundEngine.stopCountTick();
-    };
+    return () => cancelAnimationFrame(raf.current);
   }, [target, duration]);
 
   return value;

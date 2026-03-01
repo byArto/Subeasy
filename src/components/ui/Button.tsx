@@ -3,7 +3,6 @@
 import { ButtonHTMLAttributes, useRef, useState } from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { soundEngine } from '@/lib/sounds';
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
@@ -68,7 +67,6 @@ export function Button({
       setRipples((prev) => prev.filter((r) => r.id !== id));
     }, 600);
 
-    soundEngine.tap();
     onClick?.(e);
   };
 

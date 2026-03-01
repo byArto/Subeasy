@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MagnifyingGlassIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Category, Subscription } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { soundEngine } from '@/lib/sounds';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 
@@ -72,7 +71,7 @@ export function CategoryFilter({
       <div className="flex items-center gap-2">
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => { soundEngine.tap(); setIsOpen((p) => !p); }}
+          onClick={() => { setIsOpen((p) => !p); }}
           className={cn(
             'flex items-center gap-1.5 min-h-[36px] px-3.5 rounded-full text-xs font-semibold transition-colors',
             isOpen || hasActiveFilter
@@ -182,7 +181,7 @@ export function CategoryFilter({
                     <motion.button
                       key={opt.value}
                       whileTap={{ scale: 0.93 }}
-                      onClick={() => { soundEngine.tap(); onSortChange(opt.value); }}
+                      onClick={() => { onSortChange(opt.value); }}
                       className={cn(
                         'min-h-[32px] px-3 rounded-full text-[11px] font-semibold transition-colors',
                         sortBy === opt.value
@@ -243,7 +242,7 @@ function PillButton({
   return (
     <motion.button
       whileTap={{ scale: 0.93 }}
-      onClick={() => { soundEngine.tap(); onTap(); }}
+      onClick={() => { onTap(); }}
       className={cn(
         'relative flex items-center gap-1.5 shrink-0',
         'min-h-[32px] px-3 rounded-full',

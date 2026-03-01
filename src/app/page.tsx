@@ -15,7 +15,6 @@ import { useCategories } from '@/hooks/useCategories';
 import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
-import { useSound } from '@/hooks/useSound';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -171,7 +170,6 @@ export default function Home() {
     setSettings,
   });
 
-  const { playSuccess, playDelete, playPaid, playToggleOn, playToggleOff } = useSound();
 
   // When workspace mode is active, show workspace pool instead of personal subs
   const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
@@ -296,13 +294,11 @@ export default function Home() {
   const handleMarkPaid = useCallback((sub: Subscription) => {
     const nextDate = getNextPaymentDate(sub.nextPaymentDate, sub.cycle);
     wsUpdateSubscription(sub.id, { nextPaymentDate: nextDate });
-    playPaid();
-  }, [wsUpdateSubscription, playPaid]);
+  }, [wsUpdateSubscription]);
 
   const handleDeleteSub = useCallback((sub: Subscription) => {
     wsDeleteSubscription(sub.id);
-    playDelete();
-  }, [wsDeleteSubscription, playDelete]);
+  }, [wsDeleteSubscription]);
 
   // Memoized subscription lookups for modals
   const selectedSub = useMemo(
@@ -437,13 +433,13 @@ export default function Home() {
       </AnimatePresence>
 
       <main ref={mainRef} className="flex-1 min-h-0 scrollable-content">
-        <AnimatePresence mode="sync" initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={activeTab}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            transition={{ duration: 0.08 }}
             className="pb-4"
           >
             {activeTab === 'home' && (
@@ -538,7 +534,6 @@ export default function Home() {
           existingSubscriptions={activeSubscriptions}
           onSubmit={async (data) => {
             await wsAddSubscription(data);
-            playSuccess();
             closeAdd();
           }}
           onAddCategory={addCategory}
@@ -569,13 +564,11 @@ export default function Home() {
             onToggleActive={() => {
               const willBeActive = !selectedSub.isActive;
               wsUpdateSubscription(selectedSub.id, { isActive: willBeActive });
-              willBeActive ? playToggleOn() : playToggleOff();
             }}
             onDelete={() => {
               // Close first so the modal never renders with a missing sub (blank flash)
               closeDetail();
               wsDeleteSubscription(selectedSub.id);
-              playDelete();
             }}
           />
         )}
@@ -594,7 +587,6 @@ export default function Home() {
             categories={categories}
             onSubmit={async (data) => {
               await wsUpdateSubscription(editingSubId!, data);
-              playSuccess();
               closeEdit();
             }}
             onDelete={async () => {
@@ -602,7 +594,6 @@ export default function Home() {
               const idToDelete = editingSubId!;
               closeEdit();
               await wsDeleteSubscription(idToDelete);
-              playDelete();
             }}
             onAddCategory={addCategory}
             onClose={closeEdit}

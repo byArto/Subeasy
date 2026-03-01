@@ -47,13 +47,17 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
-        {/* Theme init — reads localStorage before paint to avoid flash */}
+        {/* Theme init — reads localStorage before paint to avoid flash.
+            dangerouslySetInnerHTML is safe here: __html is a hardcoded
+            compile-time string with no user input. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `try{var t=localStorage.getItem('neonsub-theme');if(t==='purple'||t==='blue')document.documentElement.dataset.theme=t;}catch(e){}`,
           }}
         />
-        {/* Non-blocking font load via preload */}
+        {/* Non-blocking font load via preload.
+            dangerouslySetInnerHTML is safe here: __html is a hardcoded
+            compile-time string with no user input. */}
         <link
           rel="preload"
           href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap"
@@ -100,12 +104,11 @@ export default function RootLayout({
               animation: 'pulse-glow 1.5s ease-in-out infinite',
             }}
           />
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `@keyframes pulse-glow{0%,100%{opacity:.8;transform:scale(1)}50%{opacity:1;transform:scale(1.04)}}`,
-            }}
-          />
+          {/* pulse-glow keyframe is defined in globals.css */}
         </div>
+        {/* Splash removal helper — must be inline so it runs before React hydration.
+            dangerouslySetInnerHTML is safe here: __html is a hardcoded
+            compile-time string with no user input. */}
         <script
           dangerouslySetInnerHTML={{
             __html: `window.__removeSplash=function(){var s=document.getElementById('pre-splash');if(s){s.style.opacity='0';setTimeout(function(){s.remove()},300)}}`,

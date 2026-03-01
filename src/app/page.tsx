@@ -310,6 +310,14 @@ export default function Home() {
     [editingSubId, activeSubscriptions]
   );
 
+  // Safety: if a modal is open but the sub was deleted, close it immediately
+  useEffect(() => {
+    if (selectedSubId && !selectedSub) closeDetail();
+  }, [selectedSubId, selectedSub]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (editingSubId && !editingSub) closeEdit();
+  }, [editingSubId, editingSub]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Splash screen
   if (!splashDone) {
     return <SplashScreen onComplete={() => setSplashDone(true)} />;

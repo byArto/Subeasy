@@ -88,6 +88,7 @@ export function SubCard({
   const dragX = useMotionValue(0);
   const revealedRef = useRef(false);
   const isDraggingRef = useRef(false);
+  const justDeletedRef = useRef(false);
   const [holdProgress, setHoldProgress] = useState(0);
   const holdTimerRef = useRef<number | null>(null);
   const holdStartRef = useRef<number>(0);
@@ -114,6 +115,7 @@ export function SubCard({
   }
 
   function handleCardTap() {
+    if (justDeletedRef.current) return; // hold-delete just fired — ignore spurious click
     if (revealedRef.current) {
       snapTo(0);
     } else {
@@ -133,8 +135,9 @@ export function SubCard({
         holdTimerRef.current = null;
         setHoldProgress(0);
         haptic.error();
+        justDeletedRef.current = true;
         snapTo(0);
-        setTimeout(() => onDelete?.(sub), 150);
+        setTimeout(() => { onDelete?.(sub); justDeletedRef.current = false; }, 300);
       } else {
         holdTimerRef.current = requestAnimationFrame(tick);
       }
@@ -176,6 +179,7 @@ export function SubCard({
             onPointerUp={handleHoldEnd}
             onPointerLeave={handleHoldEnd}
             onPointerCancel={handleHoldEnd}
+            onClick={(e) => e.stopPropagation()}
             className="absolute right-0 top-0 bottom-0 w-[80px] flex flex-col items-center justify-center gap-1 bg-danger overflow-hidden select-none touch-none"
           >
             {/* Hold progress fill from bottom */}

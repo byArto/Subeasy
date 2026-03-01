@@ -97,6 +97,8 @@ export function SettingsPage({
 
   const [confirmClear, setConfirmClear] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
   const [notifError, setNotifError] = useState<string | null>(null);
   const [pdfOverlayHtml, setPdfOverlayHtml] = useState<string | null>(null);
   const [pdfSending, setPdfSending] = useState(false);
@@ -546,12 +548,6 @@ export function SettingsPage({
         </div>
       </motion.div>
 
-      {/* ── 1. Тема оформления ── */}
-      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title={t('settings.themes.title')} />
-        <ThemeSwitch value={theme} onChange={setTheme} isPro={isPro} onOpenPro={onOpenPro} t={t} />
-      </motion.div>
-
       {/* ── 2. Валюта ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.currency.title')} />
@@ -731,277 +727,7 @@ export function SettingsPage({
         />
       </motion.div>
 
-      {/* ── 4. Категории ── */}
-      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title={t('settings.categories.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
-          {/* Collapsible header */}
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setCategoriesOpen((p) => !p)}
-            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-text-primary font-medium">{t('settings.categories.all')}</span>
-              <span className="text-xs text-text-muted">{categories.length}</span>
-            </div>
-            <motion.svg
-              animate={{ rotate: categoriesOpen ? 180 : 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              className="text-text-muted"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </motion.svg>
-          </motion.button>
-
-          {/* Expandable content */}
-          <AnimatePresence initial={false}>
-            {categoriesOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-                className="overflow-hidden"
-              >
-                <div className="border-t border-border-subtle">
-                  <AnimatePresence initial={false}>
-                    {categories.map((cat, i) => (
-                      <CategoryRow
-                        key={cat.id}
-                        category={cat}
-                        isLast={i === categories.length - 1 && !showNewCat}
-                        isEditing={editingCatId === cat.id}
-                        editName={editCatName}
-                        editEmoji={editCatEmoji}
-                        onEditNameChange={setEditCatName}
-                        onEditEmojiChange={setEditCatEmoji}
-                        onStartEdit={() => startEditCategory(cat)}
-                        onSaveEdit={saveEditCategory}
-                        onCancelEdit={() => setEditingCatId(null)}
-                        onDelete={() => deleteCategory(cat.id)}
-                        deleteLabelText={t('settings.categories.delete')}
-                        namePlaceholder={t('settings.categories.namePlaceholder')}
-                      />
-                    ))}
-                  </AnimatePresence>
-
-                  {/* Add new category */}
-                  <AnimatePresence>
-                    {showNewCat && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden border-t border-border-subtle"
-                      >
-                        <div className="flex items-center gap-2.5 px-4 py-3">
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.85 }}
-                            onClick={() => {
-                              const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟', '🎪', '🛒'];
-                              const idx = emojis.indexOf(newCatEmoji);
-                              setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
-                            }}
-                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-lg"
-                          >
-                            {newCatEmoji}
-                          </motion.button>
-                          <input
-                            type="text"
-                            value={newCatName}
-                            onChange={(e) => setNewCatName(e.target.value)}
-                            placeholder={t('settings.categories.namePlaceholder')}
-                            autoFocus
-                            className={cn(
-                              'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-border-subtle',
-                              'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                              'focus:border-neon/40'
-                            )}
-                          />
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleAddCategory}
-                            disabled={!newCatName.trim()}
-                            className={cn(
-                              'w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold',
-                              newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
-                            )}
-                          >
-                            ✓
-                          </motion.button>
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => { setShowNewCat(false); setNewCatName(''); }}
-                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-sm text-text-muted"
-                          >
-                            ✕
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Add button */}
-                  {!showNewCat && (
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setShowNewCat(true)}
-                      className="w-full flex items-center gap-2.5 px-4 py-3.5 border-t border-border-subtle text-neon active:bg-neon/5 transition-colors"
-                    >
-                      <span className="w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center text-neon text-sm font-bold">+</span>
-                      <span className="text-sm font-medium">{t('settings.categories.add')}</span>
-                    </motion.button>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </motion.div>
-
-      {/* ── 5. Данные ── */}
-      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title={t('settings.data.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
-          <SettingsRow label={t('settings.data.export')} hint={t('settings.data.exportHint')} onTap={handleExport} />
-          <SettingsRow
-            label={t('settings.data.exportCsv')}
-            hint={t('settings.data.exportCsvHint')}
-            onTap={handleExportCsv}
-            proLocked={!isPro}
-          />
-          <SettingsRow
-            label={t('settings.data.exportPdf')}
-            hint={t('settings.data.exportPdfHint')}
-            onTap={handleExportPdf}
-            proLocked={!isPro}
-          />
-          <SettingsRow label={t('settings.data.import')} hint={t('settings.data.importHint')} onTap={handleImport} isLast={false} />
-
-          {/* Clear data */}
-          <AnimatePresence mode="wait">
-            {!confirmClear ? (
-              <motion.button
-                key="clear-btn"
-                type="button"
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setConfirmClear(true)}
-                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
-              >
-                <span className="text-sm text-danger font-medium">{t('settings.data.clearAll')}</span>
-                <span className="text-xs text-text-muted">{subscriptions.length} {t('settings.data.subscriptionsCount')}</span>
-              </motion.button>
-            ) : (
-              <motion.div
-                key="confirm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="px-4 py-3.5 space-y-2.5"
-              >
-                <p className="text-xs text-danger font-medium">{t('settings.data.clearConfirmText')}</p>
-                <div className="flex gap-2">
-                  <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmClear(false)}>
-                    {t('common.cancel')}
-                  </Button>
-                  <Button fullWidth variant="danger" size="sm" onClick={handleClearAll}>
-                    {t('settings.data.deleteAll')}
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json"
-          onChange={onFileSelected}
-          className="hidden"
-        />
-      </motion.div>
-
-      {/* ── 6. Аккаунт ── */}
-      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SectionHeader title={t('settings.account.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
-          {user ? (
-            <>
-              <div className="px-4 py-3.5 border-b border-border-subtle">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-neon/15 flex items-center justify-center">
-                    <span className="text-neon text-sm font-bold">
-                      {user.email?.[0]?.toUpperCase() ?? '?'}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-text-primary font-medium truncate">{user.email}</p>
-                    <p className="text-[11px] text-text-muted">{t('settings.account.synced')}</p>
-                  </div>
-                  <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon" />
-                </div>
-              </div>
-
-              <AnimatePresence mode="wait">
-                {!confirmLogout ? (
-                  <motion.button
-                    key="logout-btn"
-                    type="button"
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setConfirmLogout(true)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
-                  >
-                    <span className="text-sm text-danger font-medium">{t('settings.account.logout')}</span>
-                  </motion.button>
-                ) : (
-                  <motion.div
-                    key="logout-confirm"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="px-4 py-3.5 space-y-2.5"
-                  >
-                    <p className="text-xs text-text-secondary">
-                      {t('settings.account.logoutConfirmText')}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
-                        {t('common.cancel')}
-                      </Button>
-                      <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
-                        {t('settings.account.logoutConfirm')}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          ) : (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSkipAuth(false)}
-              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-neon/5 transition-colors"
-            >
-              <div>
-                <span className="text-sm text-neon font-medium">{t('settings.account.login')}</span>
-                <p className="text-[11px] text-text-muted mt-0.5">{t('settings.account.loginHint')}</p>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </motion.button>
-          )}
-        </div>
-      </motion.div>
-
-      {/* ── 7. Семейный план ── */}
+      {/* ── Семейный план ── */}
       {user && (
         <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
           <SectionHeader title={lang === 'ru' ? 'Семейный план' : 'Family Plan'} />
@@ -1272,6 +998,344 @@ export function SettingsPage({
           </div>
         </motion.div>
       )}
+
+      {/* ── Тема оформления ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.themes.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setThemeOpen((p) => !p)}
+            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
+          >
+            <span className="text-sm text-text-primary font-medium">{t('settings.themes.title')}</span>
+            <motion.svg
+              animate={{ rotate: themeOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
+          <AnimatePresence initial={false}>
+            {themeOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border-subtle p-4">
+                  <ThemeSwitch value={theme} onChange={setTheme} isPro={isPro} onOpenPro={onOpenPro} t={t} />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* ── 4. Категории ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.categories.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          {/* Collapsible header */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setCategoriesOpen((p) => !p)}
+            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-text-primary font-medium">{t('settings.categories.all')}</span>
+              <span className="text-xs text-text-muted">{categories.length}</span>
+            </div>
+            <motion.svg
+              animate={{ rotate: categoriesOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
+
+          {/* Expandable content */}
+          <AnimatePresence initial={false}>
+            {categoriesOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border-subtle">
+                  <AnimatePresence initial={false}>
+                    {categories.map((cat, i) => (
+                      <CategoryRow
+                        key={cat.id}
+                        category={cat}
+                        isLast={i === categories.length - 1 && !showNewCat}
+                        isEditing={editingCatId === cat.id}
+                        editName={editCatName}
+                        editEmoji={editCatEmoji}
+                        onEditNameChange={setEditCatName}
+                        onEditEmojiChange={setEditCatEmoji}
+                        onStartEdit={() => startEditCategory(cat)}
+                        onSaveEdit={saveEditCategory}
+                        onCancelEdit={() => setEditingCatId(null)}
+                        onDelete={() => deleteCategory(cat.id)}
+                        deleteLabelText={t('settings.categories.delete')}
+                        namePlaceholder={t('settings.categories.namePlaceholder')}
+                      />
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Add new category */}
+                  <AnimatePresence>
+                    {showNewCat && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden border-t border-border-subtle"
+                      >
+                        <div className="flex items-center gap-2.5 px-4 py-3">
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.85 }}
+                            onClick={() => {
+                              const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟', '🎪', '🛒'];
+                              const idx = emojis.indexOf(newCatEmoji);
+                              setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
+                            }}
+                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-lg"
+                          >
+                            {newCatEmoji}
+                          </motion.button>
+                          <input
+                            type="text"
+                            value={newCatName}
+                            onChange={(e) => setNewCatName(e.target.value)}
+                            placeholder={t('settings.categories.namePlaceholder')}
+                            autoFocus
+                            className={cn(
+                              'flex-1 min-h-[36px] px-3 rounded-lg bg-surface-3 border border-border-subtle',
+                              'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
+                              'focus:border-neon/40'
+                            )}
+                          />
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleAddCategory}
+                            disabled={!newCatName.trim()}
+                            className={cn(
+                              'w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-sm font-bold',
+                              newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
+                            )}
+                          >
+                            ✓
+                          </motion.button>
+                          <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => { setShowNewCat(false); setNewCatName(''); }}
+                            className="w-9 h-9 shrink-0 rounded-lg bg-surface-3 flex items-center justify-center text-sm text-text-muted"
+                          >
+                            ✕
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Add button */}
+                  {!showNewCat && (
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowNewCat(true)}
+                      className="w-full flex items-center gap-2.5 px-4 py-3.5 border-t border-border-subtle text-neon active:bg-neon/5 transition-colors"
+                    >
+                      <span className="w-9 h-9 rounded-lg bg-neon/10 flex items-center justify-center text-neon text-sm font-bold">+</span>
+                      <span className="text-sm font-medium">{t('settings.categories.add')}</span>
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* ── Данные ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.data.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setDataOpen((p) => !p)}
+            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
+          >
+            <span className="text-sm text-text-primary font-medium">{t('settings.data.title')}</span>
+            <motion.svg
+              animate={{ rotate: dataOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
+          <AnimatePresence initial={false}>
+            {dataOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-border-subtle">
+                  <SettingsRow label={t('settings.data.export')} hint={t('settings.data.exportHint')} onTap={handleExport} />
+                  <SettingsRow
+                    label={t('settings.data.exportCsv')}
+                    hint={t('settings.data.exportCsvHint')}
+                    onTap={handleExportCsv}
+                    proLocked={!isPro}
+                  />
+                  <SettingsRow
+                    label={t('settings.data.exportPdf')}
+                    hint={t('settings.data.exportPdfHint')}
+                    onTap={handleExportPdf}
+                    proLocked={!isPro}
+                  />
+                  <SettingsRow label={t('settings.data.import')} hint={t('settings.data.importHint')} onTap={handleImport} isLast={false} />
+
+                  {/* Clear data */}
+                  <AnimatePresence mode="wait">
+                    {!confirmClear ? (
+                      <motion.button
+                        key="clear-btn"
+                        type="button"
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setConfirmClear(true)}
+                        className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                      >
+                        <span className="text-sm text-danger font-medium">{t('settings.data.clearAll')}</span>
+                        <span className="text-xs text-text-muted">{subscriptions.length} {t('settings.data.subscriptionsCount')}</span>
+                      </motion.button>
+                    ) : (
+                      <motion.div
+                        key="confirm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="px-4 py-3.5 space-y-2.5"
+                      >
+                        <p className="text-xs text-danger font-medium">{t('settings.data.clearConfirmText')}</p>
+                        <div className="flex gap-2">
+                          <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmClear(false)}>
+                            {t('common.cancel')}
+                          </Button>
+                          <Button fullWidth variant="danger" size="sm" onClick={handleClearAll}>
+                            {t('settings.data.deleteAll')}
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={onFileSelected}
+          className="hidden"
+        />
+      </motion.div>
+
+      {/* ── 6. Аккаунт ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.account.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          {user ? (
+            <>
+              <div className="px-4 py-3.5 border-b border-border-subtle">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-neon/15 flex items-center justify-center">
+                    <span className="text-neon text-sm font-bold">
+                      {user.email?.[0]?.toUpperCase() ?? '?'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-text-primary font-medium truncate">{user.email}</p>
+                    <p className="text-[11px] text-text-muted">{t('settings.account.synced')}</p>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon" />
+                </div>
+              </div>
+
+              <AnimatePresence mode="wait">
+                {!confirmLogout ? (
+                  <motion.button
+                    key="logout-btn"
+                    type="button"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setConfirmLogout(true)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                  >
+                    <span className="text-sm text-danger font-medium">{t('settings.account.logout')}</span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="logout-confirm"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="px-4 py-3.5 space-y-2.5"
+                  >
+                    <p className="text-xs text-text-secondary">
+                      {t('settings.account.logoutConfirmText')}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
+                        {t('common.cancel')}
+                      </Button>
+                      <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
+                        {t('settings.account.logoutConfirm')}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setSkipAuth(false)}
+              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-neon/5 transition-colors"
+            >
+              <div>
+                <span className="text-sm text-neon font-medium">{t('settings.account.login')}</span>
+                <p className="text-[11px] text-text-muted mt-0.5">{t('settings.account.loginHint')}</p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
 
       {/* ── 8. О приложении ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">

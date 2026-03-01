@@ -6,8 +6,8 @@
 
 @theme {
   /* ── Fonts ── */
-  --font-display: 'Nunito', sans-serif;
-  --font-body: 'Nunito', sans-serif;
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Montserrat', sans-serif;
 
   /* ── Neon Accent Colors ── */
   --color-neon: #00FF41;
@@ -94,7 +94,7 @@
 }
 
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 [data-theme="purple"] body {

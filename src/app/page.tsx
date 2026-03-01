@@ -33,6 +33,7 @@ import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
 import { generateId } from '@/lib/utils';
+import { getAuthToken } from '@/lib/supabase';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -177,12 +178,14 @@ export default function Home() {
   // Workspace-aware CRUD: routes through service-client API (bypasses RLS)
   const wsAddSubscription = useCallback(async (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (isWorkspaceActive && workspace && user) {
+      const token = await getAuthToken();
+      if (!token) return;
       const now = new Date().toISOString();
       const newSub: Subscription = { ...data, id: generateId(), createdAt: now, updatedAt: now, workspaceId: workspace.id };
       await fetch('/api/workspace/subscriptions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: newSub, workspaceId: workspace.id, userId: user.id }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ subscription: newSub, workspaceId: workspace.id }),
       });
       await refreshWorkspaceSubs();
     } else {
@@ -194,11 +197,13 @@ export default function Home() {
     if (isWorkspaceActive && workspace && user) {
       const sub = workspaceSubscriptions.find((s) => s.id === id);
       if (sub) {
+        const token = await getAuthToken();
+        if (!token) return;
         const updated: Subscription = { ...sub, ...updates, updatedAt: new Date().toISOString() };
         await fetch('/api/workspace/subscriptions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ subscription: updated, workspaceId: workspace.id, userId: user.id }),
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ subscription: updated, workspaceId: workspace.id }),
         });
         await refreshWorkspaceSubs();
       }
@@ -209,7 +214,12 @@ export default function Home() {
 
   const wsDeleteSubscription = useCallback(async (id: string) => {
     if (isWorkspaceActive && workspace) {
-      await fetch(`/api/workspace/subscriptions?id=${id}`, { method: 'DELETE' });
+      const token = await getAuthToken();
+      if (!token) return;
+      await fetch(`/api/workspace/subscriptions?id=${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
       await refreshWorkspaceSubs();
     } else {
       deleteSubscription(id);
@@ -398,10 +408,12 @@ export default function Home() {
                     setJoinLoading(true);
                     setJoinError('');
                     try {
+                      const authToken = await getAuthToken();
+                      if (!authToken) { setJoinError(lang === 'ru' ? 'Не авторизован' : 'Not authenticated'); setJoinLoading(false); return; }
                       const res = await fetch('/api/workspace/join', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ token: joinToken, userId: user.id }),
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+                        body: JSON.stringify({ token: joinToken }),
                       });
                       const data = await res.json();
                       if (res.ok) {

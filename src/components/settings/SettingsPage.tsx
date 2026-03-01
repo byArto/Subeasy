@@ -14,7 +14,7 @@ import { useTheme, Theme } from '@/components/providers/ThemeProvider';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { exportCSV, exportPDF } from '@/lib/export';
-import { createClient } from '@/lib/supabase';
+import { createClient, getAuthToken } from '@/lib/supabase';
 import { upsertWorkspaceSubscription } from '@/lib/sync';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
@@ -281,10 +281,12 @@ export function SettingsPage({
     setWsCreating(true);
     setWsError('');
     try {
+      const token = await getAuthToken();
+      if (!token) { setWsError(lang === 'ru' ? 'Не авторизован' : 'Not authenticated'); return; }
       const res = await fetch('/api/workspace/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: wsName.trim(), userId: user.id }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ name: wsName.trim() }),
       });
       const data = await res.json();
 
@@ -373,10 +375,12 @@ export function SettingsPage({
     if (!user || !workspace) return;
     setWsActionLoading(true);
     try {
+      const token = await getAuthToken();
+      if (!token) return;
       const res = await fetch('/api/workspace/leave', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ workspaceId: workspace.id }),
       });
       if (res.ok) {
         clearWorkspace(); // clearWorkspace already resets all state incl. isWorkspaceActive
@@ -393,10 +397,12 @@ export function SettingsPage({
     if (!user || !workspace) return;
     setWsActionLoading(true);
     try {
+      const token = await getAuthToken();
+      if (!token) return;
       const res = await fetch('/api/workspace/delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId: workspace.id, userId: user.id }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ workspaceId: workspace.id }),
       });
       if (res.ok) {
         clearWorkspace(); // clearWorkspace already resets all state incl. isWorkspaceActive

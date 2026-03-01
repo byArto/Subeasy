@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase-server';
+import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
 
 /**
  * GET /api/workspace/subscriptions?workspaceId=...
- * Returns all subscriptions for a workspace using service client (bypasses RLS).
+ * Returns all subscriptions for a workspace. Requires auth + workspace membership.
  */
 export async function GET(req: NextRequest) {
+  const authUser = await verifyAuth(req);
+  if (!authUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const workspaceId = req.nextUrl.searchParams.get('workspaceId');
   if (!workspaceId) {
     return NextResponse.json({ error: 'Missing workspaceId' }, { status: 400 });
@@ -13,13 +18,25 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceClient();
 
+  // Verify caller is a member of this workspace
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', authUser.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from('subscriptions')
     .select('*')
     .eq('workspace_id', workspaceId);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch subscriptions' }, { status: 500 });
   }
 
   return NextResponse.json(data ?? []);
@@ -27,22 +44,39 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/workspace/subscriptions
- * Upserts a single subscription into a workspace using service client (bypasses RLS).
- * Body: { subscription: Subscription, workspaceId: string, userId: string }
+ * Upserts a single subscription into a workspace. Requires auth + workspace membership.
+ * Body: { subscription: Subscription, workspaceId: string }
  */
 export async function POST(req: NextRequest) {
   try {
-    const { subscription: sub, workspaceId, userId } = await req.json();
+    const authUser = await verifyAuth(req);
+    if (!authUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!sub || !workspaceId || !userId) {
+    const { subscription: sub, workspaceId } = await req.json();
+
+    if (!sub || !workspaceId) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const supabase = createServiceClient();
 
+    // Verify caller is a member of this workspace
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', authUser.id)
+      .maybeSingle();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const row = {
       id: sub.id,
-      user_id: userId,
+      user_id: authUser.id,
       workspace_id: workspaceId,
       name: sub.name,
       price: sub.price,
@@ -66,7 +100,7 @@ export async function POST(req: NextRequest) {
       .upsert(row, { onConflict: 'id' });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
@@ -78,9 +112,14 @@ export async function POST(req: NextRequest) {
 
 /**
  * DELETE /api/workspace/subscriptions?id=...
- * Deletes a single workspace subscription by id using service client (bypasses RLS).
+ * Deletes a workspace subscription. Requires auth + membership in that subscription's workspace.
  */
 export async function DELETE(req: NextRequest) {
+  const authUser = await verifyAuth(req);
+  if (!authUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const id = req.nextUrl.searchParams.get('id');
   if (!id) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
@@ -88,13 +127,35 @@ export async function DELETE(req: NextRequest) {
 
   const supabase = createServiceClient();
 
+  // Fetch the subscription to verify it belongs to a workspace the caller is a member of
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('workspace_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (!sub?.workspace_id) {
+    return NextResponse.json({ error: 'Not found or not a workspace subscription' }, { status: 404 });
+  }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('workspace_id', sub.workspace_id)
+    .eq('user_id', authUser.id)
+    .maybeSingle();
+
+  if (!membership) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   const { error } = await supabase
     .from('subscriptions')
     .delete()
     .eq('id', id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete subscription' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

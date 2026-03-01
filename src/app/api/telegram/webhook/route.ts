@@ -4,6 +4,8 @@ import { createServiceClient } from '@/lib/supabase-server';
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET!;
 
+const VALID_PLANS = new Set(['pro_monthly', 'pro_yearly', 'pro_lifetime']);
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
@@ -30,11 +32,15 @@ function calcProUntil(payload: string, currentProUntil: string | null): string |
   return null;
 }
 
-async function answerPreCheckout(queryId: string) {
+async function answerPreCheckout(queryId: string, ok: boolean, errorMessage?: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerPreCheckoutQuery`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pre_checkout_query_id: queryId, ok: true }),
+    body: JSON.stringify({
+      pre_checkout_query_id: queryId,
+      ok,
+      ...(ok ? {} : { error_message: errorMessage ?? 'Invalid request' }),
+    }),
   });
 }
 
@@ -61,7 +67,13 @@ export async function POST(req: NextRequest) {
   // ── pre_checkout_query ────────────────────────────────────────────────────
   // Must answer within 10 seconds or Telegram will decline the payment
   if (update.pre_checkout_query) {
-    await answerPreCheckout(update.pre_checkout_query.id);
+    const pcqPayload: string = update.pre_checkout_query.invoice_payload;
+    if (!VALID_PLANS.has(pcqPayload)) {
+      console.warn('[webhook/pre_checkout] unknown payload:', pcqPayload);
+      await answerPreCheckout(update.pre_checkout_query.id, false, 'Unknown plan');
+      return NextResponse.json({ ok: true });
+    }
+    await answerPreCheckout(update.pre_checkout_query.id, true);
     return NextResponse.json({ ok: true });
   }
 
@@ -71,6 +83,11 @@ export async function POST(req: NextRequest) {
     const telegramUserId: number = update.message.from.id;
     const chatId: number = update.message.chat.id;
     const payload: string = payment.invoice_payload; // 'pro_monthly' | 'pro_yearly' | 'pro_lifetime'
+
+    if (!VALID_PLANS.has(payload)) {
+      console.error('[webhook/payment] unknown invoice_payload, ignoring:', payload);
+      return NextResponse.json({ ok: true });
+    }
 
     const supabase = createServiceClient();
 

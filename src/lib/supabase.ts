@@ -12,3 +12,9 @@ export function createClient(): SupabaseClient {
   }
   return cachedClient;
 }
+
+/** Returns the current session access token, or null if unauthenticated. */
+export async function getAuthToken(): Promise<string | null> {
+  const { data: { session } } = await createClient().auth.getSession();
+  return session?.access_token ?? null;
+}

@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { getAuthToken } from '@/lib/supabase';
 import type { Workspace, WorkspaceMember, Subscription } from '@/lib/types';
 
 interface WorkspaceContextValue {
@@ -47,9 +48,11 @@ const MODE_KEY = 'neonsub-workspace-mode';
 const POLL_INTERVAL_MS = 60_000; // refresh workspace subs every 60s when active
 
 /** Fetch workspace subscriptions via service-client API (bypasses RLS for all members) */
-async function fetchWorkspaceSubs(workspaceId: string): Promise<Subscription[]> {
+async function fetchWorkspaceSubs(workspaceId: string, token: string): Promise<Subscription[]> {
   try {
-    const res = await fetch(`/api/workspace/subscriptions?workspaceId=${workspaceId}`);
+    const res = await fetch(`/api/workspace/subscriptions?workspaceId=${workspaceId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     if (!res.ok) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rows: any[] = await res.json();
@@ -104,7 +107,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   // Fetch full members list via service-client API (bypasses RLS)
   const refreshMembers = useCallback(async (workspaceId: string) => {
     try {
-      const res = await fetch(`/api/workspace/members?workspaceId=${workspaceId}`);
+      const token = await getAuthToken();
+      if (!token) return;
+      const res = await fetch(`/api/workspace/members?workspaceId=${workspaceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) return;
       const rows: { workspace_id: string; user_id: string; role: string; joined_at: string }[] = await res.json();
       setMembers(rows.map((m) => ({
@@ -119,7 +126,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   /** Re-fetch workspace subs via service-client API (all members can call this) */
   const refreshWorkspaceSubs = useCallback(async () => {
     if (!workspace) return;
-    const subs = await fetchWorkspaceSubs(workspace.id);
+    const token = await getAuthToken();
+    if (!token) return;
+    const subs = await fetchWorkspaceSubs(workspace.id, token);
     setWorkspaceSubs(subs);
   }, [workspace]);
 
@@ -134,9 +143,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(LS_KEY, ws.id);
       localStorage.setItem(MODE_KEY, 'workspace');
     } catch { /* ignore */ }
+    const token = await getAuthToken();
+    if (!token) return;
     // Load subs and full members list in parallel (service client — no RLS issues)
     const [subs] = await Promise.all([
-      fetchWorkspaceSubs(ws.id),
+      fetchWorkspaceSubs(ws.id, token),
       refreshMembers(ws.id),
     ]);
     setWorkspaceSubs(subs);
@@ -174,9 +185,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
    * Fetch workspace via API (service client, bypasses RLS entirely).
    * Used as the primary load method — no dependency on browser RLS policies.
    */
-  const fetchWorkspaceViaApi = useCallback(async (userId: string) => {
+  const fetchWorkspaceViaApi = useCallback(async () => {
     try {
-      const res = await fetch(`/api/workspace/mine?userId=${userId}`);
+      const token = await getAuthToken();
+      if (!token) return null;
+      const res = await fetch('/api/workspace/mine', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) return null;
       const data = await res.json();
       if (!data || !data.workspace) return null;
@@ -194,7 +209,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     setLoading(true);
     try {
-      const result = await fetchWorkspaceViaApi(user.id);
+      const result = await fetchWorkspaceViaApi();
       if (result) {
         await activateWorkspace(result.workspace, result.members);
       }
@@ -213,7 +228,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     async function autoLoad() {
       setLoading(true);
       try {
-        const result = await fetchWorkspaceViaApi(user!.id);
+        const result = await fetchWorkspaceViaApi();
         if (result) {
           // Use the value captured synchronously at render time (before any effect
           // could clear localStorage — specifically the logout-watcher on initial null).
@@ -241,11 +256,13 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     autoLoad();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Poll workspace subscriptions every 30s when workspace mode is active
+  // Poll workspace subscriptions every 60s when workspace mode is active
   useEffect(() => {
     if (!isWorkspaceActive || !workspace) return;
     const timer = setInterval(async () => {
-      const subs = await fetchWorkspaceSubs(workspace.id);
+      const token = await getAuthToken();
+      if (!token) return;
+      const subs = await fetchWorkspaceSubs(workspace.id, token);
       setWorkspaceSubs(subs);
     }, POLL_INTERVAL_MS);
     return () => clearInterval(timer);

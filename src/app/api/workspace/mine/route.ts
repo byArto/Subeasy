@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase-server';
+import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
 
 /**
- * GET /api/workspace/mine?userId=...
- * Returns the user's workspace + all members (bypasses RLS via service client).
- * Used by autoLoad in WorkspaceProvider as a fallback when pullWorkspace fails.
+ * GET /api/workspace/mine
+ * Returns the caller's workspace + all members (bypasses RLS via service client).
+ * Requires Authorization: Bearer <jwt> header.
  */
 export async function GET(req: NextRequest) {
-  const userId = req.nextUrl.searchParams.get('userId');
-  if (!userId) {
-    return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
+  const authUser = await verifyAuth(req);
+  if (!authUser) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  const userId = authUser.id;
 
   const supabase = createServiceClient();
 

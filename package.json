@@ -17,10 +17,12 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.34.0",
     "next": "16.1.6",
-    "next-pwa": "^5.6.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^3.7.0"
+  },
+  "overrides": {
+    "valibot": "^1.2.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

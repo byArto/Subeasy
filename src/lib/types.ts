@@ -52,5 +52,6 @@ export interface AppSettings {
   useManualRate: boolean;  // true = ручной курс, false = авто от ЦБ
   notificationsEnabled: boolean;
   notifyDaysBefore: number; // за сколько дней до платежа
-  monthlyBudget?: number;   // PRO: месячный лимит расходов (0 = не задан)
+  monthlyBudget?: number;      // PRO: месячный лимит расходов (0 = не задан)
+  budgetCurrency?: DisplayCurrency; // валюта, в которой был введён бюджет
 }

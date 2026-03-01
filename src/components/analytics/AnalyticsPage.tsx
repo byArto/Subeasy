@@ -279,7 +279,12 @@ function BudgetSection({
   const [inputVal, setInputVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const budget = settings.monthlyBudget ?? 0;
+  const rawBudget = settings.monthlyBudget ?? 0;
+  const budgetCur = settings.budgetCurrency ?? displayCurrency;
+  // Convert stored budget to current display currency
+  const budget = rawBudget > 0 && budgetCur !== displayCurrency
+    ? Math.round(convertCurrency(rawBudget, budgetCur as Currency, displayCurrency as Currency, exchangeRate))
+    : rawBudget;
   const pct = budget > 0 ? Math.min((monthlyTotal / budget) * 100, 999) : 0;
   const remaining = budget - monthlyTotal;
   const isOver = remaining < 0;
@@ -321,7 +326,7 @@ function BudgetSection({
   const handleSave = () => {
     const val = parseFloat(inputVal.replace(',', '.'));
     if (!isNaN(val) && val >= 0) {
-      onUpdateSettings?.({ monthlyBudget: Math.round(val) });
+      onUpdateSettings?.({ monthlyBudget: Math.round(val), budgetCurrency: displayCurrency as import('@/lib/types').DisplayCurrency });
     }
     setEditing(false);
   };

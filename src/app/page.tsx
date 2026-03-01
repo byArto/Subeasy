@@ -566,9 +566,10 @@ export default function Home() {
               wsUpdateSubscription(selectedSub.id, { isActive: willBeActive });
             }}
             onDelete={() => {
-              // Close first so the modal never renders with a missing sub (blank flash)
+              const idToDelete = selectedSub.id;
               closeDetail();
-              wsDeleteSubscription(selectedSub.id);
+              // Defer deletion until modal close animation starts, preventing blank-modal race
+              setTimeout(() => wsDeleteSubscription(idToDelete), 50);
             }}
           />
         )}

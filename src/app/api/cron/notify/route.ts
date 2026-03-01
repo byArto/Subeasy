@@ -130,13 +130,8 @@ async function sendTelegramMessage(chatId: number, text: string, lang: string) {
 export async function GET(req: NextRequest) {
   // Validate Vercel cron secret
   const auth = req.headers.get('authorization');
-  const secretSet = !!CRON_SECRET;
-  const match = auth === `Bearer ${CRON_SECRET}`;
-  if (!secretSet || !match) {
-    return NextResponse.json({
-      error: 'Unauthorized',
-      debug: { secretSet, receivedHeader: auth ?? 'none' },
-    }, { status: 401 });
+  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const supabase = createServiceClient();

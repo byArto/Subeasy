@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     if (memberError) {
       console.error('[workspace/join] member insert error:', memberError);
-      return NextResponse.json({ error: 'Failed to join', detail: memberError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to join workspace' }, { status: 500 });
     }
 
     return NextResponse.json({ workspaceId: workspace.id, workspaceName: workspace.name });

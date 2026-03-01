@@ -93,8 +93,17 @@
   background-color: #060B0F;
 }
 
-[data-theme="purple"] body,
+body {
+  font-family: 'Nunito', sans-serif;
+}
+
+[data-theme="purple"] body {
+  font-family: 'Exo 2', sans-serif;
+  background-color: var(--color-surface);
+}
+
 [data-theme="blue"] body {
+  font-family: 'Golos Text', sans-serif;
   background-color: var(--color-surface);
 }
 

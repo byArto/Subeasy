@@ -254,6 +254,8 @@ const dict: Translations = {
   'analytics.empty': { ru: 'Добавьте подписки чтобы увидеть аналитику', en: 'Add subscriptions to see analytics' },
   'analytics.insights': { ru: 'Инсайты', en: 'Insights' },
   'analytics.expensive': { ru: 'Дорогая', en: 'Most expensive' },
+  'analytics.dominant': { ru: 'Доминант', en: 'Dominant' },
+  'analytics.ofExpenses': { ru: 'расходов', en: 'of expenses' },
   'analytics.longest': { ru: 'Долгая', en: 'Longest' },
   'analytics.forecast': { ru: 'Прогноз', en: 'Forecast' },
   'analytics.forecastDesc': { ru: 'Ожидаемые расходы · {{month}}', en: 'Expected expenses · {{month}}' },

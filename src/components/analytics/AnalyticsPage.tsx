@@ -195,7 +195,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           subscriptions={subscriptions}
           displayCurrency={displayCurrency}
           exchangeRate={exchangeRate}
-          symbol={symbol}
+          monthlyTotal={monthlyTotal}
           onSubTap={onSubTap}
         />
       </motion.div>
@@ -643,31 +643,30 @@ function InsightsBadges({
   subscriptions,
   displayCurrency,
   exchangeRate,
-  symbol,
+  monthlyTotal,
   onSubTap,
 }: {
   active: Subscription[];
   subscriptions: Subscription[];
   displayCurrency: string;
   exchangeRate: number;
-  symbol: string;
+  monthlyTotal: number;
   onSubTap?: (sub: Subscription) => void;
 }) {
   const { t } = useLanguage();
 
-  const mostExpensive = useMemo(() => {
-    if (active.length === 0) return null;
+  const dominant = useMemo(() => {
+    if (active.length === 0 || monthlyTotal <= 0) return null;
     let best: Subscription | null = null;
     let bestMonthly = 0;
     for (const s of active) {
       const m = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
-      if (m > bestMonthly) {
-        bestMonthly = m;
-        best = s;
-      }
+      if (m > bestMonthly) { bestMonthly = m; best = s; }
     }
-    return best ? { sub: best, monthly: bestMonthly } : null;
-  }, [active, displayCurrency, exchangeRate]);
+    if (!best) return null;
+    const pct = Math.round((bestMonthly / monthlyTotal) * 100);
+    return { sub: best, monthly: bestMonthly, pct };
+  }, [active, displayCurrency, exchangeRate, monthlyTotal]);
 
   const longest = useMemo(() => {
     const allActive = subscriptions.filter((s) => s.isActive && s.cycle !== 'one-time' && s.cycle !== 'trial');
@@ -676,58 +675,48 @@ function InsightsBadges({
     let bestDays = 0;
     for (const s of allActive) {
       const d = daysSince(s.startDate);
-      if (d > bestDays) {
-        bestDays = d;
-        best = s;
-      }
+      if (d > bestDays) { bestDays = d; best = s; }
     }
     return best ? { sub: best, days: bestDays } : null;
   }, [subscriptions]);
 
-  if (!mostExpensive && !longest) return null;
+  if (!dominant && !longest) return null;
 
   return (
     <div>
       <SectionHeader title={t('analytics.insights')} />
       <div className="grid grid-cols-2 gap-3">
-        {/* Most Expensive */}
-        {mostExpensive && (
+        {/* Dominant */}
+        {dominant && (
           <motion.button
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => onSubTap?.(mostExpensive.sub)}
+            onClick={() => onSubTap?.(dominant.sub)}
             className="relative bg-surface-2 rounded-2xl border border-border-subtle p-4 overflow-hidden text-left active:bg-surface-3 transition-colors"
           >
             <div
               className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
-              style={{ backgroundColor: mostExpensive.sub.color }}
+              style={{ backgroundColor: dominant.sub.color }}
             />
-
             <div className="relative">
               <div className="flex items-center gap-1.5 mb-3">
-                <span className="text-xs">👑</span>
-                <span className="text-[10px] font-bold text-warning uppercase tracking-wider">
-                  {t('analytics.expensive')}
+                <span className="text-xs">📊</span>
+                <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                  {t('analytics.dominant')}
                 </span>
               </div>
-
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2.5"
-                style={{
-                  background: `linear-gradient(135deg, ${mostExpensive.sub.color}30, ${mostExpensive.sub.color}10)`,
-                }}
+                style={{ background: `linear-gradient(135deg, ${dominant.sub.color}30, ${dominant.sub.color}10)` }}
               >
-                <ServiceLogo name={mostExpensive.sub.name} emoji={mostExpensive.sub.icon} size={24} />
+                <ServiceLogo name={dominant.sub.name} emoji={dominant.sub.icon} size={24} />
               </div>
-
-              <p className="text-sm font-semibold text-text-primary truncate">
-                {mostExpensive.sub.name}
-              </p>
-              <p className="text-lg font-bold text-text-primary tabular-nums mt-1">
-                {formatAmount(Math.round(mostExpensive.monthly))}
-                <span className="text-xs text-text-muted ml-0.5">{symbol}{t('cycle.monthly')}</span>
+              <p className="text-sm font-semibold text-text-primary truncate">{dominant.sub.name}</p>
+              <p className="text-lg font-bold tabular-nums mt-1" style={{ color: dominant.sub.color }}>
+                {dominant.pct}%
+                <span className="text-xs text-text-muted ml-1 font-normal">{t('analytics.ofExpenses')}</span>
               </p>
             </div>
           </motion.button>

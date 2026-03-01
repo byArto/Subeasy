@@ -194,8 +194,8 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                       <span style={{ fontSize: 15 }}>👑</span>
                       <span style={{ fontSize: 14, fontWeight: 900, color: '#f5c842', letterSpacing: '0.06em' }}>SubEasy PRO</span>
                     </div>
-                    <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 8px', lineHeight: 1.2 }}>
-                      {isRu ? 'Сколько ты теряешь прямо сейчас?' : 'How much are you losing right now?'}
+                    <h2 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 8px', lineHeight: 1.2 }}>
+                      {isRu ? <>Сколько ты<br />теряешь прямо сейчас?</> : <>How much are you<br />losing right now?</>}
                     </h2>
                     <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, lineHeight: 1.55 }}>
                       {isRu

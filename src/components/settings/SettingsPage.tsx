@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Category, AppSettings, Subscription } from '@/lib/types';
-import { cn, sanitizeUrl } from '@/lib/utils';
+import { Category, AppSettings, Subscription, DisplayCurrency } from '@/lib/types';
+import { cn, sanitizeUrl, convertCurrency } from '@/lib/utils';
+import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -725,6 +726,8 @@ export function SettingsPage({
           isPro={isPro}
           onOpenPro={onOpenPro}
           t={t}
+          displayCurrency={settings.displayCurrency}
+          exchangeRate={settings.exchangeRate}
         />
       </motion.div>
 
@@ -1407,17 +1410,27 @@ function BudgetLimitSetting({
   isPro,
   onOpenPro,
   t,
+  displayCurrency,
+  exchangeRate,
 }: {
   settings: AppSettings;
   updateSettings: (u: Partial<AppSettings>) => void;
   isPro: boolean;
   onOpenPro: () => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
+  displayCurrency: DisplayCurrency;
+  exchangeRate: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const budget = settings.monthlyBudget ?? 0;
+
+  const rawBudget = settings.monthlyBudget ?? 0;
+  const budgetCur = (settings.budgetCurrency ?? displayCurrency) as DisplayCurrency;
+  const budget = rawBudget > 0 && budgetCur !== displayCurrency
+    ? Math.round(convertCurrency(rawBudget, budgetCur, displayCurrency, exchangeRate))
+    : rawBudget;
+  const currencySymbol = CURRENCY_SYMBOLS[displayCurrency] ?? displayCurrency;
 
   function startEdit() {
     setInputVal(budget > 0 ? String(budget) : '');
@@ -1427,7 +1440,9 @@ function BudgetLimitSetting({
 
   function handleSave() {
     const val = parseFloat(inputVal.replace(',', '.'));
-    if (!isNaN(val) && val >= 0) updateSettings({ monthlyBudget: Math.round(val) });
+    if (!isNaN(val) && val >= 0) {
+      updateSettings({ monthlyBudget: Math.round(val), budgetCurrency: displayCurrency });
+    }
     setEditing(false);
   }
 
@@ -1457,7 +1472,7 @@ function BudgetLimitSetting({
           /* Edit mode */
           <div className="space-y-3">
             <div className="flex items-center bg-surface-3 rounded-xl px-3 gap-2 border border-border-subtle">
-              <span className="text-text-muted text-sm shrink-0">₽</span>
+              <span className="text-text-muted text-sm shrink-0">{currencySymbol}</span>
               <input
                 ref={inputRef}
                 type="number"
@@ -1498,7 +1513,7 @@ function BudgetLimitSetting({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-text-primary tabular-nums">
-                {budget.toLocaleString('ru-RU')} ₽
+                {budget.toLocaleString()} {currencySymbol}
               </p>
               <p className="text-xs text-text-muted mt-0.5">{t('budget.title')}</p>
             </div>
@@ -1729,8 +1744,6 @@ function ThemeSwitch({
 }
 
 /* ── Currency Switch ── */
-
-import { DisplayCurrency } from '@/lib/types';
 
 const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
   { code: 'RUB', symbol: '₽' },

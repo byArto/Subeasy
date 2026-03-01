@@ -263,6 +263,7 @@ const dict: Translations = {
   'analytics.comparison': { ru: 'Сравнение', en: 'Comparison' },
   'analytics.thisMonth': { ru: 'Этот месяц', en: 'This month' },
   'analytics.lastMonth': { ru: 'Прошлый месяц', en: 'Last month' },
+  'analytics.vsLastMonth': { ru: 'vs прошлый мес.', en: 'vs last month' },
   'analytics.newPeriod': { ru: 'Новый период отслеживания', en: 'New tracking period' },
   'analytics.dynamics': { ru: 'Динамика расходов', en: 'Spending dynamics' },
   'analytics.noData': { ru: 'Добавьте подписки для аналитики', en: 'Add subscriptions for analytics' },

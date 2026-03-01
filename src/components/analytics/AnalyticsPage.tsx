@@ -146,6 +146,9 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           monthlyTotalAlt={monthlyTotalAlt}
           symbol={symbol}
           altSymbol={altSymbol}
+          subscriptions={subscriptions}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
         />
       </motion.div>
 
@@ -160,46 +163,6 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           active={active}
           displayCurrency={displayCurrency}
           exchangeRate={exchangeRate}
-        />
-      </motion.div>
-
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <InsightsBadges
-          active={active}
-          subscriptions={subscriptions}
-          displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
-          symbol={symbol}
-          onSubTap={onSubTap}
-        />
-      </motion.div>
-
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <ForecastSection
-          subscriptions={subscriptions}
-          active={active}
-          displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
-          symbol={symbol}
-          monthlyTotal={monthlyTotal}
-        />
-      </motion.div>
-
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <MonthComparison
-          subscriptions={subscriptions}
-          displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
-          symbol={symbol}
-        />
-      </motion.div>
-
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
-        <SpendingTimeline
-          subscriptions={subscriptions}
-          displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
-          symbol={symbol}
         />
       </motion.div>
 
@@ -221,6 +184,17 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           exchangeRate={exchangeRate}
           symbol={symbol}
           monthlyTotal={monthlyTotal}
+          onSubTap={onSubTap}
+        />
+      </motion.div>
+
+      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <InsightsBadges
+          active={active}
+          subscriptions={subscriptions}
+          displayCurrency={displayCurrency}
+          exchangeRate={exchangeRate}
+          symbol={symbol}
           onSubTap={onSubTap}
         />
       </motion.div>
@@ -551,11 +525,17 @@ function PeriodTotal({
   monthlyTotalAlt,
   symbol,
   altSymbol,
+  subscriptions,
+  displayCurrency,
+  exchangeRate,
 }: {
   monthlyTotal: number;
   monthlyTotalAlt: number;
   symbol: string;
   altSymbol: string;
+  subscriptions: Subscription[];
+  displayCurrency: string;
+  exchangeRate: number;
 }) {
   const { t } = useLanguage();
   const [period, setPeriod] = useState<Period>('month');
@@ -568,6 +548,23 @@ function PeriodTotal({
     quarter: t('analytics.period.quarter'),
     year: t('analytics.period.year'),
   };
+
+  // Month-over-month % change (only shown in "month" period)
+  const { pct, isUp, isNewPeriod } = useMemo(() => {
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth();
+    const prevM = curM === 0 ? 11 : curM - 1;
+    const prevY = curM === 0 ? curY - 1 : curY;
+    const thisTotal = getMonthlyTotal(subscriptions, curY, curM, exchangeRate, displayCurrency);
+    const lastTotal = getMonthlyTotal(subscriptions, prevY, prevM, exchangeRate, displayCurrency);
+    const diff = thisTotal - lastTotal;
+    return {
+      pct: lastTotal > 0 ? Math.round((diff / lastTotal) * 100) : null,
+      isUp: diff > 0,
+      isNewPeriod: lastTotal === 0 && thisTotal > 0,
+    };
+  }, [subscriptions, exchangeRate, displayCurrency]);
 
   return (
     <div className="bg-surface-2 rounded-2xl border border-border-subtle p-5">
@@ -612,6 +609,23 @@ function PeriodTotal({
             <p className="text-xs text-text-muted mt-2">
               ≈ {formatAmount(Math.round(totalAlt))} {altSymbol}
             </p>
+            {/* Month comparison chip */}
+            {period === 'month' && (
+              <div className="flex justify-center mt-3">
+                {isNewPeriod ? (
+                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-neon/15 text-neon">
+                    NEW
+                  </span>
+                ) : pct !== null ? (
+                  <span className={cn(
+                    'px-2.5 py-1 rounded-full text-[11px] font-semibold',
+                    isUp ? 'bg-danger/15 text-danger' : pct < 0 ? 'bg-neon/15 text-neon' : 'bg-surface-3 text-text-muted',
+                  )}>
+                    {isUp ? '↑ +' : pct < 0 ? '↓ ' : '= '}{pct}% {t('analytics.vsLastMonth')}
+                  </span>
+                ) : null}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

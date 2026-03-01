@@ -153,7 +153,7 @@ export async function syncSettings(
   // Remote wins for synced fields, but preserve local-only fields
   // (monthlyBudget is not stored in Supabase yet)
   if (remote) {
-    return { ...remote, monthlyBudget: localSettings.monthlyBudget };
+    return { ...remote, monthlyBudget: localSettings.monthlyBudget, budgetCurrency: localSettings.budgetCurrency };
   }
   await pushSettings(userId, localSettings);
   return localSettings;

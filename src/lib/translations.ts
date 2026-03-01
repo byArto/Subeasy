@@ -180,6 +180,7 @@ const dict: Translations = {
   'form.newCategory': { ru: 'Новая', en: 'New' },
   'form.categoryNamePlaceholder': { ru: 'Название категории', en: 'Category name' },
   'form.trialEndDate': { ru: 'Дата окончания триала', en: 'Trial end date' },
+  'form.oneTimeDate': { ru: 'Дата окончания', en: 'End date' },
   'form.nextPaymentDate': { ru: 'Дата следующего платежа', en: 'Next payment date' },
   'form.startDate': { ru: 'Дата начала подписки', en: 'Subscription start date' },
   'form.managementUrl': { ru: 'Ссылка на управление', en: 'Management link' },

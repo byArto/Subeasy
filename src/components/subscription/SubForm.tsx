@@ -570,7 +570,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={cycle === 'trial' ? t('form.trialEndDate') : t('form.nextPaymentDate')} error={errors.nextPaymentDate} />
+        <FieldLabel text={cycle === 'trial' ? t('form.trialEndDate') : cycle === 'one-time' ? t('form.oneTimeDate') : t('form.nextPaymentDate')} error={errors.nextPaymentDate} />
         <input
           type="date"
           value={nextPaymentDate}

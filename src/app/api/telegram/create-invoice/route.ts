@@ -5,19 +5,19 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
 const PLANS = {
   monthly: {
-    stars: 199,
+    stars: 249,
     payload: 'pro_monthly',
     title: 'SubEasy PRO · Месяц',
     description: 'Полный PRO-доступ на 30 дней',
   },
   yearly: {
-    stars: 1499,
+    stars: 1799,
     payload: 'pro_yearly',
     title: 'SubEasy PRO · Год',
-    description: 'Полный PRO-доступ на 365 дней — выгода 37%',
+    description: 'Полный PRO-доступ на 365 дней — выгода 40%',
   },
   lifetime: {
-    stars: 2499,
+    stars: 2999,
     payload: 'pro_lifetime',
     title: 'SubEasy PRO · Навсегда',
     description: 'Пожизненный PRO-доступ без ограничений',

@@ -48,9 +48,9 @@ const FEATURES = [
 ];
 
 const PLAN_CONFIG = {
-  monthly:  { stars: 199,  labelRu: 'Месяц',    labelEn: 'Month',    periodRu: '/мес',   periodEn: '/mo' },
-  yearly:   { stars: 1499, labelRu: 'Год',       labelEn: 'Year',     periodRu: '/год',   periodEn: '/yr', badgeRu: 'Выгода −37%', badgeEn: 'Save −37%' },
-  lifetime: { stars: 2499, labelRu: 'Навсегда',  labelEn: 'Lifetime', periodRu: '',       periodEn: '' },
+  monthly:  { stars: 249,  labelRu: 'Месяц',    labelEn: 'Month',    periodRu: '/мес',   periodEn: '/mo' },
+  yearly:   { stars: 1799, labelRu: 'Год',       labelEn: 'Year',     periodRu: '/год',   periodEn: '/yr', badgeRu: 'Выгода −40%', badgeEn: 'Save −40%' },
+  lifetime: { stars: 2999, labelRu: 'Навсегда',  labelEn: 'Lifetime', periodRu: '',       periodEn: '' },
 } as const;
 
 export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {

@@ -11,6 +11,7 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Lang } from '@/lib/translations';
 import { haptic } from '@/lib/haptic';
+import { soundEngine } from '@/lib/sounds';
 
 interface SubCardProps {
   subscription: Subscription;
@@ -107,6 +108,7 @@ export function SubCard({
   function handleDragEnd(_: unknown, info: { offset: { x: number } }) {
     isDraggingRef.current = false;
     if (info.offset.x < REVEAL_THRESHOLD) {
+      soundEngine.swipe();
       snapTo(REVEAL_X);
     } else {
       snapTo(0);
@@ -129,9 +131,11 @@ export function SubCard({
       const elapsed = performance.now() - holdStartRef.current;
       const progress = Math.min((elapsed / duration) * 100, 100);
       setHoldProgress(progress);
+      soundEngine.holdTick(progress);
       if (progress >= 100) {
         holdTimerRef.current = null;
         setHoldProgress(0);
+        soundEngine.resetHold();
         haptic.error();
         snapTo(0);
         setTimeout(() => onDelete?.(sub), 150);
@@ -147,6 +151,7 @@ export function SubCard({
       cancelAnimationFrame(holdTimerRef.current);
       holdTimerRef.current = null;
     }
+    soundEngine.resetHold();
     setHoldProgress(0);
   }
 

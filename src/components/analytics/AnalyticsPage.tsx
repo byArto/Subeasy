@@ -174,6 +174,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           exchangeRate={exchangeRate}
           symbol={symbol}
           monthlyTotal={monthlyTotal}
+          onSubTap={onSubTap}
         />
       </motion.div>
 
@@ -1248,6 +1249,7 @@ function SpendingTimeline({
    ═══════════════════════════════════════ */
 
 interface CategoryData {
+  id: string;
   name: string;
   emoji: string;
   value: number;
@@ -1262,6 +1264,7 @@ function CategoryBreakdown({
   exchangeRate,
   symbol,
   monthlyTotal,
+  onSubTap,
 }: {
   active: Subscription[];
   categories: Category[];
@@ -1269,8 +1272,10 @@ function CategoryBreakdown({
   exchangeRate: number;
   symbol: string;
   monthlyTotal: number;
+  onSubTap?: (sub: Subscription) => void;
 }) {
   const { t } = useLanguage();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const data = useMemo(() => {
     const map = new Map<string, number>();
@@ -1283,6 +1288,7 @@ function CategoryBreakdown({
     for (const [catId, value] of map) {
       const cat = categories.find((c) => c.id === catId);
       result.push({
+        id: catId,
         name: cat
           ? (DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name)
           : t('analytics.other'),
@@ -1295,6 +1301,14 @@ function CategoryBreakdown({
 
     return result.sort((a, b) => b.value - a.value);
   }, [active, categories, displayCurrency, exchangeRate, monthlyTotal, t]);
+
+  const selectedData = selectedId ? data.find((d) => d.id === selectedId) ?? null : null;
+  const selectedSubs = useMemo(
+    () => selectedId ? active.filter((s) => s.category === selectedId) : [],
+    [active, selectedId],
+  );
+
+  const toggle = (id: string) => setSelectedId((prev) => (prev === id ? null : id));
 
   if (data.length === 0) return null;
 
@@ -1314,45 +1328,132 @@ function CategoryBreakdown({
                   cy="50%"
                   innerRadius="60%"
                   outerRadius="85%"
-                  strokeWidth={0}
+                  strokeWidth={2}
+                  stroke="transparent"
                   animationBegin={0}
-                  animationDuration={800}
+                  animationDuration={600}
+                  onClick={(_, index) => toggle(data[index].id)}
+                  style={{ cursor: 'pointer' }}
                 >
                   {data.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
+                    <Cell
+                      key={i}
+                      fill={entry.color}
+                      opacity={selectedId && selectedId !== entry.id ? 0.25 : 1}
+                      // @ts-expect-error recharts supports outerRadius on Cell
+                      outerRadius={selectedId === entry.id ? '92%' : '85%'}
+                    />
                   ))}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             {/* Center label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-lg font-bold text-text-primary tabular-nums">
-                {formatAmount(Math.round(monthlyTotal))}
-              </span>
-              <span className="text-[10px] text-text-muted">{symbol}{t('cycle.monthly')}</span>
+              <AnimatePresence mode="wait">
+                {selectedData ? (
+                  <motion.div
+                    key={selectedData.id}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex flex-col items-center"
+                  >
+                    <span className="text-2xl">{selectedData.emoji}</span>
+                    <span className="text-[11px] font-semibold text-text-primary mt-0.5 text-center leading-tight px-2">
+                      {selectedData.name}
+                    </span>
+                    <span className="text-xs font-bold tabular-nums mt-0.5" style={{ color: selectedData.color }}>
+                      {formatAmount(selectedData.value)} {symbol}
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="total"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85 }}
+                    transition={{ duration: 0.18 }}
+                    className="flex flex-col items-center"
+                  >
+                    <span className="text-lg font-bold text-text-primary tabular-nums">
+                      {formatAmount(Math.round(monthlyTotal))}
+                    </span>
+                    <span className="text-[10px] text-text-muted">{symbol}{t('cycle.monthly')}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
         {/* Legend */}
-        <div className="space-y-2.5">
-          {data.map((d) => (
-            <div key={d.name} className="flex items-center gap-2.5">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: d.color }}
-              />
-              <span className="text-sm shrink-0">{d.emoji}</span>
-              <span className="text-sm text-text-primary flex-1 truncate">{d.name}</span>
-              <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
-                {formatAmount(d.value)} {symbol}
-              </span>
-              <span className="text-[11px] text-text-muted w-8 text-right tabular-nums shrink-0">
-                {d.pct}%
-              </span>
-            </div>
-          ))}
+        <div className="space-y-1.5">
+          {data.map((d) => {
+            const isSelected = selectedId === d.id;
+            const isDimmed = selectedId !== null && !isSelected;
+            return (
+              <motion.button
+                key={d.id}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => toggle(d.id)}
+                className={cn(
+                  'w-full flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors',
+                  isSelected ? 'bg-surface-3' : isDimmed ? 'opacity-40' : 'active:bg-surface-3',
+                )}
+              >
+                <span
+                  className={cn('w-2.5 h-2.5 rounded-full shrink-0 transition-transform', isSelected && 'scale-125')}
+                  style={{ backgroundColor: d.color }}
+                />
+                <span className="text-sm shrink-0">{d.emoji}</span>
+                <span className="text-sm text-text-primary flex-1 truncate text-left">{d.name}</span>
+                <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
+                  {formatAmount(d.value)} {symbol}
+                </span>
+                <span className="text-[11px] text-text-muted w-8 text-right tabular-nums shrink-0">
+                  {d.pct}%
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
+
+        {/* Subscriptions for selected category */}
+        <AnimatePresence>
+          {selectedData && selectedSubs.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 pt-4 border-t border-border-subtle space-y-2">
+                <p className="text-[11px] font-semibold text-text-muted uppercase tracking-widest mb-2 pl-1">
+                  {selectedData.emoji} {selectedData.name}
+                </p>
+                {selectedSubs.map((sub) => {
+                  const monthly = Math.round(getMonthlyInCurrency(sub, displayCurrency, exchangeRate));
+                  return (
+                    <motion.button
+                      key={sub.id}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => onSubTap?.(sub)}
+                      className="w-full flex items-center gap-3 rounded-xl p-2.5 bg-surface-3 active:bg-surface-4 transition-colors"
+                    >
+                      <ServiceLogo name={sub.name} emoji={sub.icon} size={32} className="rounded-lg shrink-0" />
+                      <span className="text-sm text-text-primary flex-1 text-left truncate">{sub.name}</span>
+                      <span className="text-sm font-semibold tabular-nums shrink-0" style={{ color: selectedData.color }}>
+                        {formatAmount(monthly)} {symbol}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
         { key: 'X-DNS-Prefetch-Control', value: 'on' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        // Enforce HTTPS for 2 years, including subdomains
+        { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
         // Allow embedding inside Telegram WebView, block other iframes
         { key: 'Content-Security-Policy', value: "frame-ancestors 'self' https://web.telegram.org t.me" },
       ],

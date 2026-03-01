@@ -44,7 +44,7 @@ export const CURRENCY_SYMBOLS: Record<string, string> = {
 export const CYCLE_LABELS: Record<string, string> = {
   monthly: 'Ежемесячно',
   yearly: 'Ежегодно',
-  weekly: 'Еженедельно',
+  quarterly: 'Ежеквартально',
   'one-time': 'Разовый',
   trial: 'Пробный',
 };

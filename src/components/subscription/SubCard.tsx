@@ -28,7 +28,7 @@ type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 const cycleSuffixKey: Record<BillingCycle, string> = {
   monthly: 'cycle.monthly',
   yearly: 'cycle.yearly',
-  weekly: 'cycle.weekly',
+  quarterly: 'cycle.quarterly',
   'one-time': '',
   trial: '',
 };
@@ -251,9 +251,11 @@ export function SubCard({
               <p className="text-xs text-text-muted mt-0.5 truncate">
                 {sub.cycle === 'trial'
                   ? t('payment.trial', { date: dateFormatted })
-                  : days < 0
-                    ? t('payment.overdue', { date: dateFormatted })
-                    : t('payment.next', { date: dateFormatted })}
+                  : sub.cycle === 'one-time'
+                    ? t('payment.purchased', { date: dateFormatted })
+                    : days < 0
+                      ? t('payment.overdue', { date: dateFormatted })
+                      : t('payment.next', { date: dateFormatted })}
               </p>
             </div>
 
@@ -262,11 +264,24 @@ export function SubCard({
               {sub.cycle === 'trial' ? (
                 <>
                   <p className="text-sm font-bold text-neon tabular-nums">FREE</p>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(100,130,255,0.18)', color: '#99aaff' }}>
+                    {t('cycle.trial.label')}
+                  </span>
                   {sub.price > 0 && (
                     <p className="text-[10px] text-text-muted">
                       {t('payment.later')} {Math.round(sub.price).toLocaleString('ru-RU')}{symbol}
                     </p>
                   )}
+                </>
+              ) : sub.cycle === 'one-time' ? (
+                <>
+                  <p className="text-sm font-bold text-text-primary tabular-nums">
+                    {Math.round(sub.price).toLocaleString('ru-RU')}
+                    <span className="text-text-muted text-xs ml-0.5">{symbol}</span>
+                  </p>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md" style={{ background: 'rgba(245,200,66,0.15)', color: '#f5c842' }}>
+                    {t('cycle.oneTime.label')}
+                  </span>
                 </>
               ) : (
                 <>

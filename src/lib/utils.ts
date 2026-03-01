@@ -50,8 +50,8 @@ export function convertCurrency(
 
 export function getMonthlyPrice(sub: Subscription): number {
   switch (sub.cycle) {
-    case 'weekly':
-      return sub.price * 4.33;
+    case 'quarterly':
+      return sub.price / 3;
     case 'monthly':
       return sub.price;
     case 'yearly':
@@ -60,7 +60,7 @@ export function getMonthlyPrice(sub: Subscription): number {
     case 'trial':
       return 0;
     default:
-      return sub.price;
+      return 0;
   }
 }
 
@@ -79,8 +79,8 @@ export function isPaymentSoon(nextPaymentDate: string, daysBefore: number): bool
 export function getNextPaymentDate(current: string, cycle: string): string {
   const d = new Date(current);
   switch (cycle) {
-    case 'weekly':
-      d.setDate(d.getDate() + 7);
+    case 'quarterly':
+      d.setMonth(d.getMonth() + 3);
       break;
     case 'monthly':
       d.setMonth(d.getMonth() + 1);

@@ -84,16 +84,18 @@ function getPaymentDatesInMonth(sub: Subscription, year: number, month: number):
     return dates;
   }
 
-  if (sub.cycle === 'weekly') {
+  if (sub.cycle === 'quarterly') {
     let cursor = new Date(next);
     while (isBefore(monthStart, cursor)) {
-      cursor = addWeeks(cursor, -1);
+      cursor = new Date(cursor);
+      cursor.setMonth(cursor.getMonth() - 3);
     }
     while (cursor <= monthEnd) {
       if (cursor >= monthStart && cursor <= monthEnd) {
         dates.push(new Date(cursor));
       }
-      cursor = addWeeks(cursor, 1);
+      cursor = new Date(cursor);
+      cursor.setMonth(cursor.getMonth() + 3);
     }
     return dates;
   }

@@ -13,10 +13,10 @@ const dict: Translations = {
   // ── Cycle suffixes ──
   'cycle.monthly': { ru: '/мес', en: '/mo' },
   'cycle.yearly': { ru: '/год', en: '/yr' },
-  'cycle.weekly': { ru: '/нед', en: '/wk' },
+  'cycle.quarterly': { ru: '/кв', en: '/qtr' },
   'cycle.monthly.label': { ru: 'Ежемесячно', en: 'Monthly' },
   'cycle.yearly.label': { ru: 'Ежегодно', en: 'Yearly' },
-  'cycle.weekly.label': { ru: 'Еженедельно', en: 'Weekly' },
+  'cycle.quarterly.label': { ru: 'Ежеквартально', en: 'Quarterly' },
   'cycle.oneTime.label': { ru: 'Разовый', en: 'One-time' },
   'cycle.trial.label': { ru: 'Пробный', en: 'Trial' },
 
@@ -52,6 +52,7 @@ const dict: Translations = {
 
   // ── SubCard payment info ──
   'payment.trial': { ru: 'Триал до · {{date}}', en: 'Trial until · {{date}}' },
+  'payment.purchased': { ru: 'Куплено · {{date}}', en: 'Purchased · {{date}}' },
   'payment.overdue': { ru: 'Просрочен · {{date}}', en: 'Overdue · {{date}}' },
   'payment.next': { ru: 'Следующий · {{date}}', en: 'Next · {{date}}' },
   'payment.later': { ru: 'далее', en: 'then' },
@@ -138,6 +139,7 @@ const dict: Translations = {
   'detail.startDate': { ru: 'Дата начала', en: 'Start date' },
   'detail.trialStart': { ru: 'Начало триала', en: 'Trial start' },
   'detail.nextPayment': { ru: 'Следующий платёж', en: 'Next payment' },
+  'detail.purchaseDate': { ru: 'Дата покупки', en: 'Purchase date' },
   'detail.trialEnd': { ru: 'Окончание триала', en: 'Trial end' },
   'detail.cycle': { ru: 'Цикл', en: 'Billing cycle' },
   'detail.trialPeriod': { ru: 'Пробный период', en: 'Trial period' },

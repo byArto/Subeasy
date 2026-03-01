@@ -27,12 +27,12 @@ const COLOR_PALETTE = [
 ];
 
 const CURRENCIES: Currency[] = ['RUB', 'USD'];
-const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'weekly', 'one-time', 'trial'];
+const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'quarterly', 'one-time', 'trial'];
 
 const CYCLE_KEY_MAP: Record<BillingCycle, string> = {
   monthly: 'cycle.monthly.label',
   yearly: 'cycle.yearly.label',
-  weekly: 'cycle.weekly.label',
+  quarterly: 'cycle.quarterly.label',
   'one-time': 'cycle.oneTime.label',
   trial: 'cycle.trial.label',
 };
@@ -524,8 +524,16 @@ export function SubForm({
               className={cn(
                 'min-h-[36px] px-3 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap',
                 cycle === c
-                  ? 'bg-neon text-surface'
-                  : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
+                  ? c === 'one-time'
+                    ? 'bg-[#f5c842] text-surface'
+                    : c === 'trial'
+                      ? 'bg-[#99aaff] text-surface'
+                      : 'bg-neon text-surface'
+                  : c === 'one-time'
+                    ? 'bg-surface-2 border border-[rgba(245,200,66,0.3)] text-[#f5c842] active:bg-surface-4'
+                    : c === 'trial'
+                      ? 'bg-surface-2 border border-[rgba(100,130,255,0.3)] text-[#99aaff] active:bg-surface-4'
+                      : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
               )}
             >
               {t(CYCLE_KEY_MAP[c])}

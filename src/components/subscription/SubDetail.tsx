@@ -38,7 +38,7 @@ const CYCLE_SUFFIX_KEY: Record<string, string> = {
 const CYCLE_LABEL_KEY: Record<string, string> = {
   monthly: 'cycle.monthly.label',
   yearly: 'cycle.yearly.label',
-  weekly: 'cycle.weekly.label',
+  quarterly: 'cycle.quarterly.label',
   'one-time': 'cycle.oneTime.label',
   trial: 'cycle.trial.label',
 };
@@ -62,8 +62,8 @@ function getTotalSpent(sub: Subscription): number {
 
   let payments: number;
   switch (sub.cycle) {
-    case 'weekly':
-      payments = Math.floor(diffDays / 7);
+    case 'quarterly':
+      payments = Math.floor(diffDays / 91.25);
       break;
     case 'monthly':
       payments = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
@@ -138,7 +138,7 @@ function getCostPerDay(sub: Subscription): number | null {
   switch (sub.cycle) {
     case 'monthly': return sub.price / 30.44;
     case 'yearly': return sub.price / 365;
-    case 'weekly': return sub.price / 7;
+    case 'quarterly': return sub.price / 91.25;
     default: return null;
   }
 }
@@ -278,11 +278,11 @@ export function SubDetail({
       value: formatDate(sub.startDate, lang),
     },
     {
-      label: isTrial ? t('detail.trialEnd') : t('detail.nextPayment'),
+      label: isTrial ? t('detail.trialEnd') : sub.cycle === 'one-time' ? t('detail.purchaseDate') : t('detail.nextPayment'),
       value: (
         <span className="flex items-center gap-2">
           {formatDate(sub.nextPaymentDate, lang)}
-          {sub.isActive && (
+          {sub.isActive && sub.cycle !== 'one-time' && (
             <Badge
               variant={days <= 1 ? 'danger' : days <= 7 ? 'warning' : 'neutral'}
             >

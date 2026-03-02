@@ -73,6 +73,16 @@ export async function POST(req: NextRequest) {
   const update = await req.json().catch(() => null);
   if (!update) return NextResponse.json({ ok: true });
 
+  // ── /delete_data command (GDPR right to erasure) ─────────────────────────
+  if (update.message?.text?.startsWith('/delete_data')) {
+    const chatId: number = update.message.chat.id;
+    await sendMessage(
+      chatId,
+      '🗑 <b>Удаление аккаунта и данных</b>\n\nЧтобы удалить все свои данные из SubEasy (подписки, настройки, аккаунт):\n\n1. Откройте приложение SubEasy\n2. Настройки → Аккаунт → «Удалить аккаунт и данные»\n\nИли напишите нам: @by_arto — удалим вручную в течение 24 часов.\n\n<i>Ваши права защищены согласно GDPR и Политике конфиденциальности: subeasy.org/privacy</i>',
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   // ── /paysupport command ───────────────────────────────────────────────────
   if (update.message?.text?.startsWith('/paysupport')) {
     const chatId: number = update.message.chat.id;

@@ -343,6 +343,16 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                     <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: '8px 0 0' }}>
                       {isRu ? 'Мгновенная активация · Telegram Stars' : 'Instant activation · Telegram Stars'}
                     </p>
+                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '6px 0 0', lineHeight: 1.6 }}>
+                      {isRu ? 'Оплачивая, вы соглашаетесь с ' : 'By paying you agree to the '}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(245,200,66,0.5)', textDecoration: 'underline' }}>
+                        {isRu ? 'Условиями' : 'Terms'}
+                      </a>
+                      {' · '}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(245,200,66,0.5)', textDecoration: 'underline' }}>
+                        {isRu ? 'Конфиденциальность' : 'Privacy'}
+                      </a>
+                    </p>
                   </div>
 
                   {/* ── Divider ── */}

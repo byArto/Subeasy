@@ -87,6 +87,8 @@ export function SettingsPage({
   } = useWorkspace();
   const [langOpen, setLangOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [editCatEmoji, setEditCatEmoji] = useState('');
@@ -253,6 +255,37 @@ export function SettingsPage({
     localStorage.removeItem('neonsub-categories');
     localStorage.removeItem('neonsub-settings');
     window.location.reload();
+  }
+
+  async function handleDeleteAccount() {
+    setDeletingAccount(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { signOut(); return; }
+
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        console.error('[deleteAccount]', err);
+      }
+
+      // Clear local storage regardless of server result
+      ['neonsub-subscriptions', 'neonsub-categories', 'neonsub-settings',
+       'neonsub-language', 'neonsub-theme', 'neonsub-active-workspace-id'].forEach(
+        (k) => localStorage.removeItem(k),
+      );
+      signOut();
+    } catch (e) {
+      console.error('[deleteAccount] unexpected:', e);
+      signOut();
+    } finally {
+      setDeletingAccount(false);
+    }
   }
 
   function startEditCategory(cat: Category) {
@@ -1338,6 +1371,51 @@ export function SettingsPage({
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Delete account */}
+              <div className="border-t border-border-subtle">
+                <AnimatePresence mode="wait">
+                  {!confirmDeleteAccount ? (
+                    <motion.button
+                      key="delete-account-btn"
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setConfirmDeleteAccount(true)}
+                      className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                    >
+                      <div>
+                        <span className="text-sm text-danger/70 font-medium">
+                          {lang === 'ru' ? 'Удалить аккаунт и данные' : 'Delete account & data'}
+                        </span>
+                        <p className="text-[11px] text-text-muted mt-0.5">
+                          {lang === 'ru' ? 'Безвозвратное удаление (GDPR)' : 'Permanent deletion (GDPR)'}
+                        </p>
+                      </div>
+                    </motion.button>
+                  ) : (
+                    <motion.div
+                      key="delete-account-confirm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="px-4 py-3.5 space-y-2.5"
+                    >
+                      <p className="text-xs text-danger font-medium">
+                        {lang === 'ru'
+                          ? 'Все подписки, настройки и аккаунт будут удалены навсегда. Это нельзя отменить.'
+                          : 'All subscriptions, settings and your account will be permanently deleted. This cannot be undone.'}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmDeleteAccount(false)}>
+                          {t('common.cancel')}
+                        </Button>
+                        <Button fullWidth variant="danger" size="sm" onClick={handleDeleteAccount} disabled={deletingAccount}>
+                          {deletingAccount ? '…' : (lang === 'ru' ? 'Удалить всё' : 'Delete all')}
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </>
           ) : (
             <motion.button
@@ -1375,10 +1453,29 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.5.1</p>
+          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.6.2</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             {t('settings.about.description')}
           </p>
+          <div className="flex gap-3 mt-1">
+            <a
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-text-muted underline underline-offset-2 hover:text-neon transition-colors"
+            >
+              {lang === 'ru' ? 'Конфиденциальность' : 'Privacy Policy'}
+            </a>
+            <span className="text-text-muted text-[11px]">·</span>
+            <a
+              href="/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-text-muted underline underline-offset-2 hover:text-neon transition-colors"
+            >
+              {lang === 'ru' ? 'Условия' : 'Terms'}
+            </a>
+          </div>
         </div>
       </motion.div>
 

@@ -1,4 +1,4 @@
-import { Subscription, Currency } from './types';
+import { Subscription, Currency, BillingCycle } from './types';
 import { CURRENCY_SYMBOLS } from './constants';
 
 export function generateId(): string {
@@ -106,6 +106,28 @@ export function getNextPaymentDate(current: string, cycle: string): string {
         return d.toISOString().split('T')[0];
     }
   }
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Given a subscription start date and billing cycle, returns the next future
+ * payment date. Works for subscriptions added retroactively (e.g. started
+ * 3 months ago) by advancing period-by-period until the date is in the future.
+ */
+export function calcNextPaymentFromStart(startDate: string, cycle: BillingCycle): string {
+  const d = new Date(startDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  do {
+    switch (cycle) {
+      case 'monthly':   d.setMonth(d.getMonth() + 1); break;
+      case 'quarterly': d.setMonth(d.getMonth() + 3); break;
+      case 'yearly':    d.setFullYear(d.getFullYear() + 1); break;
+      default: return startDate; // one-time / trial — не трогаем
+    }
+  } while (d <= today);
+
   return d.toISOString().split('T')[0];
 }
 

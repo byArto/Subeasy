@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Subscription, Currency, BillingCycle, Category, AppSettings } from '@/lib/types';
-import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency } from '@/lib/utils';
+import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency, calcNextPaymentFromStart } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -153,6 +153,15 @@ export function SubForm({
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [shake, setShake] = useState(false);
+
+  // Auto-calculate nextPaymentDate when startDate or cycle changes.
+  // In edit mode we skip the first run to preserve the stored date.
+  const skipFirst = useRef(mode === 'edit');
+  useEffect(() => {
+    if (skipFirst.current) { skipFirst.current = false; return; }
+    if (cycle === 'one-time' || cycle === 'trial') return;
+    setNextPaymentDate(calcNextPaymentFromStart(startDate, cycle));
+  }, [startDate, cycle]); // eslint-disable-line react-hooks/exhaustive-deps
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');

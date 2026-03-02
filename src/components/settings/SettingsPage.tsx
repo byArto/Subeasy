@@ -192,7 +192,8 @@ export function SettingsPage({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ html: pdfOverlayHtml }),
+        // HTML is generated server-side from DB data — no client HTML sent
+        body: '{}',
       });
 
       if (res.ok) {

@@ -74,9 +74,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // SECURITY: if sub.id already exists in DB, verify it belongs to THIS workspace.
+    // Prevents IDOR where a member supplies a foreign subscription's id to overwrite it.
+    let existingUserId: string = authUser.id;
+    if (sub.id) {
+      const { data: existing } = await supabase
+        .from('subscriptions')
+        .select('workspace_id, user_id')
+        .eq('id', sub.id)
+        .maybeSingle();
+
+      if (existing) {
+        if (existing.workspace_id !== workspaceId) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+        // Preserve original owner — don't let attacker take ownership via upsert
+        existingUserId = existing.user_id;
+      }
+    }
+
     const row = {
       id: sub.id,
-      user_id: authUser.id,
+      user_id: existingUserId,
       workspace_id: workspaceId,
       name: sub.name,
       price: sub.price,

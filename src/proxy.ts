@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
  * Verifies the Bearer JWT before the request reaches the route handler.
  * Route handlers still call verifyAuth() internally (defense in depth).
  */
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -208,6 +208,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ sent, skipped, failed, total: profiles.length });
   } catch (err) {
     console.error('[cron/notify] fatal:', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

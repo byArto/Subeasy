@@ -1517,7 +1517,7 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.6.2</p>
+          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.0.0</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             {t('settings.about.description')}
           </p>

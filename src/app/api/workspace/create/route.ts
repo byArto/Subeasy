@@ -20,6 +20,9 @@ export async function POST(req: NextRequest) {
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (name.trim().length > 50) {
+      return NextResponse.json({ error: 'Workspace name too long (max 50 characters)' }, { status: 400 });
+    }
 
     const supabase = createServiceClient();
 

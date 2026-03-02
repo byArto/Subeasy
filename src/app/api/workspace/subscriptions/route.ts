@@ -60,6 +60,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Field validation
+    const VALID_CYCLES = ['monthly', 'yearly', 'quarterly', 'one-time', 'trial'] as const;
+    const VALID_CURRENCIES = ['RUB', 'USD', 'EUR'] as const;
+
+    if (typeof sub.name !== 'string' || !sub.name.trim() || sub.name.length > 100) {
+      return NextResponse.json({ error: 'Invalid name' }, { status: 400 });
+    }
+    if (typeof sub.price !== 'number' || sub.price < 0 || sub.price > 10_000_000) {
+      return NextResponse.json({ error: 'Invalid price' }, { status: 400 });
+    }
+    if (!VALID_CURRENCIES.includes(sub.currency)) {
+      return NextResponse.json({ error: 'Invalid currency' }, { status: 400 });
+    }
+    if (!VALID_CYCLES.includes(sub.cycle)) {
+      return NextResponse.json({ error: 'Invalid cycle' }, { status: 400 });
+    }
+
     const supabase = createServiceClient();
 
     // Verify caller is a member of this workspace

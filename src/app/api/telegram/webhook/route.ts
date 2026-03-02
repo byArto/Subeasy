@@ -152,6 +152,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // Log affiliate conversion if payment came through an affiliate link
+    const affiliateInfo = update.message?.affiliate_info;
+    if (affiliateInfo?.affiliate_user?.id) {
+      await supabase.from('affiliate_conversions').insert({
+        buyer_telegram_id:     telegramUserId,
+        buyer_profile_id:      profile.id,
+        affiliate_telegram_id: affiliateInfo.affiliate_user.id,
+        plan:                  payload,
+        stars_total:           payment.total_amount,
+        affiliate_stars:       affiliateInfo.amount ?? 0,
+        commission_per_mille:  affiliateInfo.commission_per_mille ?? 0,
+        telegram_charge_id:    payment.telegram_payment_charge_id,
+      });
+    }
+
     const planLabel: Record<string, string> = {
       pro_monthly:  '🗓 Месячный план (30 дней)',
       pro_yearly:   '📅 Годовой план (365 дней)',

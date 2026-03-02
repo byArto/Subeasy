@@ -24,17 +24,28 @@ export async function pullSubscriptions(userId: string): Promise<Subscription[]>
 
 export async function pushSubscriptions(userId: string, subs: Subscription[]): Promise<void> {
   const client = supabase();
-  // Only delete personal subs (workspace_id IS NULL) — never touch workspace subs
-  await client.from('subscriptions').delete().eq('user_id', userId).is('workspace_id', null);
-
-  // Only push personal subs (no workspaceId)
   const personalSubs = subs.filter((s) => !s.workspaceId);
-  if (personalSubs.length === 0) return;
+  const keepIds = new Set(personalSubs.map((s) => s.id));
 
-  const rows = personalSubs.map((s) => subscriptionToDb(s, userId));
-  const { error } = await client.from('subscriptions').insert(rows);
+  // Step 1: upsert all current subs — never deletes, safe if interrupted
+  if (personalSubs.length > 0) {
+    const rows = personalSubs.map((s) => subscriptionToDb(s, userId));
+    const { error } = await client.from('subscriptions').upsert(rows, { onConflict: 'id' });
+    if (error) console.warn('[sync] pushSubscriptions upsert error:', error.message);
+  }
 
-  if (error) console.warn('[sync] pushSubscriptions error:', error.message);
+  // Step 2: delete only stale records (exist in DB but removed locally)
+  const { data: existing } = await client
+    .from('subscriptions')
+    .select('id')
+    .eq('user_id', userId)
+    .is('workspace_id', null);
+
+  const staleIds = (existing ?? []).map((r) => r.id).filter((id) => !keepIds.has(id));
+  if (staleIds.length > 0) {
+    const { error } = await client.from('subscriptions').delete().in('id', staleIds);
+    if (error) console.warn('[sync] pushSubscriptions delete stale error:', error.message);
+  }
 }
 
 export async function syncSubscriptions(
@@ -77,14 +88,26 @@ export async function pullCategories(userId: string): Promise<Category[]> {
 
 export async function pushCategories(userId: string, cats: Category[]): Promise<void> {
   const client = supabase();
-  await client.from('categories').delete().eq('user_id', userId);
+  const keepIds = new Set(cats.map((c) => c.id));
 
-  if (cats.length === 0) return;
+  // Step 1: upsert all current categories — safe if interrupted
+  if (cats.length > 0) {
+    const rows = cats.map((c) => categoryToDb(c, userId));
+    const { error } = await client.from('categories').upsert(rows, { onConflict: 'id' });
+    if (error) console.warn('[sync] pushCategories upsert error:', error.message);
+  }
 
-  const rows = cats.map((c) => categoryToDb(c, userId));
-  const { error } = await client.from('categories').insert(rows);
+  // Step 2: delete only stale records (exist in DB but removed locally)
+  const { data: existing } = await client
+    .from('categories')
+    .select('id')
+    .eq('user_id', userId);
 
-  if (error) console.warn('[sync] pushCategories error:', error.message);
+  const staleIds = (existing ?? []).map((r) => r.id).filter((id) => !keepIds.has(id));
+  if (staleIds.length > 0) {
+    const { error } = await client.from('categories').delete().in('id', staleIds);
+    if (error) console.warn('[sync] pushCategories delete stale error:', error.message);
+  }
 }
 
 export async function syncCategories(

@@ -2,9 +2,46 @@
 
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { usePro } from '@/components/providers/ProProvider';
 
 export function ProBadge({ onOpen }: { onOpen: () => void }) {
   const { lang } = useLanguage();
+  const { isPro, proUntil, loading } = usePro();
+
+  if (loading) return null;
+
+  if (isPro) {
+    const daysLeft = proUntil
+      ? Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    const label = daysLeft !== null
+      ? `PRO · ${daysLeft}${lang === 'ru' ? 'д' : 'd'}`
+      : 'PRO';
+
+    return (
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 5,
+          background: 'rgba(245,200,66,0.1)',
+          border: '1px solid rgba(245,200,66,0.35)',
+          borderRadius: 20,
+          padding: '4px 10px',
+          fontSize: 11,
+          fontWeight: 800,
+          color: '#f5c842',
+          flexShrink: 0,
+        }}
+      >
+        👑 {label}
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      </div>
+    );
+  }
 
   return (
     <motion.div

@@ -72,7 +72,7 @@ export function SettingsPage({
   const { user, signOut, setSkipAuth } = useAuth();
   const { isTelegram } = useTelegramContext();
   const { lang, setLang, t } = useLanguage();
-  const { isPro } = usePro();
+  const { isPro, proUntil } = usePro();
   const { theme, setTheme } = useTheme();
   const {
     workspace,
@@ -485,7 +485,7 @@ export function SettingsPage({
 
       {/* ── PRO Plan Banner ── */}
       <div
-        onClick={onOpenPro}
+        onClick={isPro ? undefined : onOpenPro}
         style={{
           background: 'rgba(245,200,66,0.06)',
           border: '1px solid rgba(245,200,66,0.2)',
@@ -495,19 +495,33 @@ export function SettingsPage({
           alignItems: 'center',
           justifyContent: 'space-between',
           marginBottom: 16,
-          cursor: 'pointer',
+          cursor: isPro ? 'default' : 'pointer',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#39ff84', letterSpacing: '0.08em' }}>FREE</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: isPro ? '#f5c842' : '#39ff84', letterSpacing: '0.08em' }}>
+            {isPro ? '👑 PRO' : 'FREE'}
+          </span>
           <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', display: 'inline-block' }} />
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
             {lang === 'ru' ? 'Текущий план' : 'Current plan'}
           </span>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
-          👑 {lang === 'ru' ? 'Получить PRO →' : 'Get PRO →'}
-        </span>
+        {isPro ? (
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(245,200,66,0.75)', display: 'flex', alignItems: 'center', gap: 4 }}>
+            {proUntil
+              ? `${Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} ${lang === 'ru' ? 'дней' : 'days'}`
+              : lang === 'ru' ? '♾ Навсегда' : '♾ Lifetime'
+            }
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </span>
+        ) : (
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
+            👑 {lang === 'ru' ? 'Получить PRO →' : 'Get PRO →'}
+          </span>
+        )}
       </div>
 
       {/* ── 0. Язык / Language ── */}

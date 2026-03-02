@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const chatId: number = update.message.chat.id;
     await sendMessage(
       chatId,
-      '💬 <b>Поддержка по оплате SubEasy PRO</b>\n\nЕсли возникли проблемы с оплатой или активацией — напишите нам: @byArto\n\nОтвечаем в течение 24 часов.',
+      '💬 <b>Поддержка по оплате SubEasy PRO</b>\n\nЕсли возникли проблемы с оплатой или активацией — напишите нам: @by_arto\n\nОтвечаем в течение 24 часов.',
     );
     return NextResponse.json({ ok: true });
   }

@@ -88,6 +88,8 @@ export function SettingsPage({
   const [langOpen, setLangOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [confirmDeleteAccount2, setConfirmDeleteAccount2] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState('');
@@ -1324,98 +1326,160 @@ export function SettingsPage({
         <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
           {user ? (
             <>
-              <div className="px-4 py-3.5 border-b border-border-subtle">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-neon/15 flex items-center justify-center">
+              {/* Always visible: email + arrow toggle */}
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setAccountOpen((p) => !p)}
+                className="w-full flex items-center justify-between px-4 py-3.5 active:bg-surface-3 transition-colors"
+              >
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-neon/15 flex items-center justify-center shrink-0">
                     <span className="text-neon text-sm font-bold">
                       {user.email?.[0]?.toUpperCase() ?? '?'}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm text-text-primary font-medium truncate">{user.email}</p>
                     <p className="text-[11px] text-text-muted">{t('settings.account.synced')}</p>
                   </div>
-                  <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon" />
+                  <div className="w-2 h-2 rounded-full bg-neon animate-pulse-neon shrink-0" />
                 </div>
-              </div>
+                <motion.svg
+                  animate={{ rotate: accountOpen ? 180 : 0 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className="text-text-muted shrink-0 ml-3"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </motion.svg>
+              </motion.button>
 
-              <AnimatePresence mode="wait">
-                {!confirmLogout ? (
-                  <motion.button
-                    key="logout-btn"
-                    type="button"
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setConfirmLogout(true)}
-                    className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
-                  >
-                    <span className="text-sm text-danger font-medium">{t('settings.account.logout')}</span>
-                  </motion.button>
-                ) : (
+              {/* Expandable: logout + delete account */}
+              <AnimatePresence initial={false}>
+                {accountOpen && (
                   <motion.div
-                    key="logout-confirm"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="px-4 py-3.5 space-y-2.5"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                    className="overflow-hidden"
                   >
-                    <p className="text-xs text-text-secondary">
-                      {t('settings.account.logoutConfirmText')}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
-                        {t('common.cancel')}
-                      </Button>
-                      <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
-                        {t('settings.account.logoutConfirm')}
-                      </Button>
+                    <div className="border-t border-border-subtle">
+                      <AnimatePresence mode="wait">
+                        {!confirmLogout ? (
+                          <motion.button
+                            key="logout-btn"
+                            type="button"
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setConfirmLogout(true)}
+                            className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                          >
+                            <span className="text-sm text-danger font-medium">{t('settings.account.logout')}</span>
+                          </motion.button>
+                        ) : (
+                          <motion.div
+                            key="logout-confirm"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="px-4 py-3.5 space-y-2.5"
+                          >
+                            <p className="text-xs text-text-secondary">
+                              {t('settings.account.logoutConfirmText')}
+                            </p>
+                            <div className="flex gap-2">
+                              <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
+                                {t('common.cancel')}
+                              </Button>
+                              <Button fullWidth variant="danger" size="sm" onClick={() => { signOut(); setConfirmLogout(false); }}>
+                                {t('settings.account.logoutConfirm')}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Delete account — 2-step confirmation */}
+                      <div className="border-t border-border-subtle">
+                        <AnimatePresence mode="wait">
+                          {!confirmDeleteAccount ? (
+                            <motion.button
+                              key="delete-account-btn"
+                              type="button"
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => setConfirmDeleteAccount(true)}
+                              className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
+                            >
+                              <div>
+                                <span className="text-sm text-danger/70 font-medium">
+                                  {lang === 'ru' ? 'Удалить аккаунт и данные' : 'Delete account & data'}
+                                </span>
+                                <p className="text-[11px] text-text-muted mt-0.5">
+                                  {lang === 'ru' ? 'Безвозвратное удаление (GDPR)' : 'Permanent deletion (GDPR)'}
+                                </p>
+                              </div>
+                            </motion.button>
+                          ) : !confirmDeleteAccount2 ? (
+                            <motion.div
+                              key="delete-account-step1"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="px-4 py-3.5 space-y-2.5"
+                            >
+                              <div className="flex items-start gap-2.5">
+                                <span className="text-base shrink-0 mt-0.5">⚠️</span>
+                                <div>
+                                  <p className="text-xs text-danger font-semibold mb-1">
+                                    {lang === 'ru' ? 'Это действие необратимо' : 'This action cannot be undone'}
+                                  </p>
+                                  <p className="text-[11px] text-text-secondary leading-relaxed">
+                                    {lang === 'ru'
+                                      ? 'Все подписки, настройки и аккаунт будут удалены навсегда. PRO-статус аннулируется.'
+                                      : 'All subscriptions, settings and your account will be permanently deleted. PRO status will be revoked.'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmDeleteAccount(false)}>
+                                  {t('common.cancel')}
+                                </Button>
+                                <Button fullWidth variant="danger" size="sm" onClick={() => setConfirmDeleteAccount2(true)}>
+                                  {lang === 'ru' ? 'Продолжить →' : 'Continue →'}
+                                </Button>
+                              </div>
+                            </motion.div>
+                          ) : (
+                            <motion.div
+                              key="delete-account-step2"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              className="px-4 py-3.5 space-y-2.5"
+                            >
+                              <p className="text-xs text-danger font-semibold">
+                                {lang === 'ru' ? '🗑 Последнее предупреждение' : '🗑 Final warning'}
+                              </p>
+                              <p className="text-[11px] text-text-secondary leading-relaxed">
+                                {lang === 'ru'
+                                  ? 'Вы уверены? После удаления восстановить данные невозможно.'
+                                  : 'Are you sure? Data cannot be recovered after deletion.'}
+                              </p>
+                              <div className="flex gap-2">
+                                <Button fullWidth variant="secondary" size="sm" onClick={() => { setConfirmDeleteAccount(false); setConfirmDeleteAccount2(false); }}>
+                                  {t('common.cancel')}
+                                </Button>
+                                <Button fullWidth variant="danger" size="sm" onClick={handleDeleteAccount} disabled={deletingAccount}>
+                                  {deletingAccount ? '…' : (lang === 'ru' ? 'Удалить всё' : 'Delete all')}
+                                </Button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-
-              {/* Delete account */}
-              <div className="border-t border-border-subtle">
-                <AnimatePresence mode="wait">
-                  {!confirmDeleteAccount ? (
-                    <motion.button
-                      key="delete-account-btn"
-                      type="button"
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setConfirmDeleteAccount(true)}
-                      className="w-full flex items-center justify-between px-4 py-3.5 active:bg-danger/5 transition-colors"
-                    >
-                      <div>
-                        <span className="text-sm text-danger/70 font-medium">
-                          {lang === 'ru' ? 'Удалить аккаунт и данные' : 'Delete account & data'}
-                        </span>
-                        <p className="text-[11px] text-text-muted mt-0.5">
-                          {lang === 'ru' ? 'Безвозвратное удаление (GDPR)' : 'Permanent deletion (GDPR)'}
-                        </p>
-                      </div>
-                    </motion.button>
-                  ) : (
-                    <motion.div
-                      key="delete-account-confirm"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="px-4 py-3.5 space-y-2.5"
-                    >
-                      <p className="text-xs text-danger font-medium">
-                        {lang === 'ru'
-                          ? 'Все подписки, настройки и аккаунт будут удалены навсегда. Это нельзя отменить.'
-                          : 'All subscriptions, settings and your account will be permanently deleted. This cannot be undone.'}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button fullWidth variant="secondary" size="sm" onClick={() => setConfirmDeleteAccount(false)}>
-                          {t('common.cancel')}
-                        </Button>
-                        <Button fullWidth variant="danger" size="sm" onClick={handleDeleteAccount} disabled={deletingAccount}>
-                          {deletingAccount ? '…' : (lang === 'ru' ? 'Удалить всё' : 'Delete all')}
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
             </>
           ) : (
             <motion.button

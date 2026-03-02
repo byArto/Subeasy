@@ -64,6 +64,16 @@ export async function POST(req: NextRequest) {
   const update = await req.json().catch(() => null);
   if (!update) return NextResponse.json({ ok: true });
 
+  // ── /paysupport command ───────────────────────────────────────────────────
+  if (update.message?.text?.startsWith('/paysupport')) {
+    const chatId: number = update.message.chat.id;
+    await sendMessage(
+      chatId,
+      '💬 <b>Поддержка по оплате SubEasy PRO</b>\n\nЕсли возникли проблемы с оплатой или активацией — напишите нам: @byArto\n\nОтвечаем в течение 24 часов.',
+    );
+    return NextResponse.json({ ok: true });
+  }
+
   // ── pre_checkout_query ────────────────────────────────────────────────────
   // Must answer within 10 seconds or Telegram will decline the payment
   if (update.pre_checkout_query) {

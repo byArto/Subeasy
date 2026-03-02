@@ -197,10 +197,10 @@ export async function GET(req: NextRequest) {
           const res = await sendTelegramMessage(Number(profile.telegram_chat_id), text, lang);
 
           if (res.ok) sent++;
-          else { failed++; console.warn('[cron/notify] Telegram API error for', profile.id, await res.text()); }
+          else { failed++; console.error('[cron/notify] Telegram API error for', profile.id, await res.text()); }
         } catch (err) {
           failed++;
-          console.warn('[cron/notify] user error:', profile.id, err);
+          console.error('[cron/notify] user error:', profile.id, err);
         }
       }),
     );

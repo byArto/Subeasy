@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
@@ -55,9 +56,17 @@ async function sendMessage(chatId: number, text: string) {
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // Verify the request comes from Telegram
+  // Verify the request comes from Telegram (timing-safe comparison)
   const secret = req.headers.get('x-telegram-bot-api-secret-token');
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+  const secretValid = (() => {
+    try {
+      if (!WEBHOOK_SECRET || !secret) return false;
+      const a = Buffer.from(secret);
+      const b = Buffer.from(WEBHOOK_SECRET);
+      return a.length === b.length && timingSafeEqual(a, b);
+    } catch { return false; }
+  })();
+  if (!secretValid) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -124,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ is_pro: true, pro_until: proUntil })
+      .update({ is_pro: true, pro_until: proUntil, last_stars_charge_id: payment.telegram_payment_charge_id })
       .eq('id', profile.id);
 
     if (updateError) {

@@ -34,7 +34,7 @@ export function useSaveTelegramChatId() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ telegram_chat_id: tgUser.id }),
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData }),
       }).catch((err) => console.warn('[useSaveTelegramChatId] connect:', err));
     });
 

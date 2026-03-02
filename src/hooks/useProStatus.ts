@@ -12,12 +12,13 @@ export interface ProStatus {
 }
 
 export function useProStatus(): ProStatus {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isPro, setIsPro] = useState(false);
   const [proUntil, setProUntil] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStatus = useCallback(async () => {
+  // Pure fetch — doesn't care about authLoading, used for manual refresh too
+  const doFetch = useCallback(async () => {
     if (!user) {
       setIsPro(false);
       setProUntil(null);
@@ -51,9 +52,12 @@ export function useProStatus(): ProStatus {
   }, [user]);
 
   useEffect(() => {
+    // Don't fetch while auth session is still restoring — prevents false "isPro=false"
+    // flash when user IS pro but getSession() hasn't resolved yet
+    if (authLoading) return;
     setLoading(true);
-    fetchStatus();
-  }, [fetchStatus]);
+    doFetch();
+  }, [doFetch, authLoading]);
 
-  return { isPro, proUntil, loading, refresh: fetchStatus };
+  return { isPro, proUntil, loading, refresh: doFetch };
 }

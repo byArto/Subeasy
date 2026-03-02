@@ -44,12 +44,15 @@ export async function GET(req: NextRequest) {
     .select('workspace_id, user_id, role, joined_at')
     .eq('workspace_id', ws.id);
 
+  const isOwner = ws.owner_id === userId;
+
   return NextResponse.json({
     workspace: {
       id: ws.id,
       name: ws.name,
       ownerId: ws.owner_id,
-      inviteToken: ws.invite_token,
+      // Only expose invite_token to the workspace owner
+      inviteToken: isOwner ? ws.invite_token : null,
       createdAt: ws.created_at,
     },
     members: (allMembers ?? []).map((m: { workspace_id: string; user_id: string; role: string; joined_at: string }) => ({

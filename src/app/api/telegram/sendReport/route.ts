@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase-server';
 import { generateReportHtml } from '@/lib/reportHtml';
+import { checkRateLimit } from '@/lib/ratelimit';
 import type { Subscription, Category, AppSettings } from '@/lib/types';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
@@ -43,6 +44,10 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
+  if (!await checkRateLimit('sendReport', user.id, 10, 60)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   const supabase = createServiceClient();

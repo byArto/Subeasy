@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase-server';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 // Reject initData older than 24 hours
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
+  if (!await checkRateLimit('tg-connect', user.id, 30, 60)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   // Validate Telegram initData signature — never trust client-supplied chat_id directly

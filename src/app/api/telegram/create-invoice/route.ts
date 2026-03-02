@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 
@@ -38,6 +39,10 @@ export async function POST(req: NextRequest) {
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {
     return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+  }
+
+  if (!await checkRateLimit('create-invoice', user.id, 20, 60)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   // Validate plan

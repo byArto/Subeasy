@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: NextRequest) {
   try {
     const authUser = await verifyAuth(req);
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Rate limit by IP — protects against invite token brute-force
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1';
+    if (!await checkRateLimit('ws-join', ip, 30, 60)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const body = await req.json();

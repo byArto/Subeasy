@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: NextRequest) {
   try {
     const authUser = await verifyAuth(req);
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!await checkRateLimit('ws-create', authUser.id, 10, 60)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const body = await req.json();

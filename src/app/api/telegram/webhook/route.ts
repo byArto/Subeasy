@@ -45,11 +45,16 @@ async function answerPreCheckout(queryId: string, ok: boolean, errorMessage?: st
   });
 }
 
-async function sendMessage(chatId: number, text: string) {
+async function sendMessage(chatId: number, text: string, replyMarkup?: object) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    }),
   });
 }
 
@@ -72,6 +77,21 @@ export async function POST(req: NextRequest) {
 
   const update = await req.json().catch(() => null);
   if (!update) return NextResponse.json({ ok: true });
+
+  // ── /start command ───────────────────────────────────────────────────────
+  if (update.message?.text?.startsWith('/start')) {
+    const chatId: number = update.message.chat.id;
+    await sendMessage(
+      chatId,
+      '👋 <b>Welcome to SubEasy!</b>\n\nTrack all your subscriptions in one place — never miss a renewal again.\n\n💡 Add subscriptions, set budgets, get reminders before charges.',
+      {
+        inline_keyboard: [[
+          { text: '🚀 Open SubEasy', web_app: { url: 'https://www.subeasy.org' } },
+        ]],
+      },
+    );
+    return NextResponse.json({ ok: true });
+  }
 
   // ── /delete_data command (GDPR right to erasure) ─────────────────────────
   if (update.message?.text?.startsWith('/delete_data')) {

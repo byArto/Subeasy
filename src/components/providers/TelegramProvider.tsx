@@ -11,7 +11,9 @@ if (typeof window !== 'undefined') {
       token: 'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',
       appName: 'subeasy',
     });
-  } catch { /* ignore */ }
+  } catch (e) {
+    console.error('[TelegramAnalytics] init failed:', e);
+  }
 }
 
 interface TelegramContextValue {

@@ -6,7 +6,7 @@ import { Subscription } from '@/lib/types';
 import { SubCard } from './SubCard';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { getLogoUrl } from '@/lib/services';
+import { getLogoUrl, searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { SortOption } from '@/components/dashboard/CategoryFilter';
 
@@ -40,6 +40,7 @@ interface SubListProps {
   onMarkPaid?: (sub: Subscription) => void;
   onDelete?: (sub: Subscription) => void;
   onAddTap?: () => void;
+  onAddWithService?: (svc: ServiceTemplate) => void;
   mostExpensiveId?: string | null;
   longestId?: string | null;
   notifyDaysBefore?: number;
@@ -56,6 +57,7 @@ export function SubList({
   onMarkPaid,
   onDelete,
   onAddTap,
+  onAddWithService,
   mostExpensiveId,
   longestId,
   notifyDaysBefore = 7,
@@ -81,7 +83,7 @@ export function SubList({
 
   // Show empty state
   if (subscriptions.length === 0) {
-    return <EmptyOnboarding onAddTap={onAddTap} />;
+    return <EmptyOnboarding onAddTap={onAddTap} onAddWithService={onAddWithService} />;
   }
 
   // Show "no results for filter"
@@ -161,7 +163,7 @@ function ServiceIcon({ domain, emoji, name, size = 20 }: { domain: string; emoji
   );
 }
 
-function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
+function EmptyOnboarding({ onAddTap, onAddWithService }: { onAddTap?: () => void; onAddWithService?: (svc: ServiceTemplate) => void }) {
   const { t } = useLanguage();
   const [carouselIdx, setCarouselIdx] = useState(0);
 
@@ -236,7 +238,11 @@ function EmptyOnboarding({ onAddTap }: { onAddTap?: () => void }) {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 + i * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
               whileTap={{ scale: 0.93 }}
-              onClick={onAddTap}
+              onClick={() => {
+                const found = searchServices(svc.name)[0];
+                if (found && onAddWithService) onAddWithService(found);
+                else onAddTap?.();
+              }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-2 border border-border-subtle active:bg-surface-3 transition-colors"
             >
               <span

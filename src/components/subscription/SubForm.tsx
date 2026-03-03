@@ -86,6 +86,7 @@ function encodePaymentMethod(type: PaymentType, cardType: CardType, detail: stri
 interface SubFormProps {
   mode: 'add' | 'edit';
   initialData?: Subscription;
+  serviceTemplate?: ServiceTemplate;
   categories: Category[];
   existingSubscriptions?: Subscription[];
   onSubmit: (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -119,6 +120,7 @@ const fieldVariants = {
 export function SubForm({
   mode,
   initialData,
+  serviceTemplate,
   categories,
   existingSubscriptions,
   onSubmit,
@@ -131,12 +133,12 @@ export function SubForm({
   const { t } = useLanguage();
 
   /* ── State ── */
-  const [icon, setIcon] = useState(initialData?.icon || '📺');
-  const [name, setName] = useState(initialData?.name || '');
-  const [price, setPrice] = useState(initialData?.price?.toString() || '');
-  const [currency, setCurrency] = useState<Currency>(initialData?.currency || 'RUB');
-  const [cycle, setCycle] = useState<BillingCycle>(initialData?.cycle || 'monthly');
-  const [category, setCategory] = useState(initialData?.category || '');
+  const [icon, setIcon] = useState(initialData?.icon || serviceTemplate?.emoji || '📺');
+  const [name, setName] = useState(initialData?.name || serviceTemplate?.name || '');
+  const [price, setPrice] = useState(initialData?.price?.toString() || serviceTemplate?.defaultPrice?.toString() || '');
+  const [currency, setCurrency] = useState<Currency>(initialData?.currency || serviceTemplate?.defaultCurrency || 'RUB');
+  const [cycle, setCycle] = useState<BillingCycle>(initialData?.cycle || serviceTemplate?.cycle || 'monthly');
+  const [category, setCategory] = useState(initialData?.category || serviceTemplate?.categoryId || '');
   const [nextPaymentDate, setNextPaymentDate] = useState(
     initialData?.nextPaymentDate || new Date().toISOString().split('T')[0]
   );
@@ -149,7 +151,7 @@ export function SubForm({
   );
   const [managementUrl, setManagementUrl] = useState(initialData?.managementUrl || '');
   const [notes, setNotes] = useState(initialData?.notes || '');
-  const [color, setColor] = useState(initialData?.color || '#007AFF');
+  const [color, setColor] = useState(initialData?.color || serviceTemplate?.color || '#007AFF');
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [shake, setShake] = useState(false);

@@ -31,6 +31,7 @@ import { ProBadge, ProModal } from '@/components/pro';
 import { ShareModal } from '@/components/share/ShareModal';
 import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
+import { ServiceTemplate } from '@/lib/services';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
 import { generateId } from '@/lib/utils';
 import { getAuthToken } from '@/lib/supabase';
@@ -82,6 +83,7 @@ export default function Home() {
   const [splashDone, setSplashDone] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [prefillService, setPrefillService] = useState<ServiceTemplate | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [tabDirection, setTabDirection] = useState(0);
@@ -296,7 +298,7 @@ export default function Home() {
   }, [activeTab]);
 
   const openAdd = useCallback(() => setShowAddModal(true), []);
-  const closeAdd = useCallback(() => setShowAddModal(false), []);
+  const closeAdd = useCallback(() => { setShowAddModal(false); setPrefillService(null); }, []);
   const openDetail = useCallback((sub: Subscription) => setSelectedSubId(sub.id), []);
   const closeDetail = useCallback(() => setSelectedSubId(null), []);
   const closeEdit = useCallback(() => setEditingSubId(null), []);
@@ -478,6 +480,7 @@ export default function Home() {
                 getActiveSubscriptions={getActiveSubs}
                 getUpcomingPayments={getUpcomingSubs}
                 onAddTap={openAdd}
+                onAddWithService={(svc) => { setPrefillService(svc); setShowAddModal(true); }}
                 onSubTap={openDetail}
                 onMarkPaid={handleMarkPaid}
                 onDeleteSub={handleDeleteSub}
@@ -556,6 +559,7 @@ export default function Home() {
       >
         <SubForm
           mode="add"
+          serviceTemplate={prefillService ?? undefined}
           categories={categories}
           existingSubscriptions={activeSubscriptions}
           onSubmit={async (data) => {
@@ -649,6 +653,7 @@ function HomeTab({
   getActiveSubscriptions,
   getUpcomingPayments,
   onAddTap,
+  onAddWithService,
   onSubTap,
   onMarkPaid,
   onDeleteSub,
@@ -662,6 +667,7 @@ function HomeTab({
   getActiveSubscriptions: () => Subscription[];
   getUpcomingPayments: (days: number) => Subscription[];
   onAddTap: () => void;
+  onAddWithService: (svc: ServiceTemplate) => void;
   onSubTap: (sub: Subscription) => void;
   onMarkPaid: (sub: Subscription) => void;
   onDeleteSub: (sub: Subscription) => void;
@@ -795,6 +801,7 @@ function HomeTab({
         onMarkPaid={onMarkPaid}
         onDelete={onDeleteSub}
         onAddTap={onAddTap}
+        onAddWithService={onAddWithService}
         mostExpensiveId={mostExpensiveId}
         longestId={longestId}
         notifyDaysBefore={settings.notifyDaysBefore}

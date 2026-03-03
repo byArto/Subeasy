@@ -359,8 +359,11 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                               pointerEvents: 'none',
                             }}
                           />
-                          <span style={{ position: 'relative', zIndex: 1 }}>
-                            ✈️ {isRu ? 'Открыть в Telegram' : 'Open in Telegram'}
+                          <span style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                            <span>✈️ {isRu ? 'Оплатить через Telegram' : 'Pay via Telegram'}</span>
+                            <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>
+                              {isRu ? 'оплата звёздами ⭐ — откроется бот' : 'payment with Stars ⭐ — bot will open'}
+                            </span>
                           </span>
                         </motion.button>
                       )}

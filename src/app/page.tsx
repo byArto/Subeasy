@@ -315,6 +315,12 @@ export default function Home() {
     () => (selectedSubId ? activeSubscriptions.find((s) => s.id === selectedSubId) : undefined),
     [selectedSubId, activeSubscriptions]
   );
+  // Cache last valid sub so SubDetail stays mounted during modal exit animation.
+  // Without this, SubDetail unmounts immediately on closeDetail(), letting pointer
+  // events bleed through to cards underneath and re-opening the modal.
+  const lastSelectedSubRef = useRef<typeof selectedSub>(undefined);
+  if (selectedSub) lastSelectedSubRef.current = selectedSub;
+  const detailSub = selectedSub ?? lastSelectedSubRef.current;
   const editingSub = useMemo(
     () => (editingSubId ? activeSubscriptions.find((s) => s.id === editingSubId) : undefined),
     [editingSubId, activeSubscriptions]
@@ -567,29 +573,31 @@ export default function Home() {
       <Modal
         open={!!selectedSubId}
         onClose={closeDetail}
-        title={selectedSub?.name}
+        title={detailSub?.name}
         size="full"
       >
-        {selectedSub && (
+        {detailSub && (
           <SubDetail
-            subscription={selectedSub}
-            category={categories.find((c) => c.id === selectedSub.category)}
+            subscription={detailSub}
+            category={categories.find((c) => c.id === detailSub.category)}
             settings={settings}
             onClose={closeDetail}
             onEdit={() => {
               setEditingSubId(selectedSubId);
               setSelectedSubId(null);
             }}
-            onMarkPaid={() => handleMarkPaid(selectedSub)}
+            onMarkPaid={() => handleMarkPaid(detailSub)}
             onToggleActive={() => {
-              const willBeActive = !selectedSub.isActive;
-              wsUpdateSubscription(selectedSub.id, { isActive: willBeActive });
+              const willBeActive = !detailSub.isActive;
+              wsUpdateSubscription(detailSub.id, { isActive: willBeActive });
             }}
             onDelete={() => {
-              const idToDelete = selectedSub.id;
+              const idToDelete = detailSub.id;
               closeDetail();
-              // Defer deletion until modal close animation starts, preventing blank-modal race
-              setTimeout(() => wsDeleteSubscription(idToDelete), 50);
+              // Wait for spring exit animation (~300ms) before deleting.
+              // Without this delay SubDetail unmounts immediately, letting pointer
+              // events bleed through to cards underneath and re-opening the modal.
+              setTimeout(() => wsDeleteSubscription(idToDelete), 400);
             }}
           />
         )}

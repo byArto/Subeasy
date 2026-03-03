@@ -24,7 +24,8 @@ const nextConfig: NextConfig = {
             // script-src: self + Telegram Mini App SDK + Vercel Analytics.
             // 'unsafe-inline' required for dangerouslySetInnerHTML init scripts
             // (theme, font-loader, splash-removal) — all are hardcoded compile-time strings.
-            "script-src 'self' 'unsafe-inline' blob: https://telegram.org https://va.vercel-scripts.com",
+            // 'unsafe-eval' required by @telegram-apps/analytics fingerprinting engine (uses eval/Function).
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://telegram.org https://va.vercel-scripts.com",
             // style-src: 'unsafe-inline' required for Tailwind/Framer Motion inline styles
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             // font-src: Google Fonts files

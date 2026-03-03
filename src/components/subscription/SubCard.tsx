@@ -137,7 +137,7 @@ export function SubCard({
         haptic.error();
         justDeletedRef.current = true;
         snapTo(0);
-        setTimeout(() => { onDelete?.(sub); justDeletedRef.current = false; }, 300);
+        setTimeout(() => { onDelete?.(sub); justDeletedRef.current = false; }, 150);
       } else {
         holdTimerRef.current = requestAnimationFrame(tick);
       }

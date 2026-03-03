@@ -24,7 +24,7 @@ import { Button } from '@/components/ui';
 interface SettingsPageProps {
   settings: AppSettings;
   updateSettings: (u: Partial<AppSettings>) => void;
-  toggleCurrency: () => void;
+  setCurrency: (c: DisplayCurrency) => void;
   setExchangeRate: (r: number) => void;
   categories: Category[];
   addCategory: (c: Omit<Category, 'id'>) => void;
@@ -57,7 +57,7 @@ const NOTIFY_OPTIONS = [1, 2, 3, 5, 7];
 export function SettingsPage({
   settings,
   updateSettings,
-  toggleCurrency,
+  setCurrency,
   setExchangeRate,
   categories,
   addCategory,
@@ -596,7 +596,13 @@ export function SettingsPage({
                 className="overflow-hidden"
               >
                 <div className="px-4 pb-4 pt-1 border-t border-border-subtle">
-                  <LangGrid value={lang} onSelect={(l) => { setLang(l); setLangOpen(false); }} isPro={isPro} onOpenPro={onOpenPro} />
+                  <LangGrid value={lang} lang={lang} onSelect={(l) => {
+                    setLang(l);
+                    setLangOpen(false);
+                    if (user) {
+                      createClient().from('user_settings').upsert({ user_id: user.id, lang: l }).then(() => {});
+                    }
+                  }} isPro={isPro} onOpenPro={onOpenPro} />
                 </div>
               </motion.div>
             )}
@@ -611,7 +617,7 @@ export function SettingsPage({
           {/* Currency toggle */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-text-primary font-medium">{t('settings.currency.main')}</span>
-            <CurrencySwitch value={settings.displayCurrency} onToggle={toggleCurrency} isPro={isPro} onOpenPro={onOpenPro} />
+            <CurrencySwitch value={settings.displayCurrency} onSelect={setCurrency} isPro={isPro} onOpenPro={onOpenPro} />
           </div>
 
           {/* Current rate display */}
@@ -1875,42 +1881,43 @@ const LANG_OPTIONS: { code: Lang; label: string; name: string }[] = [
   { code: 'pl', label: 'PL', name: 'Polski' },
 ];
 
-const FREE_LANGS: Lang[] = ['ru', 'en'];
+const READY_LANGS: Lang[] = ['ru', 'en'];
 
 function LangGrid({
   value,
   onSelect,
-  isPro,
-  onOpenPro,
+  lang,
 }: {
   value: Lang;
   onSelect: (l: Lang) => void;
   isPro: boolean;
   onOpenPro: () => void;
+  lang: Lang;
 }) {
+  const soonLabel = lang === 'en' ? 'soon' : 'скоро';
   return (
     <div className="grid grid-cols-4 gap-2">
       {LANG_OPTIONS.map((opt) => {
-        const locked = !isPro && !FREE_LANGS.includes(opt.code);
+        const soon = !READY_LANGS.includes(opt.code);
         const active = value === opt.code;
         return (
           <motion.button
             key={opt.code}
             type="button"
-            whileTap={{ scale: 0.93 }}
-            onClick={() => locked ? onOpenPro() : onSelect(opt.code)}
+            whileTap={soon ? {} : { scale: 0.93 }}
+            onClick={() => !soon && onSelect(opt.code)}
             className={cn(
               'relative flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl border transition-colors',
               active
                 ? 'bg-neon/15 border-neon/40 text-neon'
-                : locked
-                  ? 'bg-surface-3 border-border-subtle text-text-muted opacity-60'
+                : soon
+                  ? 'bg-surface-3 border-border-subtle text-text-muted opacity-50 cursor-default'
                   : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
             )}
             style={active ? { boxShadow: '0 0 10px rgba(0,255,65,0.15)' } : undefined}
           >
-            {locked && (
-              <span className="absolute top-1 right-1.5 text-[8px] text-text-muted">🔒</span>
+            {soon && (
+              <span className="absolute top-1 right-1 text-[7px] text-text-muted font-medium leading-none">{soonLabel}</span>
             )}
             <span className="text-[11px] font-bold tracking-wide">{opt.label}</span>
             <span className="text-[9px] opacity-70 leading-none">{opt.name}</span>
@@ -1999,12 +2006,12 @@ const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
 
 function CurrencySwitch({
   value,
-  onToggle,
+  onSelect,
   isPro,
   onOpenPro,
 }: {
   value: DisplayCurrency;
-  onToggle: () => void;
+  onSelect: (c: DisplayCurrency) => void;
   isPro: boolean;
   onOpenPro: () => void;
 }) {
@@ -2017,7 +2024,7 @@ function CurrencySwitch({
             key={opt.code}
             type="button"
             whileTap={{ scale: 0.93 }}
-            onClick={() => locked ? onOpenPro() : onToggle()}
+            onClick={() => locked ? onOpenPro() : onSelect(opt.code)}
             className={cn(
               'relative z-10 w-[44px] h-[32px] rounded-lg text-sm font-bold transition-colors',
               value === opt.code

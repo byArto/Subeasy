@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SERVICE_CATALOG } from '@/lib/services';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Split services into 3 rows ── */
 const ROW_1 = SERVICE_CATALOG.filter((_, i) => i % 3 === 0);
@@ -55,6 +56,7 @@ function MarqueeRow({
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(true);
+  const { lang } = useLanguage();
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(false), 1200);
@@ -176,7 +178,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
             >
-              Трекер подписок
+              {lang === 'en' ? 'Subscription tracker' : 'Трекер подписок'}
             </motion.p>
           </motion.div>
 

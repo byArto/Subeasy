@@ -92,12 +92,15 @@ export default function PrivacyPage() {
             <Li><b>Настройки приложения</b> — валюта, язык, уведомления, бюджетный лимит.</Li>
             <Li><b>IP-адрес</b> — автоматически при обращении к нашему серверу (стандартное поведение веб-сервисов).</Li>
             <Li><b>Данные об оплате PRO</b> — тип плана (monthly/yearly/lifetime), дата оплаты. Реквизиты карт мы не получаем и не храним — платёж обрабатывает Telegram.</Li>
+            <Li><b>Локальное хранилище (localStorage)</b> — язык интерфейса, активный воркспейс и настройки хранятся локально в вашем браузере. Эти данные не передаются на сервер.</Li>
           </ul>
           <P>
             <b>We collect only data necessary to provide the service:</b> Telegram ID, name and
             username; email (if signed in); subscription data you enter (names, amounts, dates,
             categories); workspace/family plan data; app settings; IP address (standard web
-            behavior); PRO payment metadata (plan type, date — not card details).
+            behavior); PRO payment metadata (plan type, date — not card details). We also use
+            localStorage to store UI preferences (language, active workspace) locally in your
+            browser — this data is never sent to our servers.
           </P>
         </Section>
 
@@ -186,6 +189,11 @@ export default function PrivacyPage() {
           <P>
             Мы удалим ваши данные без лишних задержек по вашему запросу.
             We will delete your data without undue delay upon request.
+          </P>
+          <P>
+            <b>California residents (CCPA):</b> You have the right to request disclosure of the
+            categories and specific pieces of personal data we have collected about you, and the
+            right to request deletion. Contact @by_arto on Telegram to exercise these rights.
           </P>
         </Section>
 

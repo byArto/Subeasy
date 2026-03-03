@@ -162,7 +162,7 @@ export default function Home() {
     deleteSubscription,
   } = useSubscriptions();
   const { categories, setCategories, addCategory, updateCategory, deleteCategory } = useCategories();
-  const { settings, setSettings, updateSettings, toggleCurrency, setExchangeRate } = useSettings();
+  const { settings, setSettings, updateSettings, setDisplayCurrency, setExchangeRate } = useSettings();
 
   // Sync with Supabase
   useSync(user, subscriptions, categories, settings, {
@@ -499,7 +499,7 @@ export default function Home() {
               <SettingsPage
                 settings={settings}
                 updateSettings={updateSettings}
-                toggleCurrency={toggleCurrency}
+                setCurrency={setDisplayCurrency}
                 setExchangeRate={setExchangeRate}
                 categories={categories}
                 addCategory={addCategory}

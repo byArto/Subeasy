@@ -7,7 +7,8 @@ export default function TermsPage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100vh',
+        overflowY: 'auto',
         background: 'linear-gradient(to bottom, #0A0A0F, #07070C)',
         color: '#F0F0F5',
         fontFamily: "'Montserrat', sans-serif",

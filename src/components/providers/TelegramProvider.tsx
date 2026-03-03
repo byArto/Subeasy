@@ -1,21 +1,10 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import TelegramAnalytics from '@telegram-apps/analytics';
 import { TelegramUser } from '@/hooks/useTelegram';
 
-// Initialize analytics at module level (before React render) as recommended by docs.
-// SDK reads tgWebAppData from URL hash internally — no need to wait for initData.
-if (typeof window !== 'undefined') {
-  try {
-    TelegramAnalytics.init({
-      token: 'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',
-      appName: 'subeasy',
-    });
-  } catch (e) {
-    console.error('[TelegramAnalytics] init failed:', e);
-  }
-}
+// TMA Analytics is loaded via CDN <script> tag in layout.tsx
+// and initialized via onload callback (see layout.tsx <head>).
 
 interface TelegramContextValue {
   isTelegram: boolean;

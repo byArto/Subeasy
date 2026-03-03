@@ -40,6 +40,13 @@ export default function RootLayout({
       <head>
         {/* Telegram Mini App SDK — must load before any other scripts */}
         <script src="https://telegram.org/js/telegram-web-app.js" />
+        {/* TMA Analytics — CDN approach as recommended by docs.tganalytics.xyz.
+            Loads async, initializes via onload before React renders. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `var s=document.createElement('script');s.src='https://tganalytics.xyz/index.js';s.async=true;s.onload=function(){window.telegramAnalytics.init({token:'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',appName:'subeasy'})};document.head.appendChild(s)`,
+          }}
+        />
         <link rel="preconnect" href="https://xmmseorpelrppnrlcxai.supabase.co" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link

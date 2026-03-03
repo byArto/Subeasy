@@ -34,12 +34,13 @@ const nextConfig: NextConfig = {
             "img-src 'self' data: blob: https:",
             // connect-src: Supabase REST + Realtime, Vercel Analytics, Telegram Analytics.
             // SW (sw.js) intercepts script/style/font/image loads via fetch() — all origins must be listed here too.
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://tganalytics.xyz https://telegram.org https://fonts.googleapis.com https://fonts.gstatic.com https://www.google.com",
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://tganalytics.xyz https://api.prod.innerworks.me https://flow.prod.innerworks.me https://telegram.org https://fonts.googleapis.com https://fonts.gstatic.com https://www.google.com",
             // frame-ancestors: allow embedding inside Telegram WebView only
             "frame-ancestors 'self' https://web.telegram.org https://t.me",
             // Hardening: no plugins, no base-tag hijacking, no unknown fallback
             // worker-src: Telegram Analytics SDK creates Workers from Blob URLs for fingerprinting & event batching
             "worker-src 'self' blob:",
+            "manifest-src 'self'",
             "object-src 'none'",
             "base-uri 'self'",
             "default-src 'none'",

@@ -21,6 +21,19 @@ function applyTelegramInsets() {
   const webApp = window.Telegram?.WebApp;
   if (!webApp) return;
 
+  // ── Desktop clients: never need overlay inset ─────────────────────────────
+  // Telegram Desktop, macOS, and all web clients show a native title bar
+  // *above* the WebView — no overlay controls → inset = 0.
+  // platform values: 'tdesktop' | 'macos' | 'webk' | 'weba' | 'web' (desktop)
+  //                  'ios' | 'android' | 'android_x'                (mobile)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const platform: string = (webApp as any).platform ?? '';
+  const isMobile = platform === 'ios' || platform.startsWith('android');
+  if (platform && !isMobile) {
+    document.documentElement.style.setProperty('--tg-top-inset', '0px');
+    return;
+  }
+
   // ── Режим: Fullsize vs Fullscreen ────────────────────────────────────────
   // Fullsize:    Telegram header — отдельный нативный бар над WebView.
   //             window.innerHeight < screen.height на ~88-103px.
@@ -49,7 +62,12 @@ function applyTelegramInsets() {
   }
 
   // SDK вернул 0 — heuristic по высоте экрана (CSS пиксели в Safari iOS).
+  // Guard: heuristic valid only for iPhone-sized screens; large screens = desktop/tablet = 0.
   const screenH = window.screen.height;
+  if (screenH > 950) {
+    document.documentElement.style.setProperty('--tg-top-inset', '0px');
+    return;
+  }
   const estimated = screenH >= 852 ? 103  // iPhone 14 Pro / 15 Pro
                   : screenH >= 844 ? 100  // iPhone 14 / 13
                   : screenH >= 812 ?  88  // iPhone X / 11 / 12 / 13 mini

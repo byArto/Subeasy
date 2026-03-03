@@ -1,5 +1,5 @@
-// SubEasy Service Worker v2 — cache-first + push notifications
-const CACHE_NAME = 'subeasy-v2';
+// SubEasy Service Worker v3 — cache-first + push notifications
+const CACHE_NAME = 'subeasy-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -41,12 +41,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Static assets — cache first
+  // Static assets — cache first (same-origin only; cross-origin fetches
+  // from SW can fail due to CORS/opaque responses, breaking telegram-web-app.js,
+  // Google Fonts, tganalytics SDK, etc.)
+  const isLocal = new URL(request.url).origin === self.location.origin;
   if (
-    request.destination === 'style' ||
-    request.destination === 'script' ||
-    request.destination === 'image' ||
-    request.destination === 'font'
+    isLocal &&
+    (request.destination === 'style' ||
+     request.destination === 'script' ||
+     request.destination === 'image' ||
+     request.destination === 'font')
   ) {
     event.respondWith(
       caches.match(request).then((cached) => {

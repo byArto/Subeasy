@@ -1,7 +1,18 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import TelegramAnalytics from '@telegram-apps/analytics';
 import { TelegramUser } from '@/hooks/useTelegram';
+
+// Initialize analytics as early as possible (client-side only)
+if (typeof window !== 'undefined') {
+  try {
+    TelegramAnalytics.init({
+      token: 'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',
+      appName: 'subeasy',
+    });
+  } catch { /* ignore */ }
+}
 
 interface TelegramContextValue {
   isTelegram: boolean;

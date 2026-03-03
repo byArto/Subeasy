@@ -12,6 +12,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
+    "@telegram-apps/analytics": "^1.6.4",
     "@telegram-apps/sdk-react": "^3.3.9",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.3",

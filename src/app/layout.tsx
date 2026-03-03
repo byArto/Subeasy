@@ -19,7 +19,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'SubEasy',
-  description: 'Трекер подписок — всё под контролем',
+  description: 'Subscription tracker — everything under control',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
+    <html lang="en">
       <head>
         {/* Telegram Mini App SDK — must load before any other scripts */}
         <script src="https://telegram.org/js/telegram-web-app.js" />

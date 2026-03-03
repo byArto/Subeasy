@@ -4,17 +4,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import TelegramAnalytics from '@telegram-apps/analytics';
 import { TelegramUser } from '@/hooks/useTelegram';
 
-// Initialize analytics as early as possible (client-side only)
-if (typeof window !== 'undefined') {
-  try {
-    TelegramAnalytics.init({
-      token: 'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',
-      appName: 'subeasy',
-    });
-  } catch (e) {
-    console.error('[TelegramAnalytics] init failed:', e);
-  }
-}
+// Analytics initialized inside TelegramProvider useEffect to ensure
+// window.Telegram.WebApp.initData is available (SDK reads tgWebAppData for auth).
+let analyticsInitialized = false;
 
 interface TelegramContextValue {
   isTelegram: boolean;
@@ -95,6 +87,19 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;
     if (!webApp || !webApp.initData) return;
+
+    // Initialize Telegram Analytics once — needs initData to be present
+    if (!analyticsInitialized) {
+      analyticsInitialized = true;
+      try {
+        TelegramAnalytics.init({
+          token: 'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',
+          appName: 'subeasy',
+        });
+      } catch (e) {
+        console.error('[TelegramAnalytics] init failed:', e);
+      }
+    }
 
     setIsTelegram(true);
     setUser(webApp.initDataUnsafe?.user);

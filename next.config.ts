@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
             // script-src: self + Telegram Mini App SDK + Vercel Analytics.
             // 'unsafe-inline' required for dangerouslySetInnerHTML init scripts
             // (theme, font-loader, splash-removal) — all are hardcoded compile-time strings.
-            "script-src 'self' 'unsafe-inline' https://telegram.org https://va.vercel-scripts.com",
+            "script-src 'self' 'unsafe-inline' blob: https://telegram.org https://va.vercel-scripts.com",
             // style-src: 'unsafe-inline' required for Tailwind/Framer Motion inline styles
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             // font-src: Google Fonts files
@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
             // frame-ancestors: allow embedding inside Telegram WebView only
             "frame-ancestors 'self' https://web.telegram.org https://t.me",
             // Hardening: no plugins, no base-tag hijacking, no unknown fallback
+            // worker-src: Telegram Analytics SDK creates Workers from Blob URLs for fingerprinting & event batching
+            "worker-src 'self' blob:",
             "object-src 'none'",
             "base-uri 'self'",
             "default-src 'none'",

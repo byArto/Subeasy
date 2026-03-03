@@ -9,11 +9,20 @@ export default function PrivacyLayout({ children }: { children: React.ReactNode 
     document.body.style.height = 'auto';
     document.documentElement.style.overflow = 'auto';
     document.documentElement.style.height = 'auto';
+    const appShell = document.querySelector('.app-shell') as HTMLElement | null;
+    if (appShell) {
+      appShell.style.overflow = 'auto';
+      appShell.style.height = 'auto';
+    }
     return () => {
       document.body.style.overflow = '';
       document.body.style.height = '';
       document.documentElement.style.overflow = '';
       document.documentElement.style.height = '';
+      if (appShell) {
+        appShell.style.overflow = '';
+        appShell.style.height = '';
+      }
     };
   }, []);
 

@@ -309,7 +309,7 @@ export function SubForm({
           )}
           style={{ background: `${color}15` }}
         >
-          {icon}
+          <ServiceLogo name={name} emoji={icon} size={48} />
         </motion.button>
 
         <AnimatePresence>

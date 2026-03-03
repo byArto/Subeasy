@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription, DisplayCurrency } from '@/lib/types';
 import { cn, sanitizeUrl, convertCurrency } from '@/lib/utils';
-import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -2074,6 +2074,7 @@ function CategoryRow({
   deleteLabelText: string;
   namePlaceholder: string;
 }) {
+  const { t } = useLanguage();
   const x = useMotionValue(0);
   const deleteOpacity = useTransform(x, [-100, -60], [1, 0]);
   const deleteScale = useTransform(x, [-100, -60], [1, 0.8]);
@@ -2157,7 +2158,9 @@ function CategoryRow({
         className="relative flex items-center gap-3 px-4 py-3.5 bg-surface-2 cursor-grab active:cursor-grabbing"
       >
         <span className="text-lg shrink-0">{cat.emoji}</span>
-        <span className="flex-1 text-sm text-text-primary font-medium">{cat.name}</span>
+        <span className="flex-1 text-sm text-text-primary font-medium">
+          {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
+        </span>
 
         <motion.button
           type="button"

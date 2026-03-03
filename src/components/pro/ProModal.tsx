@@ -326,17 +326,43 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                           </span>
                         </motion.button>
                       ) : (
-                        <div style={{ background: '#1e1e1e', borderRadius: 14, padding: '14px 16px', textAlign: 'center' }}>
-                          <span style={{ fontSize: 22, display: 'block', marginBottom: 6 }}>📱</span>
-                          <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 4px' }}>
-                            {isRu ? 'Оплата через Telegram' : 'Pay via Telegram'}
-                          </p>
-                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', margin: 0, lineHeight: 1.5 }}>
-                            {isRu
-                              ? 'Откройте SubEasy через Telegram-бота, чтобы оплатить звёздами'
-                              : 'Open SubEasy via Telegram bot to pay with Stars'}
-                          </p>
-                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => window.open('https://t.me/Subeasyapp_bot', '_blank')}
+                          style={{
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background: 'linear-gradient(135deg, #2AABEE 0%, #1a8fd1 100%)',
+                            color: '#fff',
+                            fontSize: 15,
+                            fontWeight: 900,
+                            width: '100%',
+                            padding: 16,
+                            borderRadius: 14,
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'block',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          {/* Shimmer sweep */}
+                          <motion.div
+                            animate={{ x: ['-120%', '220%'] }}
+                            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1.2 }}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '45%',
+                              height: '100%',
+                              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)',
+                              pointerEvents: 'none',
+                            }}
+                          />
+                          <span style={{ position: 'relative', zIndex: 1 }}>
+                            ✈️ {isRu ? 'Открыть в Telegram' : 'Open in Telegram'}
+                          </span>
+                        </motion.button>
                       )}
                     </div>
 

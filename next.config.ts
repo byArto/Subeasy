@@ -31,8 +31,8 @@ const nextConfig: NextConfig = {
             "font-src 'self' data: https://fonts.gstatic.com",
             // img-src: local + data URIs (emoji) + any HTTPS (subscription icons)
             "img-src 'self' data: blob: https:",
-            // connect-src: Supabase REST + Realtime, Vercel Analytics vitals
-            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+            // connect-src: Supabase REST + Realtime, Vercel Analytics vitals, Telegram Analytics
+            "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://tganalytics.xyz",
             // frame-ancestors: allow embedding inside Telegram WebView only
             "frame-ancestors 'self' https://web.telegram.org https://t.me",
             // Hardening: no plugins, no base-tag hijacking, no unknown fallback

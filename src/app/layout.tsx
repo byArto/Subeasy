@@ -44,7 +44,7 @@ export default function RootLayout({
             Loads async, initializes via onload before React renders. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `var s=document.createElement('script');s.src='https://tganalytics.xyz/index.js';s.async=true;s.onload=function(){window.telegramAnalytics.init({token:'eyJhcHBfbmFtZSI6InN1YmVhc3kiLCJhcHBfdXJsIjoiaHR0cHM6Ly90Lm1lL1N1YmVhc3lhcHBfYm90IiwiYXBwX2RvbWFpbiI6Imh0dHBzOi8vd3d3LnN1YmVhc3kub3JnLyJ9!NSdxMuIhGU0JG6Zl+KcqQWGp4KIhFXGkDif9tHac768=',appName:'subeasy'})};document.head.appendChild(s)`,
+            __html: `var s=document.createElement('script');s.src='https://tganalytics.xyz/index.js';s.async=true;s.onload=function(){window.telegramAnalytics.init({token:'eyJhcHBfbmFtZSI6InN1YmVhc3kxIiwiYXBwX3VybCI6Imh0dHBzOi8vdC5tZS9TdWJlYXN5YXBwX2JvdCIsImFwcF9kb21haW4iOiJodHRwczovL3d3dy5zdWJlYXN5Lm9yZyJ9!6kKQ837jvzP/vqLkUw9RDV2JG26pVJyrSTXzOscao18=',appName:'subeasy1'})};document.head.appendChild(s)`,
           }}
         />
         <link rel="preconnect" href="https://xmmseorpelrppnrlcxai.supabase.co" />

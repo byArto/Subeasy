@@ -34,7 +34,7 @@ export function PWAInstallPrompt() {
 
     const timer = setTimeout(() => setShow(true), 1200);
     return () => clearTimeout(timer);
-  }, [isInstalled]);
+  }, [isInstalled, isTelegram]);
 
   function handleDismiss() {
     setShow(false);

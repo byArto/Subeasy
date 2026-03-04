@@ -6,7 +6,6 @@ import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import { ProProvider } from '@/components/providers/ProProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { WorkspaceProvider } from '@/components/providers/WorkspaceProvider';
-import { TonConnectProvider } from '@/components/providers/TonConnectProvider';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -122,23 +121,21 @@ export default function RootLayout({
             __html: `window.__removeSplash=function(){var s=document.getElementById('pre-splash');if(s){s.style.opacity='0';setTimeout(function(){s.remove()},300)}}`,
           }}
         />
-        <TonConnectProvider>
-          <TelegramProvider>
-            <ThemeProvider>
-              <LanguageProvider>
-                <AuthProvider>
-                  <ProProvider>
-                    <WorkspaceProvider>
-                      <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
-                        {children}
-                      </div>
-                    </WorkspaceProvider>
-                  </ProProvider>
-                </AuthProvider>
-              </LanguageProvider>
-            </ThemeProvider>
-          </TelegramProvider>
-        </TonConnectProvider>
+        <TelegramProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AuthProvider>
+                <ProProvider>
+                  <WorkspaceProvider>
+                    <div className="app-shell w-full max-w-[430px] mx-auto flex-1">
+                      {children}
+                    </div>
+                  </WorkspaceProvider>
+                </ProProvider>
+              </AuthProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </TelegramProvider>
         <Analytics />
       </body>
     </html>

@@ -24,13 +24,16 @@ function getRedis(): Redis | null {
   return _redis;
 }
 
-async function getLang(chatId: number): Promise<Lang> {
+async function getLang(chatId: number, tgLangCode?: string): Promise<Lang> {
   try {
     const r = getRedis();
-    if (!r) return 'en';
-    const v = await r.get<string>(`bot_lang:${chatId}`);
-    return v === 'ru' ? 'ru' : 'en';
-  } catch { return 'en'; }
+    if (r) {
+      const v = await r.get<string>(`bot_lang:${chatId}`);
+      if (v === 'ru' || v === 'en') return v;
+    }
+  } catch { /* fall through to auto-detect */ }
+  // Auto-detect from Telegram profile language when no explicit preference set
+  return tgLangCode?.startsWith('ru') ? 'ru' : 'en';
 }
 
 async function setLang(chatId: number, lang: Lang): Promise<void> {
@@ -513,11 +516,13 @@ export async function POST(req: NextRequest) {
 
   // ── Message commands ──
   if (update.message?.text) {
-    const msg    = update.message as Record<string, unknown>;
-    const chatId = (msg.chat as Record<string, unknown>).id as number;
-    const userId = (msg.from as Record<string, unknown>).id as number;
-    const text   = msg.text as string;
-    const lang   = await getLang(chatId);
+    const msg        = update.message as Record<string, unknown>;
+    const chatId     = (msg.chat as Record<string, unknown>).id as number;
+    const from       = msg.from as Record<string, unknown>;
+    const userId     = from.id as number;
+    const tgLangCode = from.language_code as string | undefined;
+    const text       = msg.text as string;
+    const lang       = await getLang(chatId, tgLangCode);
 
     // Reply keyboard button texts (must come before command checks)
     if (text === '👑 Get PRO' || text === '👑 Получить PRO')      { await cmdPro(chatId, lang); }
@@ -543,9 +548,10 @@ export async function POST(req: NextRequest) {
     const msg    = cb.message as Record<string, unknown>;
     const chatId = (msg.chat as Record<string, unknown>).id as number;
     const msgId  = msg.message_id as number;
-    const from   = cb.from as Record<string, unknown>;
-    const userId = from.id as number;
-    const lang   = await getLang(chatId);
+    const from       = cb.from as Record<string, unknown>;
+    const userId     = from.id as number;
+    const tgLangCode = from.language_code as string | undefined;
+    const lang       = await getLang(chatId, tgLangCode);
 
     await answerCB(cbId); // acknowledge immediately
 
@@ -562,9 +568,8 @@ export async function POST(req: NextRequest) {
           ]],
         },
       });
-      // Send updated persistent keyboard in new message
-      const updateKbText = newLang === 'en' ? '⌨️ Keyboard updated' : '⌨️ Клавиатура обновлена';
-      await send(chatId, updateKbText, { reply_markup: replyKeyboard(newLang) });
+      // Re-send start message in new language so the keyboard and all text refresh
+      await cmdStart(chatId, newLang);
     }
 
     // pro — show plan selector
@@ -610,17 +615,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  await tg('setMyCommands', {
-    commands: [
-      { command: 'start',       description: '🚀 Open SubEasy' },
-      { command: 'pro',         description: '👑 Get PRO access' },
-      { command: 'status',      description: '📊 My account status' },
-      { command: 'language',    description: '🌐 Switch language / Сменить язык' },
-      { command: 'help',        description: '❓ Help & commands' },
-      { command: 'support',     description: '💬 Contact support' },
-      { command: 'delete_data', description: '🗑 Delete my data' },
-    ],
-  });
+  const enCommands = [
+    { command: 'start',       description: '🚀 Open SubEasy' },
+    { command: 'pro',         description: '👑 Get PRO access' },
+    { command: 'status',      description: '📊 My account status' },
+    { command: 'language',    description: '🌐 Switch language / Сменить язык' },
+    { command: 'help',        description: '❓ Help & commands' },
+    { command: 'support',     description: '💬 Contact support' },
+    { command: 'delete_data', description: '🗑 Delete my data' },
+  ];
+  const ruCommands = [
+    { command: 'start',       description: '🚀 Открыть SubEasy' },
+    { command: 'pro',         description: '👑 Получить PRO доступ' },
+    { command: 'status',      description: '📊 Статус аккаунта' },
+    { command: 'language',    description: '🌐 Сменить язык / Switch language' },
+    { command: 'help',        description: '❓ Помощь и команды' },
+    { command: 'support',     description: '💬 Написать в поддержку' },
+    { command: 'delete_data', description: '🗑 Удалить мои данные' },
+  ];
 
-  return NextResponse.json({ ok: true, message: 'Bot commands registered ✓' });
+  await Promise.all([
+    tg('setMyCommands', { commands: enCommands }),
+    tg('setMyCommands', { commands: enCommands, language_code: 'en' }),
+    tg('setMyCommands', { commands: ruCommands, language_code: 'ru' }),
+  ]);
+
+  return NextResponse.json({ ok: true, message: 'Bot commands registered ✓ (EN + RU)' });
 }

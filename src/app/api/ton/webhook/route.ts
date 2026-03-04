@@ -81,16 +81,22 @@ export async function POST(req: NextRequest) {
     const valueNano = Number(inMsg.value ?? inMsg.amount ?? 0);
     const txHash = String(txObj.hash ?? txObj.tx_hash ?? txObj.txHash ?? '');
 
-    // Find the pending payment by memo
+    // Find the pending non-expired payment by memo
     const { data: payment, error } = await supabase
       .from('ton_payments')
-      .select('id, user_id, plan, amount_nano, status')
+      .select('id, user_id, plan, amount_nano, status, expires_at')
       .eq('memo', memo)
       .eq('status', 'pending')
       .maybeSingle();
 
     if (error || !payment) {
       console.warn('[ton/webhook] no pending payment for memo:', memo);
+      continue;
+    }
+
+    // Reject if payment window expired (allow 1h grace period for slow blocks)
+    if (payment.expires_at && new Date(payment.expires_at) < new Date(Date.now() - 60 * 60 * 1000)) {
+      console.warn('[ton/webhook] payment expired for memo:', memo);
       continue;
     }
 
@@ -117,10 +123,15 @@ export async function POST(req: NextRequest) {
     if (!profile) continue;
 
     const proUntil = calcProUntil(payment.plan, profile.pro_until ?? null);
-    await supabase
+    const { error: updateError } = await supabase
       .from('profiles')
       .update({ is_pro: true, pro_until: proUntil })
       .eq('id', profile.id);
+
+    if (updateError) {
+      console.error('[ton/webhook] CRITICAL: payment paid but PRO activation failed for user:', profile.id, updateError.message);
+      continue;
+    }
 
     console.log('[ton/webhook] PRO activated for user:', profile.id, 'plan:', payment.plan);
 

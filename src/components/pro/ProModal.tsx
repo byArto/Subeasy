@@ -1,11 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { createClient } from '@/lib/supabase';
+
+const TonPayButton = dynamic(
+  () => import('./TonPayButton').then((m) => m.TonPayButton),
+  { ssr: false, loading: () => null },
+);
 
 type Plan = 'monthly' | 'yearly' | 'lifetime';
 
@@ -372,6 +378,25 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                     <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: '8px 0 0' }}>
                       {isRu ? 'Мгновенная активация · Telegram Stars' : 'Instant activation · Telegram Stars'}
                     </p>
+
+                    {/* TON crypto payment option */}
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>
+                          {isRu ? 'или' : 'or'}
+                        </span>
+                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                      </div>
+                      <TonPayButton
+                        plan={selectedPlan}
+                        isRu={isRu}
+                        onSuccess={() => {
+                          setPaid(true);
+                          setTimeout(() => { refreshProStatus(); }, 1500);
+                        }}
+                      />
+                    </div>
                     <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '6px 0 0', lineHeight: 1.6 }}>
                       {isRu ? 'Оплачивая, вы соглашаетесь с ' : 'By paying you agree to the '}
                       <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(245,200,66,0.5)', textDecoration: 'underline' }}>

@@ -122,14 +122,29 @@ function kbOpen(lang: Lang) {
   return { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } };
 }
 
+function replyKeyboard(lang: Lang) {
+  return {
+    keyboard: [
+      [
+        { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } },
+        { text: lang === 'en' ? '👑 Get PRO' : '👑 Получить PRO' },
+      ],
+      [
+        { text: lang === 'en' ? '📊 My Status' : '📊 Мой статус' },
+        { text: lang === 'en' ? '🌐 Language' : '🌐 Язык' },
+      ],
+    ],
+    resize_keyboard: true,
+    persistent: true,
+  };
+}
+
 function proKeyboard(lang: Lang) {
   return {
     inline_keyboard: [
-      [
-        { text: `${lang === 'en' ? 'Month' : 'Месяц'} · 249 ⭐`,        callback_data: 'plan:monthly'  },
-        { text: `${lang === 'en' ? 'Year −40%' : 'Год −40%'} · 1799 ⭐`, callback_data: 'plan:yearly'   },
-        { text: `${lang === 'en' ? 'Forever' : 'Навсегда'} · 2999 ⭐`,   callback_data: 'plan:lifetime' },
-      ],
+      [{ text: `${lang === 'en' ? 'Monthly' : 'Месяц'} · 249 ⭐`,          callback_data: 'plan:monthly'  }],
+      [{ text: `${lang === 'en' ? 'Yearly −40%' : 'Год −40%'} · 1799 ⭐`,  callback_data: 'plan:yearly'   }],
+      [{ text: `${lang === 'en' ? 'Lifetime' : 'Навсегда'} · 2999 ⭐`,     callback_data: 'plan:lifetime' }],
     ],
   };
 }
@@ -152,14 +167,7 @@ async function cmdStart(chatId: number, lang: Lang) {
     ? '👋 <b>Welcome to SubEasy!</b>\n\nTrack all your subscriptions in one place — never miss a renewal.\n\n💡 Add subscriptions, set budgets, get reminders before charges.'
     : '👋 <b>Добро пожаловать в SubEasy!</b>\n\nВсе подписки в одном месте — никогда не пропустите списание.\n\n💡 Добавляйте подписки, устанавливайте бюджеты, получайте напоминания.';
 
-  await send(chatId, text, {
-    reply_markup: {
-      inline_keyboard: [[
-        kbOpen(lang),
-        { text: lang === 'en' ? '👑 Get PRO' : '👑 Получить PRO', callback_data: 'pro' },
-      ]],
-    },
-  });
+  await send(chatId, text, { reply_markup: replyKeyboard(lang) });
 }
 
 // ─── Command: /pro (also used as callback) ────────────────────────────────────
@@ -511,11 +519,16 @@ export async function POST(req: NextRequest) {
     const text   = msg.text as string;
     const lang   = await getLang(chatId);
 
-    if (text.startsWith('/start'))       { await cmdStart(chatId, lang); }
-    else if (text.startsWith('/pro'))    { await cmdPro(chatId, lang); }
-    else if (text.startsWith('/status')) { await cmdStatus(chatId, userId, lang); }
+    // Reply keyboard button texts (must come before command checks)
+    if (text === '👑 Get PRO' || text === '👑 Получить PRO')      { await cmdPro(chatId, lang); }
+    else if (text === '📊 My Status' || text === '📊 Мой статус') { await cmdStatus(chatId, userId, lang); }
+    else if (text === '🌐 Language' || text === '🌐 Язык')         { await cmdLanguage(chatId, lang); }
+    // Commands
+    else if (text.startsWith('/start'))       { await cmdStart(chatId, lang); }
+    else if (text.startsWith('/pro'))         { await cmdPro(chatId, lang); }
+    else if (text.startsWith('/status'))      { await cmdStatus(chatId, userId, lang); }
     else if (text.startsWith('/language') || text.startsWith('/lang')) { await cmdLanguage(chatId, lang); }
-    else if (text.startsWith('/help'))   { await cmdHelp(chatId, lang); }
+    else if (text.startsWith('/help'))        { await cmdHelp(chatId, lang); }
     else if (text.startsWith('/support') || text.startsWith('/paysupport')) { await cmdSupport(chatId, lang); }
     else if (text.startsWith('/delete_data')) { await cmdDeleteData(chatId, lang); }
 
@@ -549,6 +562,9 @@ export async function POST(req: NextRequest) {
           ]],
         },
       });
+      // Send updated persistent keyboard in new message
+      const updateKbText = newLang === 'en' ? '⌨️ Keyboard updated' : '⌨️ Клавиатура обновлена';
+      await send(chatId, updateKbText, { reply_markup: replyKeyboard(newLang) });
     }
 
     // pro — show plan selector

@@ -11,6 +11,7 @@ import {
   pushCategories,
   pushSettings,
 } from '@/lib/sync';
+import { DEFAULT_CATEGORIES } from '@/lib/constants';
 
 interface SyncSetters {
   setSubscriptions: (subs: Subscription[]) => void;
@@ -53,9 +54,10 @@ export function useSync(
 
     async function doInitialSync() {
       try {
-        // When switching accounts, never merge previous user's local data
+        // When switching accounts, never merge previous user's local data (subscriptions)
+        // But always seed DEFAULT_CATEGORIES so the new user gets defaults if their DB is empty
         const localSubsToSync = switchingAccounts ? [] : subscriptions;
-        const localCatsToSync = switchingAccounts ? [] : categories;
+        const localCatsToSync = switchingAccounts ? DEFAULT_CATEGORIES : categories;
 
         const [mergedSubs, mergedCats, mergedSettings] = await Promise.all([
           syncSubscriptions(user!.id, localSubsToSync),

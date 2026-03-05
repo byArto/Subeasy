@@ -12,6 +12,16 @@ export function useCategories() {
     DEFAULT_CATEGORIES
   );
 
+  // Recovery: if categories ended up empty (e.g. bad sync on account switch), restore defaults
+  const recovered = useRef(false);
+  useEffect(() => {
+    if (recovered.current) return;
+    recovered.current = true;
+    if (!Array.isArray(categories) || categories.length === 0) {
+      setCategories(DEFAULT_CATEGORIES);
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
   // Migration: rename VPN/Безопасность → VPN/Proxy
   const migrated = useRef(false);
   useEffect(() => {

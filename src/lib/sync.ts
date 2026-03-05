@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase';
 import type { Subscription, Category, AppSettings, Workspace, WorkspaceMember } from '@/lib/types';
+import { DEFAULT_CATEGORIES } from '@/lib/constants';
 
 const supabase = () => createClient();
 
@@ -122,6 +123,15 @@ export async function syncCategories(
   for (const local of localCats) {
     if (!remoteMap.has(local.id)) {
       merged.push(local);
+    }
+  }
+
+  // Always ensure DEFAULT_CATEGORIES are present — prevents perpetual empty state
+  // (can happen when localStorage and DB are both empty after an account switch)
+  const mergedIds = new Set(merged.map((c) => c.id));
+  for (const def of DEFAULT_CATEGORIES) {
+    if (!mergedIds.has(def.id)) {
+      merged.push(def);
     }
   }
 

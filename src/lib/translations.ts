@@ -347,6 +347,9 @@ const dict: Translations = {
   'auth.otp.error.codeEmpty': { ru: 'Введите код из письма', en: 'Enter the code from email' },
   'auth.otp.error.invalid': { ru: 'Неверный или истёкший код', en: 'Invalid or expired code' },
   'auth.otp.error.rateLimit': { ru: 'Слишком много попыток, подождите', en: 'Too many attempts, please wait' },
+  'auth.telegram.or': { ru: 'или', en: 'or' },
+  'auth.telegram.cta': { ru: 'Открыть в Telegram', en: 'Open in Telegram' },
+  'auth.telegram.hint': { ru: 'Быстрее, без email и пароля', en: 'Faster — no email or password' },
 
   // ── Month names (short) ──
   'month.jan': { ru: 'Янв', en: 'Jan' },

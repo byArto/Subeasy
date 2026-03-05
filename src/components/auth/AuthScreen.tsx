@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 type Step = 'email' | 'code';
 
 export function AuthScreen() {
   const { sendOtp, verifyOtp, setSkipAuth } = useAuth();
   const { t, lang, setLang } = useLanguage();
+  const { isTelegram } = useTelegramContext();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -274,6 +276,33 @@ export function AuthScreen() {
           </motion.form>
         )}
       </AnimatePresence>
+
+      {/* Telegram CTA — only in browser (not inside Telegram) */}
+      {!isTelegram && step === 'email' && (
+        <div className="w-full mt-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-border-subtle" />
+            <span className="text-xs text-text-muted">{t('auth.telegram.or')}</span>
+            <div className="flex-1 h-px bg-border-subtle" />
+          </div>
+          <a
+            href="https://t.me/Subeasyapp_bot"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-150 active:scale-[0.97]"
+            style={{ background: '#2AABEE' }}
+          >
+            {/* Telegram logo */}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+            </svg>
+            {t('auth.telegram.cta')}
+          </a>
+          <p className="text-[11px] text-text-muted text-center mt-2">
+            {t('auth.telegram.hint')}
+          </p>
+        </div>
+      )}
 
       {/* Skip auth */}
       <div className="absolute bottom-10 flex flex-col items-center gap-1.5">

@@ -349,7 +349,7 @@ const dict: Translations = {
   'auth.otp.error.rateLimit': { ru: 'Слишком много попыток, подождите', en: 'Too many attempts, please wait' },
   'auth.telegram.or': { ru: 'или', en: 'or' },
   'auth.telegram.cta': { ru: 'Открыть в Telegram', en: 'Open in Telegram' },
-  'auth.telegram.hint': { ru: 'Быстрее, без email и пароля', en: 'Faster — no email or password' },
+  'auth.telegram.hint': { ru: 'В mini app удобнее', en: 'В mini app удобнее' },
 
   // ── Month names (short) ──
   'month.jan': { ru: 'Янв', en: 'Jan' },

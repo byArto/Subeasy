@@ -57,11 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Step 1 — send 6-digit OTP to email */
   const sendOtp = useCallback(async (email: string) => {
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true },
-    });
-    if (error) return { error: translateAuthError(error.message) };
+    // Retry once on network-level failures (e.g. iOS PWA "Load failed")
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
+      });
+      if (!error) return { error: null };
+      const isNetworkError = error.message === 'Load failed' || error.message.includes('fetch') || error.message.includes('network');
+      if (!isNetworkError || attempt === 1) return { error: translateAuthError(error.message) };
+      await new Promise(r => setTimeout(r, 800));
+    }
     return { error: null };
   }, []);
 

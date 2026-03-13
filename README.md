@@ -1,4 +1,4 @@
-# SubEasy — Subscription Tracker
+# SubEasy - Subscription Tracker
 
 > Track all your subscriptions in one place. Never miss a payment.
 
@@ -15,15 +15,15 @@ SubEasy is a Telegram Mini App + PWA for managing recurring subscriptions and pa
 
 ## Features
 
-- **Subscription tracking** — add any subscription with price, currency, billing cycle, and next payment date
-- **Multi-currency support** — display everything in your preferred currency with live exchange rates
-- **Categories & icons** — organize subscriptions with custom categories
-- **Shared workspaces** — track subscriptions together with family or teammates
-- **PRO via TON / Telegram Stars** — in-app payments with no external checkout
-- **Telegram Bot** — get notified about upcoming payments directly in Telegram
-- **Daily reminders** — cron-based push notifications at 6 AM UTC
+- **Subscription tracking** - add any subscription with price, currency, billing cycle, and next payment date
+- **Multi-currency support** - display everything in your preferred currency with live exchange rates
+- **Categories & icons** - organize subscriptions with custom categories
+- **Shared workspaces** - track subscriptions together with family or teammates
+- **PRO via TON / Telegram Stars** - in-app payments with no external checkout
+- **Telegram Bot** - get notified about upcoming payments directly in Telegram
+- **Daily reminders** - cron-based push notifications at 6 AM UTC
 - **PWA** — installable on iOS 16.4+ and Android, works offline
-- **Dark cyberpunk UI** — neon green on black, optimized for mobile
+- **Dark cyberpunk UI** - neon green on black, optimized for mobile
 
 ---
 

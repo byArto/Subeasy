@@ -3,7 +3,9 @@ import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
 
 const WEBHOOK_SECRET = process.env.TONCONSOLE_WEBHOOK_SECRET;
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+import { env } from '@/lib/env';
+
+const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 
 function calcProUntil(plan: string, currentProUntil: string | null): string | null {
   if (plan === 'lifetime') return null;
@@ -17,7 +19,7 @@ function calcProUntil(plan: string, currentProUntil: string | null): string | nu
 }
 
 async function sendTelegramMessage(chatId: number, text: string) {
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN()}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),

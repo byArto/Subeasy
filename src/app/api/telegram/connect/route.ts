@@ -4,7 +4,9 @@ import { createServiceClient } from '@/lib/supabase-server';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { checkRateLimit } from '@/lib/ratelimit';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+import { env, requireEnv } from '@/lib/env';
+
+const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 // Reject initData older than 24 hours
 const MAX_AGE_SECONDS = 86_400;
 
@@ -31,7 +33,7 @@ function validateInitData(initData: string): number | null {
       return null;
     }
 
-    const secretKey = createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
+    const secretKey = createHmac('sha256', 'WebAppData').update(BOT_TOKEN()).digest();
     const expectedHash = createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
     // Constant-time comparison to prevent timing attacks
@@ -60,8 +62,8 @@ export async function POST(req: NextRequest) {
   }
 
   const supabaseAnon = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
   );
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {

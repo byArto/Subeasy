@@ -5,7 +5,9 @@ import { generateReportHtml } from '@/lib/reportHtml';
 import { checkRateLimit } from '@/lib/ratelimit';
 import type { Subscription, Category, AppSettings } from '@/lib/types';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+import { env, requireEnv } from '@/lib/env';
+
+const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function dbToSubscription(row: any): Subscription {
@@ -38,8 +40,8 @@ export async function POST(req: NextRequest) {
   }
 
   const supabaseAnon = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
   );
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest) {
   form.append('document', new Blob([html], { type: 'text/html' }), filename);
 
   const tgRes = await fetch(
-    `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`,
+    `https://api.telegram.org/bot${BOT_TOKEN()}/sendDocument`,
     { method: 'POST', body: form },
   );
 

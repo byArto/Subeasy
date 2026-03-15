@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { NextRequest } from 'next/server';
+import { requireEnv } from './env';
 
 /**
  * Service-role Supabase client for server-side API routes and cron jobs.
@@ -7,8 +8,8 @@ import type { NextRequest } from 'next/server';
  */
 export function createServiceClient() {
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
 }
@@ -23,8 +24,8 @@ export async function verifyAuth(req: NextRequest): Promise<{ id: string } | nul
   if (!token) return null;
 
   const supabaseAnon = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
+    requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     { auth: { autoRefreshToken: false, persistSession: false } },
   );
   const { data: { user }, error } = await supabaseAnon.auth.getUser(token);

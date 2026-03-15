@@ -3,7 +3,9 @@ import { beginCell } from '@ton/core';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
 import { checkRateLimit } from '@/lib/ratelimit';
 
-const MERCHANT_WALLET = process.env.TON_WALLET_ADDRESS!;
+import { env } from '@/lib/env';
+
+const MERCHANT_WALLET = env('TON_WALLET_ADDRESS');
 
 const PLAN_USD = {
   monthly:  2.99,
@@ -73,7 +75,7 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({
-    address:     MERCHANT_WALLET,
+    address:     MERCHANT_WALLET(),
     amount_nano: nanoAmount.toString(),
     payload,
     memo,

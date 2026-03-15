@@ -3,9 +3,11 @@ import { timingSafeEqual } from 'crypto';
 import { Redis } from '@upstash/redis';
 import { createServiceClient } from '@/lib/supabase-server';
 
-const BOT_TOKEN       = process.env.TELEGRAM_BOT_TOKEN!;
-const WEBHOOK_SECRET  = process.env.TELEGRAM_WEBHOOK_SECRET!;
-const MERCHANT_WALLET = process.env.TON_WALLET_ADDRESS!;
+import { env } from '@/lib/env';
+
+const BOT_TOKEN       = env('TELEGRAM_BOT_TOKEN');
+const WEBHOOK_SECRET  = env('TELEGRAM_WEBHOOK_SECRET');
+const MERCHANT_WALLET = env('TON_WALLET_ADDRESS');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -68,7 +70,7 @@ const VALID_PLANS = new Set(['pro_monthly', 'pro_yearly', 'pro_lifetime']);
 // ─── Telegram API ─────────────────────────────────────────────────────────────
 
 async function tg(method: string, body: object) {
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN()}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -341,17 +343,17 @@ async function cbTon(chatId: number, telegramId: number, plan: Plan, lang: Lang)
     status:      'pending',
   });
 
-  const tonkeeperUrl = `https://app.tonkeeper.com/transfer/${MERCHANT_WALLET}?amount=${nanoAmount}&text=${encodeURIComponent(memo)}`;
+  const tonkeeperUrl = `https://app.tonkeeper.com/transfer/${MERCHANT_WALLET()}?amount=${nanoAmount}&text=${encodeURIComponent(memo)}`;
   const label = PLAN_LABEL[plan][lang];
 
   const text = lang === 'en'
     ? `💎 <b>TON Payment · PRO ${label}</b>\n\n` +
-      `Send <b>exactly ${tonAmount} TON</b> to:\n<code>${MERCHANT_WALLET}</code>\n\n` +
+      `Send <b>exactly ${tonAmount} TON</b> to:\n<code>${MERCHANT_WALLET()}</code>\n\n` +
       `<b>⚠️ Comment (REQUIRED):</b>\n<code>${memo}</code>\n\n` +
       `Without the comment your payment cannot be confirmed!\n\n` +
       `⏱ Valid for 30 minutes`
     : `💎 <b>Оплата TON · PRO ${label}</b>\n\n` +
-      `Отправьте <b>ровно ${tonAmount} TON</b> на адрес:\n<code>${MERCHANT_WALLET}</code>\n\n` +
+      `Отправьте <b>ровно ${tonAmount} TON</b> на адрес:\n<code>${MERCHANT_WALLET()}</code>\n\n` +
       `<b>⚠️ Комментарий (ОБЯЗАТЕЛЬНО):</b>\n<code>${memo}</code>\n\n` +
       `Без комментария платёж не будет подтверждён!\n\n` +
       `⏱ Действует 30 минут`;
@@ -484,9 +486,9 @@ export async function POST(req: NextRequest) {
   const secret = req.headers.get('x-telegram-bot-api-secret-token');
   const valid  = (() => {
     try {
-      if (!WEBHOOK_SECRET || !secret) return false;
+      if (!secret) return false;
       const a = Buffer.from(secret);
-      const b = Buffer.from(WEBHOOK_SECRET);
+      const b = Buffer.from(WEBHOOK_SECRET());
       return a.length === b.length && timingSafeEqual(a, b);
     } catch { return false; }
   })();
@@ -611,7 +613,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
-  if (!token || token !== WEBHOOK_SECRET) {
+  if (!token || token !== WEBHOOK_SECRET()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

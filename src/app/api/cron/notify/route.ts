@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase-server';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { env } from '@/lib/env';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-const CRON_SECRET = process.env.CRON_SECRET!;
+const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
+const CRON_SECRET = env('CRON_SECRET');
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subeasy.org';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ function buildMessage(
 }
 
 async function sendTelegramMessage(chatId: number, text: string, lang: string) {
-  return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+  return fetch(`https://api.telegram.org/bot${BOT_TOKEN()}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -130,7 +131,7 @@ async function sendTelegramMessage(chatId: number, text: string, lang: string) {
 export async function GET(req: NextRequest) {
   // Validate Vercel cron secret
   const auth = req.headers.get('authorization');
-  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
+  if (auth !== `Bearer ${CRON_SECRET()}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase-server';
+import { env } from '@/lib/env';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-const WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET!;
+const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
+const WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET');
 
 export async function POST(req: NextRequest) {
   // Admin-only: protected by the same webhook secret
   const secret = req.headers.get('x-admin-secret');
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+  if (secret !== WEBHOOK_SECRET()) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Refund Stars via Telegram API
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/refundStarPayment`, {
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN()}/refundStarPayment`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

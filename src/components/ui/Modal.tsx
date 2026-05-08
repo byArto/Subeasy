@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
@@ -54,7 +55,7 @@ export function Modal({
     }
   };
 
-  return (
+  const modal = (
     <AnimatePresence>
       {open && (
         <>
@@ -65,7 +66,7 @@ export function Modal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm"
           />
 
           {/* Sheet */}
@@ -80,7 +81,7 @@ export function Modal({
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={handleDragEnd}
             className={cn(
-              'fixed bottom-0 left-0 right-0 z-50',
+              'fixed bottom-0 left-0 right-0 z-[120]',
               'mx-auto max-w-[430px]',
               'bg-surface-2 rounded-t-2xl',
               'border-t border-x border-border-subtle',
@@ -122,4 +123,8 @@ export function Modal({
       )}
     </AnimatePresence>
   );
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(modal, document.body);
 }

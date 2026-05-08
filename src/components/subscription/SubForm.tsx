@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { Subscription, Currency, BillingCycle, Category, AppSettings } from '@/lib/types';
+import { Subscription, Currency, BillingCycle, Category, AppSettings, CycleAnchor } from '@/lib/types';
 import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency, calcNextPaymentFromStart } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
@@ -138,6 +138,7 @@ export function SubForm({
   const [price, setPrice] = useState(initialData?.price?.toString() || serviceTemplate?.defaultPrice?.toString() || '');
   const [currency, setCurrency] = useState<Currency>(initialData?.currency || serviceTemplate?.defaultCurrency || 'RUB');
   const [cycle, setCycle] = useState<BillingCycle>(initialData?.cycle || serviceTemplate?.cycle || 'monthly');
+  const [cycleAnchor, setCycleAnchor] = useState<CycleAnchor>(initialData?.cycleAnchor || 'date');
   const [category, setCategory] = useState(initialData?.category || serviceTemplate?.categoryId || '');
   const [nextPaymentDate, setNextPaymentDate] = useState(
     initialData?.nextPaymentDate || new Date().toISOString().split('T')[0]
@@ -162,8 +163,8 @@ export function SubForm({
   useEffect(() => {
     if (skipFirst.current) { skipFirst.current = false; return; }
     if (cycle === 'one-time' || cycle === 'trial') return;
-    setNextPaymentDate(calcNextPaymentFromStart(startDate, cycle));
-  }, [startDate, cycle]); // eslint-disable-line react-hooks/exhaustive-deps
+    setNextPaymentDate(calcNextPaymentFromStart(startDate, cycle, cycleAnchor));
+  }, [startDate, cycle, cycleAnchor]); // eslint-disable-line react-hooks/exhaustive-deps
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -174,10 +175,20 @@ export function SubForm({
   const [dupWarning, setDupWarning] = useState<Subscription | null>(null);
   const [budgetOverBy, setBudgetOverBy] = useState<number | null>(null);
 
+  function clearError(field: keyof FormErrors) {
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }
+
   /* ── Service autocomplete ── */
 
   function handleNameChange(value: string) {
     setName(value);
+    clearError('name');
     if (dupWarning) setDupWarning(null);
     if (budgetOverBy !== null) setBudgetOverBy(null);
     if (mode === 'add' && value.length >= 1) {
@@ -195,6 +206,13 @@ export function SubForm({
     setCurrency(svc.defaultCurrency);
     setCycle(svc.cycle);
     setCategory(svc.categoryId);
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.name;
+      delete next.price;
+      delete next.category;
+      return next;
+    });
     setSuggestions([]);
   }
 
@@ -259,6 +277,7 @@ export function SubForm({
       currency,
       category,
       cycle,
+      cycleAnchor: (cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly') ? cycleAnchor : undefined,
       nextPaymentDate,
       startDate,
       paymentMethod: encodePaymentMethod(paymentType, cardType, paymentDetail),
@@ -482,7 +501,10 @@ export function SubForm({
             type="number"
             inputMode="decimal"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => {
+              setPrice(e.target.value);
+              clearError('price');
+            }}
             placeholder={cycle === 'trial' ? '0 (бесплатно)' : '0'}
             className={cn(
               'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
@@ -531,7 +553,10 @@ export function SubForm({
               key={c}
               type="button"
               whileTap={{ scale: 0.93 }}
-              onClick={() => setCycle(c)}
+              onClick={() => {
+                setCycle(c);
+                clearError('price');
+              }}
               className={cn(
                 'min-h-[36px] px-3 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap',
                 cycle === c
@@ -551,6 +576,35 @@ export function SubForm({
             </motion.button>
           ))}
         </div>
+
+        {/* Cycle anchor: same date vs every N days. Only for recurring cycles. */}
+        {(cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly') && (
+          <div className="mt-2.5 flex gap-1.5">
+            {([
+              { value: 'date' as const, label: t('form.anchor.date') },
+              { value: 'days' as const, label: cycle === 'quarterly'
+                  ? t('form.anchor.days91')
+                  : cycle === 'yearly'
+                    ? t('form.anchor.days365')
+                    : t('form.anchor.days30') },
+            ]).map((a) => (
+              <motion.button
+                key={a.value}
+                type="button"
+                whileTap={{ scale: 0.93 }}
+                onClick={() => setCycleAnchor(a.value)}
+                className={cn(
+                  'flex-1 min-h-[36px] rounded-xl text-[11px] font-semibold transition-colors px-2',
+                  cycleAnchor === a.value
+                    ? 'bg-surface-4 text-text-primary border border-neon/30'
+                    : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
+                )}
+              >
+                {a.label}
+              </motion.button>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* ── Start Date ── */}
@@ -585,7 +639,10 @@ export function SubForm({
         <input
           type="date"
           value={nextPaymentDate}
-          onChange={(e) => setNextPaymentDate(e.target.value)}
+          onChange={(e) => {
+            setNextPaymentDate(e.target.value);
+            clearError('nextPaymentDate');
+          }}
           className={cn(
             'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
             'outline-none transition-all duration-200',
@@ -826,7 +883,10 @@ export function SubForm({
                         key={cat.id}
                         type="button"
                         whileTap={{ scale: 0.93 }}
-                        onClick={() => setCategory(cat.id)}
+                        onClick={() => {
+                          setCategory(cat.id);
+                          clearError('category');
+                        }}
                         className={cn(
                           'flex items-center gap-1.5 min-h-[36px] px-3 rounded-full text-xs font-semibold transition-colors',
                           category === cat.id

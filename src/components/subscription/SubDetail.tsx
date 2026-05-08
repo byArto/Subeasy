@@ -21,6 +21,10 @@ interface SubDetailProps {
   onToggleActive: () => void;
   onMarkPaid?: () => void;
   onDelete: () => void;
+  /** Convert an expired trial to a paid subscription with the given monthly price. */
+  onConvertTrial?: (monthlyPrice: number) => void;
+  /** Renew an expired one-time subscription (sets a new payment date). */
+  onRenewOneTime?: () => void;
 }
 
 /* ── Helpers ── */
@@ -203,6 +207,8 @@ export function SubDetail({
   onToggleActive,
   onMarkPaid,
   onDelete,
+  onConvertTrial,
+  onRenewOneTime,
 }: SubDetailProps) {
   const { t, lang } = useLanguage();
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
@@ -250,6 +256,17 @@ export function SubDetail({
   }, []);
 
   const isTrial = sub.cycle === 'trial';
+  const isOneTime = sub.cycle === 'one-time';
+  const isExpired = sub.isActive && days < 0;
+  const showTrialEndPrompt = isTrial && isExpired && !!onConvertTrial;
+  const showOneTimeEndPrompt = isOneTime && isExpired && !!onRenewOneTime;
+
+  // Pre-fill trial-end price input with the price the user typed when adding the trial
+  // (if any). Empty string means "user has not entered anything yet".
+  const [trialPriceInput, setTrialPriceInput] = useState<string>(
+    sub.price > 0 ? String(sub.price) : ''
+  );
+
   const costPerDay = getCostPerDay(sub);
 
   const cycleSuffix = CYCLE_SUFFIX_KEY[sub.cycle] ? t(CYCLE_SUFFIX_KEY[sub.cycle]) : '';
@@ -449,35 +466,132 @@ export function SubDetail({
 
       {/* ── Actions ── */}
       <div className="space-y-2.5 pt-1">
-        {/* Mark Paid — only for overdue recurring subs */}
-        {onMarkPaid && sub.isActive && days < 0 && sub.cycle !== 'one-time' && (
-          <motion.div custom={0} variants={btnVariants} initial="hidden" animate="visible">
-            <Button fullWidth variant="primary" size="lg" onClick={onMarkPaid}>
-              <span className="flex items-center justify-center gap-2">
-                {t('payment.markPaid')}
-              </span>
-            </Button>
+        {/* Trial expired — ask for monthly price or delete */}
+        {showTrialEndPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="rounded-2xl px-4 py-4 space-y-3"
+            style={{ background: 'rgba(100,130,255,0.08)', border: '1px solid rgba(100,130,255,0.25)' }}
+          >
+            <div>
+              <p className="text-sm font-bold text-text-primary">{t('trial.end.title')}</p>
+              <p className="text-xs text-text-muted mt-0.5">{t('trial.end.desc')}</p>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={trialPriceInput}
+                onChange={(e) => setTrialPriceInput(e.target.value)}
+                placeholder={t('trial.end.pricePlaceholder')}
+                className={cn(
+                  'flex-1 min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
+                  'outline-none transition-all duration-200 placeholder:text-text-muted/50',
+                  'border-border-subtle focus:border-neon/40',
+                  'appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                )}
+                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
+              />
+              <span className="self-center text-sm text-text-secondary px-2">{symbol}</span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                fullWidth
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  const p = parseFloat(trialPriceInput);
+                  if (!isFinite(p) || p <= 0) return;
+                  haptic.success();
+                  onConvertTrial?.(p);
+                }}
+              >
+                {t('trial.end.convert')}
+              </Button>
+              <Button
+                fullWidth
+                variant="danger"
+                size="md"
+                onClick={() => { haptic.warning(); onDelete(); }}
+              >
+                {t('trial.end.delete')}
+              </Button>
+            </div>
           </motion.div>
         )}
 
-        <motion.div custom={onMarkPaid && days < 0 ? 1 : 0} variants={btnVariants} initial="hidden" animate="visible">
-          <Button fullWidth variant="secondary" size="lg" onClick={onEdit}>
-            {t('detail.edit')}
-          </Button>
-        </motion.div>
-
-        <motion.div custom={onMarkPaid && days < 0 ? 2 : 1} variants={btnVariants} initial="hidden" animate="visible">
-          <Button
-            fullWidth
-            variant={sub.isActive ? 'secondary' : 'primary'}
-            size="md"
-            onClick={onToggleActive}
+        {/* One-time expired — ask to renew or delete */}
+        {showOneTimeEndPrompt && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="rounded-2xl px-4 py-4 space-y-3"
+            style={{ background: 'rgba(245,200,66,0.08)', border: '1px solid rgba(245,200,66,0.25)' }}
           >
-            {sub.isActive ? t('detail.pause') : t('detail.resume')}
-          </Button>
-        </motion.div>
+            <div>
+              <p className="text-sm font-bold text-text-primary">{t('oneTime.end.title')}</p>
+              <p className="text-xs text-text-muted mt-0.5">{t('oneTime.end.desc')}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                fullWidth
+                variant="primary"
+                size="md"
+                onClick={() => { haptic.success(); onRenewOneTime?.(); }}
+              >
+                {t('oneTime.end.renew')}
+              </Button>
+              <Button
+                fullWidth
+                variant="danger"
+                size="md"
+                onClick={() => { haptic.warning(); onDelete(); }}
+              >
+                {t('oneTime.end.delete')}
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
-        <motion.div custom={onMarkPaid && days < 0 ? 3 : 2} variants={btnVariants} initial="hidden" animate="visible">
+        {/* Mark Paid — for any active recurring sub (not one-time / trial).
+            Tapping early shifts nextPaymentDate forward by one cycle. */}
+        {(() => {
+          const showMarkPaid =
+            !!onMarkPaid && sub.isActive && sub.cycle !== 'one-time' && sub.cycle !== 'trial';
+          let idx = 0;
+          return (
+            <>
+              {showMarkPaid && (
+                <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
+                  <Button fullWidth variant="primary" size="lg" onClick={onMarkPaid}>
+                    <span className="flex items-center justify-center gap-2">
+                      {days < 0 ? t('payment.markPaid') : t('payment.markPaidEarly')}
+                    </span>
+                  </Button>
+                </motion.div>
+              )}
+
+              <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
+                <Button fullWidth variant="secondary" size="lg" onClick={onEdit}>
+                  {t('detail.edit')}
+                </Button>
+              </motion.div>
+
+              <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
+                <Button
+                  fullWidth
+                  variant={sub.isActive ? 'secondary' : 'primary'}
+                  size="md"
+                  onClick={onToggleActive}
+                >
+                  {sub.isActive ? t('detail.pause') : t('detail.resume')}
+                </Button>
+              </motion.div>
+
+              <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
           <div className="relative overflow-hidden rounded-xl">
             {/* Hold progress fill */}
             <div
@@ -499,6 +613,9 @@ export function SubDetail({
             </button>
           </div>
         </motion.div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

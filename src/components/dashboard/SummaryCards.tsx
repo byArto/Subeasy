@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { ShareIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
@@ -33,18 +33,27 @@ export function SummaryCards({
 
   const displayAmount = showYearly ? totalYearly : totalMonthly;
   const formattedAmount = Math.round(displayAmount).toLocaleString('ru-RU');
+  const toggleYearly = () => setShowYearly((p) => !p);
+  const handleSummaryKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    toggleYearly();
+  };
 
   return (
     <div className={cn('grid grid-cols-2 gap-3', className)}>
       {/* Left — Total cost */}
-      <motion.button
+      <motion.div
+        role="button"
+        tabIndex={0}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05, type: 'spring', stiffness: 300, damping: 30 }}
         whileTap={{ scale: 0.97 }}
-        onClick={() => setShowYearly((p) => !p)}
+        onClick={toggleYearly}
+        onKeyDown={handleSummaryKeyDown}
         className={cn(
-          'relative overflow-hidden rounded-2xl p-4 text-left',
+          'relative overflow-hidden rounded-2xl p-4 text-left cursor-pointer',
           'bg-surface-2 border border-border-subtle'
         )}
       >
@@ -75,7 +84,7 @@ export function SummaryCards({
             <ShareIcon className="w-3.5 h-3.5" />
           </button>
         )}
-      </motion.button>
+      </motion.div>
 
       {/* Right — Active count */}
       <motion.div

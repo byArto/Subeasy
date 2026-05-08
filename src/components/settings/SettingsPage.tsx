@@ -18,6 +18,7 @@ import { createClient, getAuthToken } from '@/lib/supabase';
 import { upsertWorkspaceSubscription } from '@/lib/sync';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
+import { APP_VERSION } from '@/lib/version';
 
 /* ── Props ── */
 
@@ -157,7 +158,7 @@ export function SettingsPage({
       categories,
       settings,
       exportedAt: new Date().toISOString(),
-      version: '1.5.1',
+      version: APP_VERSION,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -1523,15 +1524,13 @@ export function SettingsPage({
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
             SubEasy
           </h2>
-          <p className="text-xs text-text-muted">{t('settings.about.version')} 1.0.0</p>
+          <p className="text-xs text-text-muted">{t('settings.about.version')} {APP_VERSION}</p>
           <p className="text-xs text-text-secondary text-center leading-relaxed">
             {t('settings.about.description')}
           </p>
           <div className="flex gap-3 mt-1">
             <a
               href="/privacy"
-              target="_blank"
-              rel="noopener noreferrer"
               className="text-[11px] text-text-muted underline underline-offset-2 hover:text-neon transition-colors"
             >
               {lang === 'ru' ? 'Конфиденциальность' : 'Privacy Policy'}
@@ -1539,8 +1538,6 @@ export function SettingsPage({
             <span className="text-text-muted text-[11px]">·</span>
             <a
               href="/terms"
-              target="_blank"
-              rel="noopener noreferrer"
               className="text-[11px] text-text-muted underline underline-offset-2 hover:text-neon transition-colors"
             >
               {lang === 'ru' ? 'Условия' : 'Terms'}
@@ -1548,6 +1545,13 @@ export function SettingsPage({
           </div>
         </div>
       </motion.div>
+
+      {/* Bottom version pill — always reflects APP_VERSION */}
+      <div className="flex justify-center pt-1 pb-2">
+        <span className="text-[10px] text-text-muted/60 tabular-nums tracking-wider">
+          v{APP_VERSION}
+        </span>
+      </div>
 
     </div>
 

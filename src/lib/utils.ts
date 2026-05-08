@@ -1,4 +1,4 @@
-import { Subscription, Currency, BillingCycle } from './types';
+import { Subscription, Currency, BillingCycle, CycleAnchor } from './types';
 import { CURRENCY_SYMBOLS } from './constants';
 
 export function generateId(): string {
@@ -76,35 +76,34 @@ export function isPaymentSoon(nextPaymentDate: string, daysBefore: number): bool
   return days >= 0 && days <= daysBefore;
 }
 
-export function getNextPaymentDate(current: string, cycle: string): string {
-  const d = new Date(current);
-  switch (cycle) {
-    case 'quarterly':
-      d.setMonth(d.getMonth() + 3);
-      break;
-    case 'monthly':
-      d.setMonth(d.getMonth() + 1);
-      break;
-    case 'yearly':
-      d.setFullYear(d.getFullYear() + 1);
-      break;
+function advanceOnce(d: Date, cycle: string, anchor: CycleAnchor) {
+  if (anchor === 'days') {
+    if (cycle === 'monthly') { d.setDate(d.getDate() + 30); return; }
+    if (cycle === 'quarterly') { d.setDate(d.getDate() + 91); return; }
+    if (cycle === 'yearly') { d.setDate(d.getDate() + 365); return; }
   }
-  // If the new date is still in the past, keep advancing
+  switch (cycle) {
+    case 'quarterly': d.setMonth(d.getMonth() + 3); break;
+    case 'monthly':   d.setMonth(d.getMonth() + 1); break;
+    case 'yearly':    d.setFullYear(d.getFullYear() + 1); break;
+    case 'weekly':    d.setDate(d.getDate() + 7); break;
+  }
+}
+
+export function getNextPaymentDate(
+  current: string,
+  cycle: string,
+  anchor: CycleAnchor = 'date',
+): string {
+  const d = new Date(current);
+  advanceOnce(d, cycle, anchor);
+
+  // If the new date is still in the past, keep advancing one period at a time.
   const now = new Date();
   while (d.getTime() < now.getTime()) {
-    switch (cycle) {
-      case 'weekly':
-        d.setDate(d.getDate() + 7);
-        break;
-      case 'monthly':
-        d.setMonth(d.getMonth() + 1);
-        break;
-      case 'yearly':
-        d.setFullYear(d.getFullYear() + 1);
-        break;
-      default:
-        return d.toISOString().split('T')[0];
-    }
+    const before = d.getTime();
+    advanceOnce(d, cycle, anchor);
+    if (d.getTime() === before) break; // unknown cycle — stop
   }
   return d.toISOString().split('T')[0];
 }
@@ -114,18 +113,21 @@ export function getNextPaymentDate(current: string, cycle: string): string {
  * payment date. Works for subscriptions added retroactively (e.g. started
  * 3 months ago) by advancing period-by-period until the date is in the future.
  */
-export function calcNextPaymentFromStart(startDate: string, cycle: BillingCycle): string {
+export function calcNextPaymentFromStart(
+  startDate: string,
+  cycle: BillingCycle,
+  anchor: CycleAnchor = 'date',
+): string {
+  if (cycle === 'one-time' || cycle === 'trial') return startDate;
+
   const d = new Date(startDate);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   do {
-    switch (cycle) {
-      case 'monthly':   d.setMonth(d.getMonth() + 1); break;
-      case 'quarterly': d.setMonth(d.getMonth() + 3); break;
-      case 'yearly':    d.setFullYear(d.getFullYear() + 1); break;
-      default: return startDate; // one-time / trial — не трогаем
-    }
+    const before = d.getTime();
+    advanceOnce(d, cycle, anchor);
+    if (d.getTime() === before) return startDate;
   } while (d <= today);
 
   return d.toISOString().split('T')[0];

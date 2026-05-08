@@ -90,12 +90,14 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [joinToken, setJoinToken] = useState<string | null>(null);
   const [joinWorkspaceName, setJoinWorkspaceName] = useState('');
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState('');
   const mainRef = useRef<HTMLElement>(null);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const isOverlayOpen = showAddModal || !!selectedSubId || !!editingSubId || showSearch || showNotifications || showProModal || showShareModal;
 
   // Telegram Back Button — show when any modal is open, close topmost on press
   const { isTelegram } = useTelegramContext();
@@ -104,9 +106,7 @@ export default function Home() {
     const backBtn = window.Telegram?.WebApp?.BackButton;
     if (!backBtn) return;
 
-    const anyOpen = showAddModal || !!selectedSubId || !!editingSubId || showSearch || showNotifications || showProModal;
-
-    if (anyOpen) {
+    if (isOverlayOpen) {
       backBtn.show();
       const handleBack = () => {
         if (editingSubId)       { setEditingSubId(null); return; }
@@ -115,13 +115,14 @@ export default function Home() {
         if (showSearch)         { setShowSearch(false); return; }
         if (showNotifications)  { setShowNotifications(false); return; }
         if (showProModal)       { setShowProModal(false); return; }
+        if (showShareModal)     { setShowShareModal(false); return; }
       };
       backBtn.onClick(handleBack);
       return () => { backBtn.offClick(handleBack); };
     } else {
       backBtn.hide();
     }
-  }, [isTelegram, showAddModal, selectedSubId, editingSubId, showSearch, showNotifications, showProModal]);
+  }, [isTelegram, isOverlayOpen, showAddModal, selectedSubId, editingSubId, showSearch, showNotifications, showProModal, showShareModal]);
 
   // Track scroll position for header collapse
   useEffect(() => {
@@ -291,9 +292,14 @@ export default function Home() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTabChange = useCallback((tab: TabId) => {
+    if (tab === activeTab) return;
     const prevIdx = TAB_ORDER.indexOf(activeTab);
     const nextIdx = TAB_ORDER.indexOf(tab);
     setTabDirection(nextIdx > prevIdx ? 1 : -1);
+    setHeaderCollapsed(false);
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
     setActiveTab(tab);
   }, [activeTab]);
 
@@ -304,8 +310,26 @@ export default function Home() {
   const closeEdit = useCallback(() => setEditingSubId(null), []);
 
   const handleMarkPaid = useCallback((sub: Subscription) => {
-    const nextDate = getNextPaymentDate(sub.nextPaymentDate, sub.cycle);
+    const nextDate = getNextPaymentDate(sub.nextPaymentDate, sub.cycle, sub.cycleAnchor || 'date');
     wsUpdateSubscription(sub.id, { nextPaymentDate: nextDate });
+  }, [wsUpdateSubscription]);
+
+  // Convert an expired trial into a paid monthly subscription. Sets the next
+  // payment date to "today + 1 month" so the user gets a clean cycle start.
+  const handleConvertTrial = useCallback((sub: Subscription, monthlyPrice: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const next = new Date(today);
+    next.setMonth(next.getMonth() + 1);
+    const todayIso = today.toISOString().split('T')[0];
+    const nextIso = next.toISOString().split('T')[0];
+    wsUpdateSubscription(sub.id, {
+      cycle: 'monthly',
+      cycleAnchor: 'date',
+      price: monthlyPrice,
+      startDate: todayIso,
+      nextPaymentDate: nextIso,
+    });
   }, [wsUpdateSubscription]);
 
   const handleDeleteSub = useCallback((sub: Subscription) => {
@@ -468,7 +492,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.08 }}
-            className="pb-4"
+            className="pb-24"
           >
             {activeTab === 'home' && (
               <HomeTab
@@ -485,6 +509,7 @@ export default function Home() {
                 onMarkPaid={handleMarkPaid}
                 onDeleteSub={handleDeleteSub}
                 onDeactivateSub={(id) => wsUpdateSubscription(id, { isActive: false })}
+                onShare={() => setShowShareModal(true)}
               />
             )}
             {activeTab === 'analytics' && (
@@ -529,6 +554,20 @@ export default function Home() {
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onFabTap={openAdd}
+        disabled={isOverlayOpen}
+      />
+
+      {/* Share Modal */}
+      <ShareModal
+        open={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        totalMonthly={getTotalMonthlyActive(settings.displayCurrency, settings.exchangeRate)}
+        totalYearly={getTotalYearlyActive(settings.displayCurrency, settings.exchangeRate)}
+        activeCount={getActiveSubs().length}
+        currency={settings.displayCurrency}
+        subscriptions={getActiveSubs()}
+        lang={lang}
+        exchangeRate={settings.exchangeRate}
       />
 
       {/* Search Panel */}
@@ -591,6 +630,14 @@ export default function Home() {
               setSelectedSubId(null);
             }}
             onMarkPaid={() => handleMarkPaid(detailSub)}
+            onConvertTrial={(monthlyPrice) => {
+              handleConvertTrial(detailSub, monthlyPrice);
+            }}
+            onRenewOneTime={() => {
+              // Renew = open edit so the user can pick a new date / cycle.
+              setEditingSubId(detailSub.id);
+              setSelectedSubId(null);
+            }}
             onToggleActive={() => {
               const willBeActive = !detailSub.isActive;
               wsUpdateSubscription(detailSub.id, { isActive: willBeActive });
@@ -658,6 +705,7 @@ function HomeTab({
   onMarkPaid,
   onDeleteSub,
   onDeactivateSub,
+  onShare,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -672,15 +720,14 @@ function HomeTab({
   onMarkPaid: (sub: Subscription) => void;
   onDeleteSub: (sub: Subscription) => void;
   onDeactivateSub: (id: string) => void;
+  onShare: () => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('date');
   const [hidePaused, setHidePaused] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [ignoredDups, setIgnoredDups] = useState<Set<string>>(() => getIgnoredPairs());
 
-  const { lang } = useLanguage();
   const { displayCurrency, exchangeRate } = settings;
   const totalMonthly = useMemo(
     () => getTotalMonthly(displayCurrency, exchangeRate),
@@ -745,7 +792,7 @@ function HomeTab({
           activeCount={active.length}
           upcomingSoonCount={upcoming.length}
           currency={displayCurrency}
-          onShare={() => setShowShareModal(true)}
+          onShare={onShare}
         />
       )}
 
@@ -806,19 +853,6 @@ function HomeTab({
         longestId={longestId}
         notifyDaysBefore={settings.notifyDaysBefore}
       />
-
-      {/* Share Modal */}
-      <ShareModal
-        open={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        totalMonthly={totalMonthly}
-        totalYearly={totalYearly}
-        activeCount={active.length}
-        currency={displayCurrency}
-        subscriptions={active}
-        lang={lang}
-        exchangeRate={exchangeRate}
-      />
     </div>
   );
 }
@@ -854,4 +888,3 @@ function WorkspaceBanner({ workspaceName, lang }: { workspaceName: string; lang:
     </motion.div>
   );
 }
-

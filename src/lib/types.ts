@@ -2,6 +2,12 @@ export type Currency = 'RUB' | 'USD' | 'EUR';
 export type DisplayCurrency = 'RUB' | 'USD' | 'EUR';
 export type BillingCycle = 'monthly' | 'yearly' | 'quarterly' | 'one-time' | 'trial';
 
+// 'date' = same calendar day each period (default, current behavior).
+// 'days' = fixed-length period: monthly=30 days, quarterly=91 days.
+// Some services (e.g. Apple, certain crypto subs) bill every 30 days,
+// shifting the charge ~1 day earlier each calendar month.
+export type CycleAnchor = 'date' | 'days';
+
 export interface Subscription {
   id: string;
   name: string;
@@ -9,6 +15,7 @@ export interface Subscription {
   currency: Currency;
   category: string;
   cycle: BillingCycle;
+  cycleAnchor?: CycleAnchor; // optional, defaults to 'date' for legacy subs
   nextPaymentDate: string; // ISO date
   startDate: string;
   paymentMethod: string;

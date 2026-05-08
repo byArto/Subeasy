@@ -57,6 +57,32 @@ const dict: Translations = {
   'payment.next': { ru: 'Следующий · {{date}}', en: 'Next · {{date}}' },
   'payment.later': { ru: 'далее', en: 'then' },
   'payment.markPaid': { ru: '✓ Оплачено', en: '✓ Paid' },
+  'payment.markPaidEarly': { ru: '✓ Оплатить заранее', en: '✓ Pay early' },
+
+  // ── Cycle anchor (date vs days) ──
+  'form.anchor.date': { ru: 'Та же дата', en: 'Same date' },
+  'form.anchor.days30': { ru: 'Каждые 30 дней', en: 'Every 30 days' },
+  'form.anchor.days91': { ru: 'Каждые 91 день', en: 'Every 91 days' },
+  'form.anchor.days365': { ru: 'Каждые 365 дней', en: 'Every 365 days' },
+
+  // ── Trial end prompt ──
+  'trial.end.title': { ru: 'Пробный период закончился', en: 'Trial has ended' },
+  'trial.end.desc': {
+    ru: 'Сколько стоит подписка в месяц? Введите цену, чтобы перевести её в платную.',
+    en: 'What is the monthly price? Enter it to convert this to a paid subscription.',
+  },
+  'trial.end.pricePlaceholder': { ru: 'Цена за месяц', en: 'Monthly price' },
+  'trial.end.convert': { ru: 'Сделать платной', en: 'Convert to paid' },
+  'trial.end.delete': { ru: 'Удалить', en: 'Delete' },
+
+  // ── One-time end prompt ──
+  'oneTime.end.title': { ru: 'Срок одноразовой подписки истёк', en: 'One-time subscription has expired' },
+  'oneTime.end.desc': {
+    ru: 'Продлить подписку (с новой датой) или удалить?',
+    en: 'Renew with a new date or delete?',
+  },
+  'oneTime.end.renew': { ru: 'Продлить', en: 'Renew' },
+  'oneTime.end.delete': { ru: 'Удалить', en: 'Delete' },
 
   // ── SubList ──
   'list.title': { ru: 'Подписки', en: 'Subscriptions' },

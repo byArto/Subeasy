@@ -38,6 +38,7 @@ interface TabBarProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
   onFabTap: () => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -45,6 +46,7 @@ export function TabBar({
   activeTab,
   onTabChange,
   onFabTap,
+  disabled = false,
   className,
 }: TabBarProps) {
   const { t } = useLanguage();
@@ -52,8 +54,10 @@ export function TabBar({
     <div
       className={cn(
         'relative z-50 w-full shrink-0',
+        disabled && 'pointer-events-none',
         className
       )}
+      aria-hidden={disabled}
     >
       {/* FAB — floating above tab bar */}
       <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
@@ -61,6 +65,7 @@ export function TabBar({
           whileTap={{ scale: 0.88 }}
           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
           onClick={() => { haptic.medium(); onFabTap(); }}
+          disabled={disabled}
           className={cn(
             'flex items-center justify-center',
             'w-[56px] h-[56px] rounded-full',
@@ -93,6 +98,7 @@ export function TabBar({
                   whileTap={{ scale: 0.85 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   onClick={() => { haptic.tap(); onTabChange(tab.id); }}
+                  disabled={disabled}
                   className={cn(
                     'relative flex flex-col items-center justify-center',
                     'min-w-[56px] min-h-[44px] gap-0.5',

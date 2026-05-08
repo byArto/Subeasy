@@ -44,7 +44,7 @@ export default function RootLayout({
             Loads async, initializes via onload before React renders. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `var s=document.createElement('script');s.src='https://tganalytics.xyz/index.js';s.async=true;s.onload=function(){window.telegramAnalytics.init({token:'${process.env.NEXT_PUBLIC_TMA_ANALYTICS_TOKEN ?? ''}',appName:'subeasy1'})};document.head.appendChild(s)`,
+            __html: `try{var token='${process.env.NEXT_PUBLIC_TMA_ANALYTICS_TOKEN ?? ''}';var webApp=window.Telegram&&window.Telegram.WebApp;var inTelegram=!!(webApp&&webApp.initData);if(token&&inTelegram){var s=document.createElement('script');s.src='https://tganalytics.xyz/index.js';s.async=true;s.onload=function(){try{window.telegramAnalytics&&window.telegramAnalytics.init({token:token,appName:'subeasy1'})}catch(e){}};document.head.appendChild(s)}}catch(e){}`,
           }}
         />
         <link rel="preconnect" href="https://xmmseorpelrppnrlcxai.supabase.co" />

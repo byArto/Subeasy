@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { usePro } from '@/components/providers/ProProvider';
@@ -157,6 +158,31 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           >
             {/* Drag handle */}
             <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '12px auto 0' }} />
+            {!paid && (
+              <button
+                type="button"
+                aria-label={isRu ? 'Закрыть PRO' : 'Close PRO'}
+                onClick={onClose}
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 12,
+                  zIndex: 2,
+                  width: 36,
+                  height: 36,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  color: 'rgba(255,255,255,0.55)',
+                  cursor: 'pointer',
+                }}
+              >
+                <XMarkIcon width={18} height={18} />
+              </button>
+            )}
 
             <AnimatePresence mode="wait">
               {paid ? (

@@ -91,12 +91,13 @@ export function Button({
       {ripples.map((ripple) => (
         <span
           key={ripple.id}
-          className="absolute rounded-full bg-white/20 animate-[ripple_0.6s_ease-out_forwards] pointer-events-none"
+          className="absolute rounded-full animate-[ripple_0.6s_ease-out_forwards] pointer-events-none"
           style={{
             left: ripple.x - 40,
             top: ripple.y - 40,
             width: 80,
             height: 80,
+            background: 'var(--color-ripple)',
           }}
         />
       ))}

@@ -387,7 +387,7 @@ export function SubForm({
             'outline-none transition-all duration-200 placeholder:text-text-muted/50',
             errors.name
               ? 'border-danger/40'
-              : 'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+              : 'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
           )}
         />
 
@@ -512,7 +512,7 @@ export function SubForm({
               'appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
               errors.price
                 ? 'border-danger/40'
-                : 'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                : 'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
             )}
             style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
           />
@@ -623,7 +623,7 @@ export function SubForm({
             'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
             'outline-none transition-all duration-200',
             '[color-scheme:dark]',
-            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+            'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
           )}
         />
       </motion.div>
@@ -649,7 +649,7 @@ export function SubForm({
             '[color-scheme:dark]',
             errors.nextPaymentDate
               ? 'border-danger/40'
-              : 'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+              : 'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
           )}
         />
       </motion.div>
@@ -670,7 +670,7 @@ export function SubForm({
           className={cn(
             'w-full min-h-[48px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
             'outline-none transition-all duration-200 placeholder:text-text-muted/50',
-            'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+            'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
           )}
         />
       </motion.div>
@@ -754,7 +754,7 @@ export function SubForm({
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
-                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                   )}
                 />
               </div>
@@ -779,7 +779,7 @@ export function SubForm({
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
-                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                   )}
                 />
               </div>
@@ -804,7 +804,7 @@ export function SubForm({
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
-                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                   )}
                 />
               </div>
@@ -829,7 +829,7 @@ export function SubForm({
                   className={cn(
                     'w-full min-h-[44px] px-3.5 rounded-xl bg-surface-2 border text-sm text-text-primary',
                     'outline-none transition-all duration-200 placeholder:text-text-muted/50',
-                    'border-border-subtle focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                    'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                   )}
                 />
               </div>
@@ -944,7 +944,7 @@ export function SubForm({
                             className={cn(
                               'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
                               'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                              'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                              'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                             )}
                           />
                           <motion.button
@@ -997,7 +997,7 @@ export function SubForm({
                       'w-full px-3.5 py-3 rounded-xl bg-surface-2 border border-border-subtle',
                       'text-sm text-text-primary outline-none resize-none',
                       'placeholder:text-text-muted/50 transition-all duration-200',
-                      'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+                      'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                     )}
                   />
                 </div>

@@ -9,20 +9,20 @@ export default function TermsPage() {
       style={{
         height: '100vh',
         overflowY: 'auto',
-        background: 'linear-gradient(to bottom, #0A0A0F, #07070C)',
-        color: '#F0F0F5',
-        fontFamily: "'Montserrat', sans-serif",
+        background: 'linear-gradient(to bottom, var(--color-surface), var(--color-surface-bottom))',
+        color: 'var(--color-text-primary)',
+        fontFamily: 'var(--font-body)',
         padding: '0 0 60px',
       }}
     >
       {/* Header */}
       <div
         style={{
-          borderBottom: '1px solid rgba(0,255,65,0.08)',
+          borderBottom: '1px solid var(--color-border-subtle)',
           padding: '20px 20px 16px',
           position: 'sticky',
           top: 0,
-          background: '#0A0A0F',
+          background: 'color-mix(in srgb, var(--color-surface) 92%, transparent)',
           zIndex: 10,
         }}
       >
@@ -43,8 +43,8 @@ export default function TermsPage() {
             📋
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F5' }}>SubEasy</div>
-            <div style={{ fontSize: 11, color: '#55556A' }}>Terms of Service · Условия использования</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)' }}>SubEasy</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Terms of Service · Условия использования</div>
           </div>
         </div>
       </div>
@@ -117,12 +117,12 @@ export default function TermsPage() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  background: '#1A1A24',
+                  background: 'var(--color-surface-3)',
                   borderRadius: 10,
                   padding: '10px 14px',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#F0F0F5', fontWeight: 600 }}>{row.plan}</span>
+                <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600 }}>{row.plan}</span>
                 <span style={{ fontSize: 14, color: '#f5c842', fontWeight: 800 }}>{row.stars}</span>
               </div>
             ))}
@@ -290,8 +290,8 @@ export default function TermsPage() {
             style={{
               flex: 1,
               minWidth: 140,
-              background: 'rgba(0,255,65,0.06)',
-              border: '1px solid rgba(0,255,65,0.12)',
+              background: 'color-mix(in srgb, var(--color-neon) 6%, transparent)',
+              border: '1px solid var(--color-border-subtle)',
               borderRadius: 12,
               padding: '14px',
               textDecoration: 'none',
@@ -302,8 +302,8 @@ export default function TermsPage() {
           >
             <span style={{ fontSize: 18 }}>🔒</span>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#00FF41' }}>Privacy Policy</div>
-              <div style={{ fontSize: 11, color: '#55556A' }}>subeasy.org/privacy</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-neon)' }}>Privacy Policy</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>subeasy.org/privacy</div>
             </div>
           </a>
           <a
@@ -313,8 +313,8 @@ export default function TermsPage() {
             style={{
               flex: 1,
               minWidth: 140,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              background: 'var(--color-surface-2)',
+              border: '1px solid var(--color-border-subtle)',
               borderRadius: 12,
               padding: '14px',
               textDecoration: 'none',
@@ -325,8 +325,8 @@ export default function TermsPage() {
           >
             <span style={{ fontSize: 18 }}>✈️</span>
             <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#F0F0F5' }}>Telegram Mini Apps ToS</div>
-              <div style={{ fontSize: 11, color: '#55556A' }}>telegram.org/tos/mini-apps</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-primary)' }}>Telegram Mini Apps ToS</div>
+              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>telegram.org/tos/mini-apps</div>
             </div>
           </a>
         </div>
@@ -343,8 +343,8 @@ function Section({ children }: { children: React.ReactNode }) {
     <div
       style={{
         marginBottom: 28,
-        background: '#111118',
-        border: '1px solid rgba(0,255,65,0.06)',
+        background: 'var(--color-surface-2)',
+        border: '1px solid var(--color-border-subtle)',
         borderRadius: 16,
         padding: '16px 18px',
       }}
@@ -376,7 +376,7 @@ function P({ children }: { children: React.ReactNode }) {
     <p
       style={{
         fontSize: 13,
-        color: '#8888A0',
+        color: 'var(--color-text-secondary)',
         lineHeight: 1.65,
         margin: '0 0 8px',
       }}
@@ -388,7 +388,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 function Li({ children }: { children: React.ReactNode }) {
   return (
-    <li style={{ fontSize: 13, color: '#8888A0', lineHeight: 1.6 }}>
+    <li style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
       {children}
     </li>
   );

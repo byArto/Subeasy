@@ -129,10 +129,10 @@ function TonPayButtonInner({ plan, isRu, onSuccess }: TonPayButtonInnerProps) {
   if (status === 'confirming') {
     return (
       <div style={{ textAlign: 'center', padding: '10px 0' }}>
-        <p style={{ fontSize: 13, color: '#00FF41', fontWeight: 700, margin: '0 0 4px' }}>
+        <p style={{ fontSize: 13, color: 'var(--color-success)', fontWeight: 700, margin: '0 0 4px' }}>
           💎 {isRu ? 'Транзакция отправлена!' : 'Transaction sent!'}
         </p>
-        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 11, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.5 }}>
           {isRu
             ? 'Ожидаем подтверждение блокчейна (~5–30 сек)…'
             : 'Awaiting blockchain confirmation (~5–30 sec)…'}
@@ -140,8 +140,8 @@ function TonPayButtonInner({ plan, isRu, onSuccess }: TonPayButtonInnerProps) {
         <div style={{
           marginTop: 8,
           width: 20, height: 20,
-          border: '2px solid rgba(0,255,65,0.25)',
-          borderTop: '2px solid #00FF41',
+          border: '2px solid color-mix(in srgb, var(--color-success) 25%, transparent)',
+          borderTop: '2px solid var(--color-success)',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
           margin: '8px auto 0',
@@ -220,7 +220,7 @@ function TonPayButtonInner({ plan, isRu, onSuccess }: TonPayButtonInnerProps) {
         </motion.button>
       )}
 
-      <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '5px 0 0' }}>
+      <p style={{ fontSize: 10, color: 'var(--color-text-muted)', textAlign: 'center', margin: '5px 0 0' }}>
         Tonkeeper · MyTonWallet · Telegram Wallet
       </p>
     </>

@@ -60,7 +60,7 @@ export function SearchPanel({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/50"
+            className="fixed inset-0 z-40 modal-backdrop-bg"
           />
 
           {/* Panel */}

@@ -14,7 +14,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#00FF41',
+  themeColor: '#0A0A0F',
 };
 
 export const metadata: Metadata = {
@@ -59,7 +59,7 @@ export default function RootLayout({
             compile-time string with no user input. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('neonsub-theme');if(t==='purple'||t==='blue')document.documentElement.dataset.theme=t;}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('subeasy-theme')||localStorage.getItem('neonsub-theme');if(t==='purple'||t==='blue'||t==='claude')document.documentElement.dataset.theme=t;}catch(e){}`,
           }}
         />
         {/* Non-blocking font load via preload.
@@ -67,12 +67,12 @@ export default function RootLayout({
             compile-time string with no user input. */}
         <link
           rel="preload"
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@400;500&family=Montserrat:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap"
           as="style"
         />
         <script
           dangerouslySetInnerHTML={{
-            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap';document.head.appendChild(l)`,
+            __html: `var l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@400;500&family=Montserrat:wght@400;500;600;700;800&family=Exo+2:wght@400;500;600;700;800&family=Golos+Text:wght@400;500;600;700&display=swap';document.head.appendChild(l)`,
           }}
         />
         <link rel="icon" href="/icons/favicon.ico" sizes="any" />
@@ -81,7 +81,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SubEasy" />
-        <meta name="theme-color" content="#00FF41" />
+        <meta name="theme-color" content="#0A0A0F" />
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">
@@ -95,7 +95,7 @@ export default function RootLayout({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to bottom, #0A0A0F, #07070C)',
+            background: 'linear-gradient(to bottom, var(--color-surface), var(--color-surface-bottom))',
             zIndex: 9999,
             transition: 'opacity 0.3s',
           }}
@@ -107,7 +107,7 @@ export default function RootLayout({
             height={72}
             style={{
               borderRadius: 16,
-              filter: 'drop-shadow(0 0 20px rgba(0,255,65,0.3))',
+              filter: 'var(--app-logo-filter-compact)',
               animation: 'pulse-glow 1.5s ease-in-out infinite',
             }}
           />

@@ -98,7 +98,7 @@ export function AuthScreen() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center max-w-[430px] mx-auto px-6 bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="app-gradient-bg fixed inset-0 flex flex-col items-center justify-center max-w-[430px] mx-auto px-6">
 
       {/* Language switcher */}
       <div className="absolute top-12 right-5 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
@@ -127,8 +127,7 @@ export function AuthScreen() {
           alt="SubEasy"
           width={80}
           height={80}
-          className="rounded-2xl"
-          style={{ filter: 'drop-shadow(0 0 20px rgba(0,255,65,0.3))' }}
+          className="rounded-2xl brand-logo-filter"
         />
         <h1 className="text-2xl font-display font-extrabold tracking-tight neon-text">
           SubEasy
@@ -266,7 +265,7 @@ export function AuthScreen() {
                 onClick={handleResend}
                 disabled={resendCooldown > 0 || loading}
                 className="text-xs font-medium transition-colors disabled:opacity-40"
-                style={{ color: resendCooldown > 0 ? undefined : '#00FF41' }}
+                style={{ color: resendCooldown > 0 ? undefined : 'var(--color-neon)' }}
               >
                 {resendCooldown > 0
                   ? `${t('auth.otp.resend')} (${resendCooldown}с)`

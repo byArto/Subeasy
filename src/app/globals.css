@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════
-   NEONSUB — NEON CYBERPUNK THEME (Tailwind v4)
+   SUBEASY — THEME TOKENS (Tailwind v4)
    ═══════════════════════════════════════════════ */
 
 @theme {
@@ -9,7 +9,7 @@
   --font-display: 'Montserrat', sans-serif;
   --font-body: 'Montserrat', sans-serif;
 
-  /* ── Neon Accent Colors ── */
+  /* ── Accent Colors ── */
   --color-neon: #00FF41;
   --color-neon-dark: #00CC33;
   --color-neon-glow: #39FF14;
@@ -20,6 +20,7 @@
   --color-surface-2: #111118;
   --color-surface-3: #1A1A24;
   --color-surface-4: #252532;
+  --color-surface-bottom: #07070C;
 
   /* ── Borders ── */
   --color-border-subtle: rgba(0, 255, 65, 0.08);
@@ -29,6 +30,7 @@
   --color-text-primary: #F0F0F5;
   --color-text-secondary: #8888A0;
   --color-text-muted: #55556A;
+  --color-ripple: rgba(255, 255, 255, 0.2);
 
   /* ── Semantic ── */
   --color-danger: #FF4444;
@@ -50,8 +52,22 @@
   --animate-glow: glow 3s infinite ease-in-out;
 }
 
+:root {
+  --app-logo-filter: drop-shadow(0 0 20px rgba(0, 255, 65, 0.3)) drop-shadow(0 0 40px rgba(0, 255, 65, 0.1));
+  --app-logo-filter-compact: drop-shadow(0 0 20px rgba(0, 255, 65, 0.3));
+  --app-vignette: radial-gradient(ellipse 60% 50% at center, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.85) 60%, rgba(10,10,15,0.97) 100%);
+  --app-splash-bg: radial-gradient(circle at center, #0a1a0f 0%, #0A0A0F 70%);
+  --app-splash-glow: radial-gradient(circle, rgba(0,255,65,0.18) 0%, rgba(0,255,65,0.04) 50%, transparent 70%);
+  --app-splash-ring: radial-gradient(circle, rgba(0,255,65,0.2) 0%, transparent 70%);
+  --app-focus-ring: rgba(0, 255, 65, 0.5);
+  --app-selection-bg: rgba(0, 255, 65, 0.2);
+  --app-selection-text: #F0F0F5;
+  --app-input-focus-shadow: 0 0 12px rgba(0, 255, 65, 0.1);
+  --app-modal-backdrop: rgba(0, 0, 0, 0.6);
+}
+
 /* ═══════════════════════════════════════════════
-   PRO THEMES — runtime CSS variable overrides
+   RUNTIME THEMES — CSS variable overrides
    Applied via data-theme attribute on <html>
    ═══════════════════════════════════════════════ */
 
@@ -93,17 +109,60 @@
   background-color: #060B0F;
 }
 
+[data-theme="claude"] {
+  --color-neon: #141413;
+  --color-neon-dark: #1f1e1d;
+  --color-neon-glow: #d97757;
+  --color-neon-subtle: #d97757;
+  --color-surface: #faf9f5;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #f0eee6;
+  --color-surface-4: #e7e3d7;
+  --color-surface-bottom: #f3f0e7;
+  --color-border-subtle: rgba(31, 30, 29, 0.14);
+  --color-border-neon: rgba(31, 30, 29, 0.32);
+  --color-text-primary: #141413;
+  --color-text-secondary: #3d3d3a;
+  --color-text-muted: #73726c;
+  --color-ripple: rgba(20, 20, 19, 0.08);
+  --color-danger: #a34034;
+  --color-warning: #a45e24;
+  --color-success: #58705a;
+  --shadow-neon: 0 12px 28px rgba(31, 30, 29, 0.08);
+  --shadow-neon-strong: 0 14px 32px rgba(31, 30, 29, 0.14);
+  --shadow-card: 0 12px 32px rgba(31, 30, 29, 0.08);
+  --font-display: 'Lora', ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --app-logo-filter: drop-shadow(0 12px 22px rgba(31, 30, 29, 0.12));
+  --app-logo-filter-compact: drop-shadow(0 10px 18px rgba(31, 30, 29, 0.12));
+  --app-vignette: radial-gradient(ellipse 62% 52% at center, rgba(250,249,245,0.18) 0%, rgba(250,249,245,0.78) 56%, rgba(250,249,245,0.98) 100%);
+  --app-splash-bg: radial-gradient(circle at center, #ffffff 0%, #faf9f5 72%);
+  --app-splash-glow: radial-gradient(circle, rgba(217,119,87,0.16) 0%, rgba(217,119,87,0.05) 48%, transparent 70%);
+  --app-splash-ring: radial-gradient(circle, rgba(217,119,87,0.16) 0%, transparent 70%);
+  --app-focus-ring: rgba(31, 30, 29, 0.45);
+  --app-selection-bg: rgba(217, 119, 87, 0.22);
+  --app-selection-text: #141413;
+  --app-input-focus-shadow: 0 0 0 3px rgba(217, 119, 87, 0.12);
+  --app-modal-backdrop: rgba(31, 30, 29, 0.36);
+  background-color: #faf9f5;
+}
+
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--font-body);
 }
 
 [data-theme="purple"] body {
-  font-family: 'Exo 2', sans-serif;
+  font-family: var(--font-body);
   background-color: var(--color-surface);
 }
 
 [data-theme="blue"] body {
-  font-family: 'Golos Text', sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+}
+
+[data-theme="claude"] body {
+  font-family: var(--font-body);
   background-color: var(--color-surface);
 }
 
@@ -164,10 +223,10 @@ body {
 
 @keyframes pulse-neon {
   0%, 100% {
-    box-shadow: 0 0 8px rgba(0, 255, 65, 0.2), 0 0 24px rgba(0, 255, 65, 0.06);
+    box-shadow: var(--shadow-neon);
   }
   50% {
-    box-shadow: 0 0 16px rgba(0, 255, 65, 0.4), 0 0 48px rgba(0, 255, 65, 0.12);
+    box-shadow: var(--shadow-neon-strong);
   }
 }
 
@@ -230,7 +289,7 @@ body {
 
 html {
   height: 100%;
-  background-color: #0A0A0F; /* match body/surface — prevents visible gap on iOS PWA */
+  background-color: var(--color-surface); /* match body/surface — prevents visible gap on iOS PWA */
 
   /* --tg-top-inset: 3 слоя защиты для Telegram fullscreen overlay.
      Telegram WKWebView обнуляет env(safe-area-inset-top), поэтому нужен надёжный fallback.
@@ -255,9 +314,9 @@ body {
   -webkit-overflow-scrolling: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0A0A0F;
-  color: #F0F0F5;
-  font-family: 'Manrope', sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
   -webkit-touch-callout: none;
 }
 
@@ -308,14 +367,14 @@ button, a, [role="button"] {
 
 /* ── Selection color ── */
 ::selection {
-  background: rgba(0, 255, 65, 0.2);
-  color: #F0F0F5;
+  background: var(--app-selection-bg);
+  color: var(--app-selection-text);
 }
 
 /* ── Focus visible ── */
 @layer base {
   :focus-visible {
-    outline: 1px solid rgba(0, 255, 65, 0.5);
+    outline: 1px solid var(--app-focus-ring);
     outline-offset: 2px;
   }
 }
@@ -326,11 +385,17 @@ button, a, [role="button"] {
 
 /* ── Neon text glow ── */
 .neon-text {
-  color: #00FF41;
+  color: var(--color-neon);
   text-shadow:
     0 0 7px rgba(0, 255, 65, 0.35),
     0 0 20px rgba(0, 255, 65, 0.15),
     0 0 42px rgba(0, 255, 65, 0.06);
+}
+
+[data-theme="claude"] .neon-text {
+  color: var(--color-text-primary);
+  text-shadow: none;
+  font-weight: 500;
 }
 
 /* ── Neon border (inset glow line) ── */
@@ -340,9 +405,31 @@ button, a, [role="button"] {
 
 /* ── Glass morphism background ── */
 .glass-bg {
-  background: rgba(17, 17, 24, 0.7);
+  background: color-mix(in srgb, var(--color-surface-2) 78%, transparent);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+[data-theme="claude"] .glass-bg {
+  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.app-gradient-bg {
+  background: linear-gradient(to bottom, var(--color-surface), var(--color-surface-bottom));
+}
+
+.modal-backdrop-bg {
+  background: var(--app-modal-backdrop);
+}
+
+.brand-logo-filter {
+  filter: var(--app-logo-filter-compact);
+}
+
+[data-theme="claude"] input::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.55;
 }
 
 /* ── Shimmer loading skeleton ── */

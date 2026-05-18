@@ -268,7 +268,7 @@ function BudgetSection({
     pct >= 100 ? '#FF4444' :
     pct >= 90  ? '#FF6B00' :
     pct >= 70  ? '#FFB800' :
-    '#00FF41';
+    'var(--color-success)';
 
   const topCategories = useMemo<CategorySpend[]>(() => {
     if (active.length === 0) return [];
@@ -884,7 +884,7 @@ function ForecastSection({
                 transition={{ delay: 0.15, duration: 0.6, ease: 'easeOut' }}
                 className="h-full rounded-full"
                 style={{
-                  backgroundColor: forecast.diff > 0 ? '#FF4444' : '#00FF41',
+                  backgroundColor: forecast.diff > 0 ? '#FF4444' : 'var(--color-success)',
                 }}
               />
             </div>
@@ -1147,8 +1147,8 @@ function SpendingTimeline({
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
             <defs>
               <linearGradient id="neonGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00FF41" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#00FF41" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--color-neon)" stopOpacity={0.16} />
+                <stop offset="100%" stopColor="var(--color-neon)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#FFB800" stopOpacity={0.15} />
@@ -1157,18 +1157,18 @@ function SpendingTimeline({
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.03)"
+              stroke="var(--color-border-subtle)"
               vertical={false}
             />
             <XAxis
               dataKey="label"
-              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+              tick={{ fill: 'var(--color-text-muted)', fontSize: 10 }}
               axisLine={false}
               tickLine={false}
               interval={range === '30d' ? 4 : range === '7d' ? 0 : 1}
             />
             <YAxis
-              tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 11 }}
+              tick={{ fill: 'var(--color-text-muted)', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               width={45}
@@ -1177,11 +1177,11 @@ function SpendingTimeline({
             {avgTotal > 0 && (
               <ReferenceLine
                 y={avgTotal}
-                stroke="rgba(255,255,255,0.1)"
+                stroke="var(--color-border-subtle)"
                 strokeDasharray="4 4"
                 label={{
                   value: `${t('analytics.avg')} ${formatAmount(avgTotal)}`,
-                  fill: 'rgba(255,255,255,0.2)',
+                  fill: 'var(--color-text-muted)',
                   fontSize: 10,
                   position: 'insideTopRight',
                 }}
@@ -1190,11 +1190,11 @@ function SpendingTimeline({
             <Area
               type="monotone"
               dataKey="total"
-              stroke="#00FF41"
+              stroke="var(--color-neon)"
               strokeWidth={2}
               fill="url(#neonGrad)"
-              dot={{ fill: '#00FF41', r: 2.5, strokeWidth: 0 }}
-              activeDot={{ fill: '#00FF41', r: 5, strokeWidth: 0, style: { filter: 'drop-shadow(0 0 6px rgba(0,255,65,0.6))' } }}
+              dot={{ fill: 'var(--color-neon)', r: 2.5, strokeWidth: 0 }}
+              activeDot={{ fill: 'var(--color-neon)', r: 5, strokeWidth: 0 }}
               connectNulls={false}
             />
             <Area
@@ -1569,7 +1569,7 @@ function NeonTooltip({ active, payload, symbol }: { active?: boolean; payload?: 
    ═══════════════════════════════════════ */
 
 const GRADE_COLORS: Record<string, string> = {
-  A: '#00FF41',
+  A: 'var(--color-success)',
   B: '#82D200',
   C: '#FFB800',
   D: '#FF8C00',
@@ -1838,7 +1838,7 @@ function SubScoreSection({
         <div className="divide-y divide-border-subtle">
           {factors.map((f, i) => {
             const ratio = f.pts / f.maxPts;
-            const fColor = ratio >= 0.8 ? '#00FF41' : ratio >= 0.5 ? '#FFB800' : '#FF4444';
+            const fColor = ratio >= 0.8 ? 'var(--color-success)' : ratio >= 0.5 ? '#FFB800' : '#FF4444';
             return (
               <div key={i} className="px-4 py-3 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center shrink-0 text-base">

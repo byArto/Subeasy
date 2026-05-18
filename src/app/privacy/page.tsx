@@ -9,20 +9,20 @@ export default function PrivacyPage() {
       style={{
         height: '100vh',
         overflowY: 'auto',
-        background: 'linear-gradient(to bottom, #0A0A0F, #07070C)',
-        color: '#F0F0F5',
-        fontFamily: "'Montserrat', sans-serif",
+        background: 'linear-gradient(to bottom, var(--color-surface), var(--color-surface-bottom))',
+        color: 'var(--color-text-primary)',
+        fontFamily: 'var(--font-body)',
         padding: '0 0 60px',
       }}
     >
       {/* Header */}
       <div
         style={{
-          borderBottom: '1px solid rgba(0,255,65,0.08)',
+          borderBottom: '1px solid var(--color-border-subtle)',
           padding: '20px 20px 16px',
           position: 'sticky',
           top: 0,
-          background: '#0A0A0F',
+          background: 'color-mix(in srgb, var(--color-surface) 92%, transparent)',
           zIndex: 10,
         }}
       >
@@ -32,8 +32,8 @@ export default function PrivacyPage() {
               width: 32,
               height: 32,
               borderRadius: 10,
-              background: 'rgba(0,255,65,0.1)',
-              border: '1.5px solid rgba(0,255,65,0.2)',
+              background: 'color-mix(in srgb, var(--color-neon) 10%, transparent)',
+              border: '1.5px solid var(--color-border-neon)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -43,8 +43,8 @@ export default function PrivacyPage() {
             🔒
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F5' }}>SubEasy</div>
-            <div style={{ fontSize: 11, color: '#55556A' }}>Privacy Policy · Политика конфиденциальности</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)' }}>SubEasy</div>
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Privacy Policy · Политика конфиденциальности</div>
           </div>
         </div>
       </div>
@@ -58,14 +58,14 @@ export default function PrivacyPage() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 6,
-            background: 'rgba(0,255,65,0.06)',
-            border: '1px solid rgba(0,255,65,0.12)',
+            background: 'color-mix(in srgb, var(--color-neon) 6%, transparent)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: 8,
             padding: '4px 12px',
             marginBottom: 24,
           }}
         >
-          <span style={{ fontSize: 10, color: '#00FF41', fontWeight: 700, letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: 10, color: 'var(--color-neon)', fontWeight: 700, letterSpacing: '0.06em' }}>
             Последнее обновление / Last updated: 2 марта 2026
           </span>
         </div>
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
           <P>
             Ваши данные хранятся в <b>Supabase</b> (PostgreSQL). Supabase работает на серверах AWS
             в регионе EU West (Ирландия). Supabase соответствует требованиям GDPR. Подробнее:{' '}
-            <a href="https://supabase.com/privacy" style={{ color: '#00FF41' }} target="_blank" rel="noopener noreferrer">
+            <a href="https://supabase.com/privacy" style={{ color: 'var(--color-neon)' }} target="_blank" rel="noopener noreferrer">
               supabase.com/privacy
             </a>.
           </P>
@@ -147,10 +147,10 @@ export default function PrivacyPage() {
           <H2>Третьи стороны / Third Parties</H2>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <th style={{ textAlign: 'left', padding: '8px 0', color: '#8888A0', fontWeight: 600 }}>Сервис</th>
-                <th style={{ textAlign: 'left', padding: '8px 8px', color: '#8888A0', fontWeight: 600 }}>Цель</th>
-                <th style={{ textAlign: 'left', padding: '8px 0', color: '#8888A0', fontWeight: 600 }}>Политика</th>
+              <tr style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
+                <th style={{ textAlign: 'left', padding: '8px 0', color: 'var(--color-text-muted)', fontWeight: 600 }}>Сервис</th>
+                <th style={{ textAlign: 'left', padding: '8px 8px', color: 'var(--color-text-muted)', fontWeight: 600 }}>Цель</th>
+                <th style={{ textAlign: 'left', padding: '8px 0', color: 'var(--color-text-muted)', fontWeight: 600 }}>Политика</th>
               </tr>
             </thead>
             <tbody>
@@ -159,11 +159,11 @@ export default function PrivacyPage() {
                 { name: 'Supabase', purpose: 'Хранение данных (БД)', policy: 'supabase.com/privacy' },
                 { name: 'Vercel', purpose: 'Хостинг и CDN', policy: 'vercel.com/legal/privacy-policy' },
               ].map((row) => (
-                <tr key={row.name} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                  <td style={{ padding: '8px 0', color: '#F0F0F5', fontWeight: 600 }}>{row.name}</td>
-                  <td style={{ padding: '8px 8px', color: '#8888A0' }}>{row.purpose}</td>
+                <tr key={row.name} style={{ borderBottom: '1px solid var(--color-border-subtle)' }}>
+                  <td style={{ padding: '8px 0', color: 'var(--color-text-primary)', fontWeight: 600 }}>{row.name}</td>
+                  <td style={{ padding: '8px 8px', color: 'var(--color-text-secondary)' }}>{row.purpose}</td>
                   <td style={{ padding: '8px 0' }}>
-                    <a href={`https://${row.policy}`} style={{ color: '#00FF41', fontSize: 11 }} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://${row.policy}`} style={{ color: 'var(--color-neon)', fontSize: 11 }} target="_blank" rel="noopener noreferrer">
                       {row.policy}
                     </a>
                   </td>
@@ -239,14 +239,14 @@ export default function PrivacyPage() {
           <H2>Контакт / Contact</H2>
           <P>
             По вопросам конфиденциальности и запросам на удаление данных:{' '}
-            <a href="https://t.me/by_arto" style={{ color: '#00FF41' }} target="_blank" rel="noopener noreferrer">
+            <a href="https://t.me/by_arto" style={{ color: 'var(--color-neon)' }} target="_blank" rel="noopener noreferrer">
               @by_arto
             </a>{' '}
             в Telegram.
           </P>
           <P>
             For privacy questions and data deletion requests:{' '}
-            <a href="https://t.me/by_arto" style={{ color: '#00FF41' }} target="_blank" rel="noopener noreferrer">
+            <a href="https://t.me/by_arto" style={{ color: 'var(--color-neon)' }} target="_blank" rel="noopener noreferrer">
               @by_arto
             </a>{' '}
             on Telegram.
@@ -257,14 +257,14 @@ export default function PrivacyPage() {
           style={{
             marginTop: 32,
             padding: '16px',
-            background: 'rgba(0,255,65,0.04)',
-            border: '1px solid rgba(0,255,65,0.1)',
+            background: 'color-mix(in srgb, var(--color-neon) 4%, transparent)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: 12,
             textAlign: 'center',
           }}
         >
           <div style={{ fontSize: 20, marginBottom: 8 }}>🛡️</div>
-          <p style={{ fontSize: 12, color: '#8888A0', margin: 0, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.6 }}>
             Ваши данные — ваши. Мы храним только то, что нужно для работы сервиса.<br />
             Your data is yours. We only store what's needed to run the service.
           </p>
@@ -282,8 +282,8 @@ function Section({ children }: { children: React.ReactNode }) {
     <div
       style={{
         marginBottom: 28,
-        background: '#111118',
-        border: '1px solid rgba(0,255,65,0.06)',
+        background: 'var(--color-surface-2)',
+        border: '1px solid var(--color-border-subtle)',
         borderRadius: 16,
         padding: '16px 18px',
       }}
@@ -299,7 +299,7 @@ function H2({ children }: { children: React.ReactNode }) {
       style={{
         fontSize: 13,
         fontWeight: 800,
-        color: '#00FF41',
+        color: 'var(--color-neon)',
         margin: '0 0 10px',
         letterSpacing: '0.03em',
         textTransform: 'uppercase',
@@ -315,7 +315,7 @@ function P({ children }: { children: React.ReactNode }) {
     <p
       style={{
         fontSize: 13,
-        color: '#8888A0',
+        color: 'var(--color-text-secondary)',
         lineHeight: 1.65,
         margin: '0 0 8px',
       }}
@@ -327,7 +327,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 function Li({ children }: { children: React.ReactNode }) {
   return (
-    <li style={{ fontSize: 13, color: '#8888A0', lineHeight: 1.6 }}>
+    <li style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
       {children}
     </li>
   );

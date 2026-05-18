@@ -14,11 +14,11 @@ const ROW_3 = SERVICE_CATALOG.filter((_, i) => i % 3 === 2);
 function MarqueePill({ name, emoji, color }: { name: string; emoji: string; color: string }) {
   return (
     <div
-      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/[0.06] shrink-0"
+      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-subtle shrink-0"
       style={{ background: `${color}10` }}
     >
       <ServiceLogo name={name} emoji={emoji} size={20} />
-      <span className="text-xs text-white/40 whitespace-nowrap font-medium">
+      <span className="text-xs text-text-muted whitespace-nowrap font-medium">
         {name}
       </span>
     </div>
@@ -72,9 +72,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           exit={{ opacity: 0, scale: 1.05 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
-          style={{
-            background: 'radial-gradient(circle at center, #0a1a0f 0%, #0A0A0F 70%)',
-          }}
+          style={{ background: 'var(--app-splash-bg)' }}
         >
           {/* ── Background marquee rows ── */}
           <div className="absolute inset-0 flex flex-col justify-center gap-3 pointer-events-none">
@@ -98,18 +96,14 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           {/* ── Dark vignette overlay on top of marquee ── */}
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{
-              background: 'radial-gradient(ellipse 60% 50% at center, rgba(10,10,15,0.3) 0%, rgba(10,10,15,0.85) 60%, rgba(10,10,15,0.97) 100%)',
-            }}
+            style={{ background: 'var(--app-vignette)' }}
           />
 
           {/* ── Radial neon glow behind logo ── */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <motion.div
               className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full"
-              style={{
-                background: 'radial-gradient(circle, rgba(0,255,65,0.18) 0%, rgba(0,255,65,0.04) 50%, transparent 70%)',
-              }}
+              style={{ background: 'var(--app-splash-glow)' }}
               animate={{
                 scale: [1, 1.3, 1],
                 opacity: [0.6, 1, 0.6],
@@ -140,9 +134,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
               {/* Glow ring behind logo */}
               <motion.div
                 className="absolute inset-0 rounded-3xl"
-                style={{
-                  background: 'radial-gradient(circle, rgba(0,255,65,0.2) 0%, transparent 70%)',
-                }}
+                style={{ background: 'var(--app-splash-ring)' }}
                 animate={{
                   opacity: [0.5, 1, 0.5],
                   scale: [0.95, 1.1, 0.95],
@@ -155,9 +147,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 width={120}
                 height={120}
                 className="relative z-10 rounded-3xl"
-                style={{
-                  filter: 'drop-shadow(0 0 20px rgba(0,255,65,0.3)) drop-shadow(0 0 40px rgba(0,255,65,0.1))',
-                }}
+                style={{ filter: 'var(--app-logo-filter)' }}
               />
             </motion.div>
 

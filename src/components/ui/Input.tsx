@@ -33,7 +33,7 @@ export function Input({
           'relative flex items-center rounded-xl border transition-all duration-200',
           'bg-surface-2',
           focused
-            ? 'border-neon/40 shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+            ? 'border-neon/40 shadow-[var(--app-input-focus-shadow)]'
             : error
               ? 'border-danger/40'
               : 'border-border-subtle'
@@ -52,10 +52,10 @@ export function Input({
               y: isFloating ? -10 : 0,
               scale: isFloating ? 0.75 : 1,
               color: focused
-                ? '#00FF41'
+                ? 'var(--color-neon)'
                 : error
-                  ? '#FF4444'
-                  : '#8888A0',
+                  ? 'var(--color-danger)'
+                  : 'var(--color-text-secondary)',
             }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             className={cn(
@@ -87,7 +87,6 @@ export function Input({
               icon ? 'pl-2' : 'pl-3.5',
               'pr-3.5',
               '[&::-webkit-inner-spin-button]:appearance-none',
-              '[&::-webkit-calendar-picker-indicator]:invert',
               '[&::-webkit-calendar-picker-indicator]:opacity-50'
             )}
             style={{ WebkitAppearance: 'none' }}

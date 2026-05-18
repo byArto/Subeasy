@@ -66,7 +66,7 @@ export function Modal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[110] modal-backdrop-bg backdrop-blur-sm"
           />
 
           {/* Sheet */}

@@ -128,7 +128,7 @@ function getUrgencyColor(date: Date): string {
   const diff = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (diff <= 2) return '#FF453A';
   if (diff <= 7) return '#FFD60A';
-  return '#00FF41';
+  return 'var(--color-success)';
 }
 
 function priceInCurrency(sub: Subscription, settings: AppSettings): number {

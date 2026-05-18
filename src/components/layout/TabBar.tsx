@@ -70,8 +70,9 @@ export function TabBar({
             'flex items-center justify-center',
             'w-[56px] h-[56px] rounded-full',
             'bg-neon shadow-neon-strong',
-            'active:shadow-[0_0_30px_rgba(0,255,65,0.5)]',
-            'transition-shadow duration-150'
+            'active:shadow-neon',
+            'transition-shadow duration-150',
+            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neon/30'
           )}
         >
           <PlusIcon className="w-7 h-7 text-surface stroke-[2.5]" />
@@ -102,7 +103,8 @@ export function TabBar({
                   className={cn(
                     'relative flex flex-col items-center justify-center',
                     'min-w-[56px] min-h-[44px] gap-0.5',
-                    'transition-colors duration-150'
+                    'rounded-lg transition-colors duration-150',
+                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neon/30'
                   )}
                 >
                   <Icon

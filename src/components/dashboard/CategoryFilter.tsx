@@ -131,7 +131,7 @@ export function CategoryFilter({
                   className={cn(
                     'w-full min-h-[40px] pl-9 pr-3.5 rounded-xl bg-surface-3 border border-border-subtle',
                     'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                    'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.08)]'
+                    'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                   )}
                 />
                 {searchQuery && (

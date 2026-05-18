@@ -68,7 +68,7 @@ export function Select({
           'bg-surface-2 border transition-all duration-200',
           'text-sm text-left',
           open
-            ? 'border-neon/40 shadow-[0_0_12px_rgba(0,255,65,0.1)]'
+            ? 'border-neon/40 shadow-[var(--app-input-focus-shadow)]'
             : 'border-border-subtle'
         )}
       >

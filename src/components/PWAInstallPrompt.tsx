@@ -56,7 +56,7 @@ export function PWAInstallPrompt() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={handleDismiss}
-            className="fixed inset-0 z-[100] bg-black/50"
+            className="fixed inset-0 z-[100] modal-backdrop-bg"
           />
 
           {/* Bottom sheet */}
@@ -69,7 +69,7 @@ export function PWAInstallPrompt() {
           >
             <div className="bg-surface-2 rounded-t-3xl border border-b-0 border-border-subtle p-6 pb-8">
               {/* Drag handle */}
-              <div className="w-10 h-1 rounded-full bg-white/10 mx-auto mb-5" />
+              <div className="w-10 h-1 rounded-full bg-text-muted/20 mx-auto mb-5" />
 
               {/* Icon + title */}
               <div className="flex items-center gap-3 mb-5">

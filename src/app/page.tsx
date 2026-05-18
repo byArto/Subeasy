@@ -375,7 +375,7 @@ export default function Home() {
   }
 
   return (
-    <div className="app-container fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden bg-gradient-to-b from-surface to-[#07070C]">
+    <div className="app-container app-gradient-bg fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden">
       <Header
         title={t(TAB_TITLE_KEYS[activeTab])}
         titleBadge={activeTab === 'home' ? <ProBadge onOpen={() => setShowProModal(true)} /> : undefined}
@@ -399,8 +399,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: 'rgba(0,0,0,0.7)' }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop-bg"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}

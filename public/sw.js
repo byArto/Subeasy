@@ -1,5 +1,5 @@
-// SubEasy Service Worker v3 — cache-first + push notifications
-const CACHE_NAME = 'subeasy-v3';
+// SubEasy Service Worker v4 — cache-first + push notifications
+const CACHE_NAME = 'subeasy-v4';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',

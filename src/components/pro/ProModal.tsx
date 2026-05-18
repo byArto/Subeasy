@@ -73,6 +73,13 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
   const [paid, setPaid] = useState(false);
 
   const isRu = lang === 'ru';
+  const mutedText = 'var(--color-text-muted)';
+  const secondaryText = 'var(--color-text-secondary)';
+  const primaryText = 'var(--color-text-primary)';
+  const panel = 'var(--color-surface-2)';
+  const panelAlt = 'var(--color-surface-3)';
+  const border = 'var(--color-border-subtle)';
+  const proGold = '#f5c842';
 
   async function handleBuy() {
     setError('');
@@ -132,7 +139,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.75)',
+              background: 'var(--app-modal-backdrop)',
               backdropFilter: 'blur(4px)',
               zIndex: 50,
             }}
@@ -150,14 +157,16 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
               left: 0,
               right: 0,
               zIndex: 51,
-              background: '#161616',
+              background: panel,
+              color: primaryText,
+              border: `1px solid ${border}`,
               borderRadius: '24px 24px 0 0',
               maxHeight: '92dvh',
               overflowY: 'auto',
             }}
           >
             {/* Drag handle */}
-            <div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.15)', borderRadius: 2, margin: '12px auto 0' }} />
+            <div style={{ width: 40, height: 4, background: 'color-mix(in srgb, var(--color-text-muted) 24%, transparent)', borderRadius: 2, margin: '12px auto 0' }} />
             {!paid && (
               <button
                 type="button"
@@ -173,10 +182,10 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: panelAlt,
+                  border: `1px solid ${border}`,
                   borderRadius: 12,
-                  color: 'rgba(255,255,255,0.55)',
+                  color: mutedText,
                   cursor: 'pointer',
                 }}
               >
@@ -197,7 +206,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                   <p style={{ fontSize: 20, fontWeight: 900, margin: '0 0 8px' }}>
                     {isRu ? 'PRO активирован!' : 'PRO activated!'}
                   </p>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: '0 0 28px' }}>
+                  <p style={{ fontSize: 13, color: secondaryText, margin: '0 0 28px' }}>
                     {isRu ? 'Все функции уже доступны' : 'All features are now available'}
                   </p>
                   <button
@@ -229,16 +238,16 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                     <h2 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 8px', lineHeight: 1.2 }}>
                       {isRu ? <>Сколько ты<br />теряешь прямо сейчас?</> : <>How much are you<br />losing right now?</>}
                     </h2>
-                    <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', margin: 0, lineHeight: 1.55 }}>
+                    <p style={{ fontSize: 13, color: secondaryText, margin: 0, lineHeight: 1.55 }}>
                       {isRu
-                        ? <>Пользователи SubEasy PRO находят в среднем <span style={{ color: '#00FF41', fontWeight: 700 }}>2–3 забытые подписки</span> на сумму <span style={{ color: '#00FF41', fontWeight: 700 }}>~2 400₽/мес</span></>
-                        : <>SubEasy PRO users find on average <span style={{ color: '#00FF41', fontWeight: 700 }}>2–3 forgotten subscriptions</span> worth <span style={{ color: '#00FF41', fontWeight: 700 }}>~$30/mo</span></>}
+                        ? <>Пользователи SubEasy PRO находят в среднем <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>2–3 забытые подписки</span> на сумму <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>~2 400₽/мес</span></>
+                        : <>SubEasy PRO users find on average <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>2–3 forgotten subscriptions</span> worth <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>~$30/mo</span></>}
                     </p>
                   </div>
 
                   {/* ── Plan selector ── */}
                   <div style={{ padding: '16px 16px 0' }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 10px' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: mutedText, margin: '0 0 10px' }}>
                       {isRu ? 'Выберите план' : 'Choose plan'}
                     </p>
 
@@ -253,8 +262,8 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                             type="button"
                             onClick={() => setSelectedPlan(plan)}
                             style={{
-                              background: isSelected ? 'rgba(245,200,66,0.12)' : '#1e1e1e',
-                              border: `1.5px solid ${isSelected ? '#f5c842' : 'rgba(255,255,255,0.08)'}`,
+                              background: isSelected ? 'rgba(245,200,66,0.12)' : panelAlt,
+                              border: `1.5px solid ${isSelected ? proGold : border}`,
                               borderRadius: 14,
                               padding: '10px 8px',
                               cursor: 'pointer',
@@ -272,7 +281,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                                 top: -8,
                                 left: '50%',
                                 transform: 'translateX(-50%)',
-                                background: '#f5c842',
+                                background: proGold,
                                 color: '#0e0e0e',
                                 fontSize: 8,
                                 fontWeight: 900,
@@ -284,19 +293,19 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                                 {isRu ? (cfg as { badgeRu: string }).badgeRu : (cfg as { badgeEn: string }).badgeEn}
                               </div>
                             )}
-                            <span style={{ fontSize: 10, fontWeight: 700, color: isSelected ? '#f5c842' : 'rgba(255,255,255,0.6)' }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: isSelected ? proGold : secondaryText }}>
                               {isRu ? cfg.labelRu : cfg.labelEn}
                             </span>
                             {/* Crossed-out original price */}
-                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textDecoration: 'line-through' }}>
+                            <span style={{ fontSize: 11, color: mutedText, textDecoration: 'line-through' }}>
                               {cfg.strikethru}⭐
                             </span>
                             {/* Actual price */}
-                            <span style={{ fontSize: 17, fontWeight: 900, color: isSelected ? '#f5c842' : '#fff', lineHeight: 1 }}>
+                            <span style={{ fontSize: 17, fontWeight: 900, color: isSelected ? proGold : primaryText, lineHeight: 1 }}>
                               {cfg.stars}⭐
                             </span>
                             {cfg.periodRu && (
-                              <span style={{ fontSize: 9, color: isSelected ? 'rgba(245,200,66,0.5)' : 'rgba(255,255,255,0.3)' }}>
+                              <span style={{ fontSize: 9, color: isSelected ? 'rgba(245,200,66,0.65)' : mutedText }}>
                                 {isRu ? cfg.periodRu : cfg.periodEn}
                               </span>
                             )}
@@ -401,18 +410,18 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                       )}
                     </div>
 
-                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', margin: '8px 0 0' }}>
+                    <p style={{ fontSize: 10, color: mutedText, textAlign: 'center', margin: '8px 0 0' }}>
                       {isRu ? 'Мгновенная активация · Telegram Stars' : 'Instant activation · Telegram Stars'}
                     </p>
 
                     {/* TON crypto payment option */}
                     <div style={{ marginTop: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', fontWeight: 600 }}>
+                        <div style={{ flex: 1, height: 1, background: border }} />
+                        <span style={{ fontSize: 10, color: mutedText, fontWeight: 600 }}>
                           {isRu ? 'или' : 'or'}
                         </span>
-                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                        <div style={{ flex: 1, height: 1, background: border }} />
                       </div>
                       <TonPayButton
                         plan={selectedPlan}
@@ -423,7 +432,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                         }}
                       />
                     </div>
-                    <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', textAlign: 'center', margin: '6px 0 0', lineHeight: 1.6 }}>
+                    <p style={{ fontSize: 10, color: mutedText, textAlign: 'center', margin: '6px 0 0', lineHeight: 1.6 }}>
                       {isRu ? 'Оплачивая, вы соглашаетесь с ' : 'By paying you agree to the '}
                       <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'rgba(245,200,66,0.5)', textDecoration: 'underline' }}>
                         {isRu ? 'Условиями' : 'Terms'}
@@ -436,11 +445,11 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                   </div>
 
                   {/* ── Divider ── */}
-                  <div style={{ margin: '16px 16px 0', height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                  <div style={{ margin: '16px 16px 0', height: 1, background: border }} />
 
                   {/* ── What you get ── */}
                   <div style={{ padding: '14px 16px calc(env(safe-area-inset-bottom, 20px) + 20px)' }}>
-                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', margin: '0 0 12px' }}>
+                    <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: mutedText, margin: '0 0 12px' }}>
                       {isRu ? 'Что получите' : 'What you get'}
                     </p>
 
@@ -455,11 +464,11 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                               alignItems: 'center',
                               gap: 12,
                               background: f.live
-                                ? 'rgba(0,255,65,0.05)'
-                                : isDimmed ? 'rgba(255,255,255,0.02)' : '#1e1e1e',
+                                ? 'color-mix(in srgb, var(--color-success) 6%, var(--color-surface-2))'
+                                : isDimmed ? 'color-mix(in srgb, var(--color-text-muted) 5%, transparent)' : panelAlt,
                               border: f.live
-                                ? '1px solid rgba(0,255,65,0.14)'
-                                : isDimmed ? '1px dashed rgba(255,255,255,0.07)' : '1px solid rgba(255,255,255,0.06)',
+                                ? '1px solid color-mix(in srgb, var(--color-success) 22%, transparent)'
+                                : isDimmed ? `1px dashed ${border}` : `1px solid ${border}`,
                               borderRadius: 12,
                               padding: '10px 12px',
                               opacity: isDimmed ? 0.55 : 1,
@@ -467,10 +476,10 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                           >
                             <span style={{ fontSize: 20, flexShrink: 0 }}>{f.icon}</span>
                             <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: isDimmed ? 'rgba(255,255,255,0.5)' : '#fff' }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: isDimmed ? mutedText : primaryText }}>
                                 {isRu ? f.ru.name : f.en.name}
                               </div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1, lineHeight: 1.4 }}>
+                              <div style={{ fontSize: 11, color: secondaryText, marginTop: 1, lineHeight: 1.4 }}>
                                 {isRu ? f.ru.desc : f.en.desc}
                               </div>
                             </div>
@@ -479,9 +488,9 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                                 flexShrink: 0,
                                 fontSize: 9,
                                 fontWeight: 800,
-                                color: '#00FF41',
-                                background: 'rgba(0,255,65,0.1)',
-                                border: '1px solid rgba(0,255,65,0.2)',
+                                color: 'var(--color-success)',
+                                background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+                                border: '1px solid color-mix(in srgb, var(--color-success) 20%, transparent)',
                                 borderRadius: 6,
                                 padding: '2px 6px',
                                 letterSpacing: '0.03em',
@@ -493,9 +502,9 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                                 flexShrink: 0,
                                 fontSize: 9,
                                 fontWeight: 800,
-                                color: isDimmed ? 'rgba(255,255,255,0.3)' : '#f5c842',
-                                background: isDimmed ? 'rgba(255,255,255,0.05)' : 'rgba(245,200,66,0.08)',
-                                border: `1px solid ${isDimmed ? 'rgba(255,255,255,0.08)' : 'rgba(245,200,66,0.2)'}`,
+                                color: isDimmed ? mutedText : proGold,
+                                background: isDimmed ? 'color-mix(in srgb, var(--color-text-muted) 6%, transparent)' : 'rgba(245,200,66,0.08)',
+                                border: `1px solid ${isDimmed ? border : 'rgba(245,200,66,0.2)'}`,
                                 borderRadius: 6,
                                 padding: '2px 6px',
                                 letterSpacing: '0.03em',
@@ -514,7 +523,7 @@ export function ProModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: 'rgba(255,255,255,0.25)',
+                          color: mutedText,
                           fontSize: 13,
                           width: '100%',
                           padding: '14px 0 0',

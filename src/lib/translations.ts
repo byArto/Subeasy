@@ -573,9 +573,10 @@ const dict: Translations = {
 
   // ── Themes ──
   'settings.themes.title': { ru: 'Тема оформления', en: 'Appearance' },
-  'settings.themes.green': { ru: 'NeonSub Green', en: 'NeonSub Green' },
+  'settings.themes.green': { ru: 'SubEasy Green', en: 'SubEasy Green' },
   'settings.themes.purple': { ru: 'Midnight Purple', en: 'Midnight Purple' },
   'settings.themes.blue': { ru: 'Arctic Blue', en: 'Arctic Blue' },
+  'settings.themes.claude': { ru: 'Claude', en: 'Claude' },
   'settings.themes.free': { ru: 'Текущая', en: 'Current' },
   'settings.themes.proOnly': { ru: 'PRO', en: 'PRO' },
 };

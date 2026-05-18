@@ -11,6 +11,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { useTheme, Theme } from '@/components/providers/ThemeProvider';
+import { THEME_OPTIONS } from '@/lib/themes';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
 import { exportCSV, exportPDF } from '@/lib/export';
@@ -279,7 +280,7 @@ export function SettingsPage({
 
       // Clear local storage regardless of server result
       ['neonsub-subscriptions', 'neonsub-categories', 'neonsub-settings',
-       'neonsub-language', 'neonsub-theme', 'neonsub-active-workspace-id'].forEach(
+       'neonsub-language', 'neonsub-theme', 'subeasy-theme', 'neonsub-active-workspace-id'].forEach(
         (k) => localStorage.removeItem(k),
       );
       signOut();
@@ -466,8 +467,7 @@ export function SettingsPage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-5"
-            style={{ background: 'rgba(0,0,0,0.75)' }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-5 modal-backdrop-bg"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -538,8 +538,8 @@ export function SettingsPage({
           <span style={{ fontSize: 13, fontWeight: 700, color: isPro ? '#f5c842' : '#39ff84', letterSpacing: '0.08em' }}>
             {isPro ? '👑 PRO' : 'FREE'}
           </span>
-          <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.1)', display: 'inline-block' }} />
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>
+          <span style={{ width: 1, height: 14, background: 'var(--color-border-subtle)', display: 'inline-block' }} />
+          <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
             {lang === 'ru' ? 'Текущий план' : 'Current plan'}
           </span>
         </div>
@@ -702,7 +702,7 @@ export function SettingsPage({
                     className={cn(
                       'w-24 min-h-[40px] px-3 rounded-xl bg-surface-3 border border-border-subtle',
                       'text-sm text-text-primary text-right outline-none tabular-nums',
-                      'focus:border-neon/40 focus:shadow-[0_0_12px_rgba(0,255,65,0.1)]',
+                      'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]',
                       'appearance-none [&::-webkit-inner-spin-button]:appearance-none'
                     )}
                     style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
@@ -876,7 +876,7 @@ export function SettingsPage({
                         {lang === 'ru' ? `${members.length} из 6 участников` : `${members.length} of 6 members`}
                       </p>
                     </div>
-                    <span className="text-xs font-bold px-2 py-1 rounded-lg" style={{ background: 'rgba(0,255,65,0.1)', color: '#00FF41' }}>
+                    <span className="text-xs font-bold px-2 py-1 rounded-lg bg-neon/10 text-neon">
                       {lang === 'ru' ? 'Владелец' : 'Owner'}
                     </span>
                   </div>
@@ -1516,9 +1516,7 @@ export function SettingsPage({
             src="/icons/icon-192x192.png"
             alt="SubEasy"
             className="w-16 h-16 rounded-2xl"
-            style={{
-              boxShadow: '0 0 24px rgba(0,255,65,0.15)',
-            }}
+            style={{ filter: 'var(--app-logo-filter-compact)' }}
           />
 
           <h2 className="font-display font-extrabold text-2xl neon-text text-neon tracking-tight">
@@ -1566,7 +1564,7 @@ export function SettingsPage({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex flex-col bg-black"
+            className="fixed inset-0 z-[200] flex flex-col bg-surface"
           >
             {/* Top bar — sits above Telegram safe area */}
             <div
@@ -1839,7 +1837,7 @@ function NeonToggle({ value, onToggle }: { value: boolean; onToggle: () => void 
         'relative w-[52px] h-[30px] rounded-full p-[3px] transition-colors duration-200',
         value ? 'bg-neon' : 'bg-surface-4'
       )}
-      style={value ? { boxShadow: '0 0 12px rgba(0, 255, 65, 0.3)' } : undefined}
+      style={value ? { boxShadow: 'var(--shadow-neon)' } : undefined}
     >
       <motion.span
         animate={{ x: value ? 22 : 0 }}
@@ -1918,7 +1916,7 @@ function LangGrid({
                   ? 'bg-surface-3 border-border-subtle text-text-muted opacity-50 cursor-default'
                   : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
             )}
-            style={active ? { boxShadow: '0 0 10px rgba(0,255,65,0.15)' } : undefined}
+            style={active ? { boxShadow: 'var(--shadow-neon)' } : undefined}
           >
             {soon && (
               <span className="absolute top-1 right-1 text-[7px] text-text-muted font-medium leading-none">{soonLabel}</span>
@@ -1933,12 +1931,6 @@ function LangGrid({
 }
 
 /* ── Theme Switch ── */
-
-const THEME_OPTIONS: { value: Theme; label: string; key: string; color: string; proOnly: boolean }[] = [
-  { value: 'green',  label: 'NeonSub Green',   key: 'settings.themes.green',  color: '#00FF41', proOnly: false },
-  { value: 'purple', label: 'Midnight Purple',  key: 'settings.themes.purple', color: '#A855F7', proOnly: true },
-  { value: 'blue',   label: 'Arctic Blue',      key: 'settings.themes.blue',   color: '#06B6D4', proOnly: true },
-];
 
 function ThemeSwitch({
   value,
@@ -2037,7 +2029,7 @@ function CurrencySwitch({
                   ? 'text-text-muted opacity-50'
                   : 'text-text-secondary'
             )}
-            style={value === opt.code ? { boxShadow: '0 0 12px rgba(0,255,65,0.3)' } : undefined}
+            style={value === opt.code ? { boxShadow: 'var(--shadow-neon)' } : undefined}
           >
             {locked ? '🔒' : opt.symbol}
           </motion.button>
@@ -2092,8 +2084,8 @@ function CategoryRow({
   if (isEditing) {
     return (
       <motion.div
-        initial={{ backgroundColor: 'rgba(0,255,65,0.03)' }}
-        animate={{ backgroundColor: 'rgba(0,255,65,0.03)' }}
+        initial={{ backgroundColor: 'color-mix(in srgb, var(--color-neon) 3%, transparent)' }}
+        animate={{ backgroundColor: 'color-mix(in srgb, var(--color-neon) 3%, transparent)' }}
         className={cn('flex items-center gap-2.5 px-4 py-3', !isLast && 'border-b border-border-subtle')}
       >
         <motion.button

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { TelegramUser } from '@/hooks/useTelegram';
+import { getThemeChrome, isValidTheme } from '@/lib/themes';
 
 // TMA Analytics is loaded via CDN <script> tag in layout.tsx
 // and initialized via onload callback (see layout.tsx <head>).
@@ -93,8 +94,10 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     webApp.expand();
 
     try {
-      webApp.setHeaderColor('#0A0A0F');
-      webApp.setBackgroundColor('#0A0A0F');
+      const storedTheme = localStorage.getItem('subeasy-theme') ?? localStorage.getItem('neonsub-theme');
+      const chrome = getThemeChrome(isValidTheme(storedTheme) ? storedTheme : 'green');
+      webApp.setHeaderColor(chrome.backgroundColor);
+      webApp.setBackgroundColor(chrome.backgroundColor);
     } catch { /* older Telegram */ }
 
     // Apply insets immediately, then listen to Telegram events for updates,

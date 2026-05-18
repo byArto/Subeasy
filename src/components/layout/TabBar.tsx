@@ -69,13 +69,13 @@ export function TabBar({
           className={cn(
             'flex items-center justify-center',
             'w-[56px] h-[56px] rounded-full',
-            'bg-neon shadow-neon-strong',
-            'active:shadow-neon',
+            'bg-[var(--app-fab-bg)] shadow-[var(--app-fab-shadow)]',
+            'active:shadow-[var(--app-fab-shadow-active)]',
             'transition-shadow duration-150',
             'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neon/30'
           )}
         >
-          <PlusIcon className="w-7 h-7 text-surface stroke-[2.5]" />
+          <PlusIcon className="w-7 h-7 text-[var(--app-fab-icon)] stroke-[2.5]" />
         </motion.button>
       </div>
 

@@ -64,6 +64,10 @@
   --app-selection-text: #F0F0F5;
   --app-input-focus-shadow: 0 0 12px rgba(0, 255, 65, 0.1);
   --app-modal-backdrop: rgba(0, 0, 0, 0.6);
+  --app-fab-bg: var(--color-neon);
+  --app-fab-icon: var(--color-surface);
+  --app-fab-shadow: var(--shadow-neon-strong);
+  --app-fab-shadow-active: var(--shadow-neon);
 }
 
 /* ═══════════════════════════════════════════════
@@ -144,6 +148,10 @@
   --app-selection-text: #141413;
   --app-input-focus-shadow: 0 0 0 3px rgba(217, 119, 87, 0.12);
   --app-modal-backdrop: rgba(31, 30, 29, 0.36);
+  --app-fab-bg: #d97757;
+  --app-fab-icon: #fffaf3;
+  --app-fab-shadow: 0 12px 28px rgba(151, 72, 48, 0.24), 0 0 0 7px rgba(217, 119, 87, 0.12);
+  --app-fab-shadow-active: 0 8px 20px rgba(151, 72, 48, 0.18), 0 0 0 5px rgba(217, 119, 87, 0.1);
   background-color: #faf9f5;
 }
 

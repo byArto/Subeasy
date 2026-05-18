@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
+import { markLocalSubscriptionImportPending } from '@/lib/sync';
 import type { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -86,6 +87,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleSetSkipAuth = useCallback((skip: boolean) => {
+    if (!skip && skipAuth && typeof window !== 'undefined') {
+      try {
+        const rawSubs = window.localStorage.getItem('neonsub-subscriptions');
+        const localSubs = rawSubs ? JSON.parse(rawSubs) : [];
+        if (Array.isArray(localSubs) && localSubs.length > 0) {
+          markLocalSubscriptionImportPending();
+        }
+      } catch { /* ignore */ }
+    }
+
     setSkipAuth(skip);
     if (typeof window !== 'undefined') {
       if (skip) {
@@ -94,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.localStorage.removeItem('neonsub-skip-auth');
       }
     }
-  }, []);
+  }, [skipAuth]);
 
   return (
     <AuthContext.Provider

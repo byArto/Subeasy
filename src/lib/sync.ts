@@ -1,8 +1,62 @@
 import { createClient } from '@/lib/supabase';
 import type { Subscription, Category, AppSettings, Workspace, WorkspaceMember } from '@/lib/types';
 import { DEFAULT_CATEGORIES } from '@/lib/constants';
+import { mergePersonalSubscriptionsForSync } from '@/lib/syncMerge';
 
 const supabase = () => createClient();
+const KNOWN_SUBS_KEY_PREFIX = 'neonsub-known-subscription-ids:';
+const PENDING_SUB_IMPORT_KEY = 'neonsub-pending-local-subscription-import';
+
+function readStringArray(key: string): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeStringArray(key: string, values: Iterable<string>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify([...new Set(values)]));
+  } catch { /* ignore */ }
+}
+
+function knownSubscriptionIdsKey(userId: string) {
+  return `${KNOWN_SUBS_KEY_PREFIX}${userId}`;
+}
+
+function readKnownSubscriptionIds(userId: string): string[] {
+  return readStringArray(knownSubscriptionIdsKey(userId));
+}
+
+function rememberKnownSubscriptionIds(userId: string, ids: Iterable<string>) {
+  const current = readKnownSubscriptionIds(userId);
+  writeStringArray(knownSubscriptionIdsKey(userId), [...current, ...ids]);
+}
+
+function hasPendingLocalSubscriptionImport(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(PENDING_SUB_IMPORT_KEY) === 'true';
+}
+
+function clearPendingLocalSubscriptionImport() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(PENDING_SUB_IMPORT_KEY);
+  } catch { /* ignore */ }
+}
+
+export function markLocalSubscriptionImportPending() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(PENDING_SUB_IMPORT_KEY, 'true');
+  } catch { /* ignore */ }
+}
 
 /* ═══════════════════════════════════════
    Subscriptions
@@ -43,10 +97,24 @@ export async function pushSubscriptions(userId: string, subs: Subscription[]): P
     .is('workspace_id', null);
 
   const staleIds = (existing ?? []).map((r) => r.id).filter((id) => !keepIds.has(id));
+  rememberKnownSubscriptionIds(userId, [...keepIds, ...(existing ?? []).map((r) => r.id)]);
   if (staleIds.length > 0) {
     const { error } = await client.from('subscriptions').delete().in('id', staleIds);
     if (error) console.warn('[sync] pushSubscriptions delete stale error:', error.message);
   }
+}
+
+export async function deletePersonalSubscription(userId: string, subId: string): Promise<void> {
+  rememberKnownSubscriptionIds(userId, [subId]);
+
+  const { error } = await supabase()
+    .from('subscriptions')
+    .delete()
+    .eq('id', subId)
+    .eq('user_id', userId)
+    .is('workspace_id', null);
+
+  if (error) console.warn('[sync] deletePersonalSubscription error:', error.message);
 }
 
 export async function syncSubscriptions(
@@ -54,18 +122,22 @@ export async function syncSubscriptions(
   localSubs: Subscription[]
 ): Promise<Subscription[]> {
   const remoteSubs = await pullSubscriptions(userId); // already personal-only
+  const knownSyncedIds = readKnownSubscriptionIds(userId);
+  const importLocalOnly = hasPendingLocalSubscriptionImport();
+  const merged = mergePersonalSubscriptionsForSync({
+    remoteSubs,
+    localSubs,
+    knownSyncedIds,
+    importLocalOnly,
+  });
 
-  // Merge: remote wins for same id, add local-only personal items
-  const remoteMap = new Map(remoteSubs.map((s) => [s.id, s]));
-  const merged = [...remoteSubs];
-
-  for (const local of localSubs.filter((s) => !s.workspaceId)) {
-    if (!remoteMap.has(local.id)) {
-      merged.push(local);
-    }
-  }
-
+  rememberKnownSubscriptionIds(userId, [
+    ...knownSyncedIds,
+    ...remoteSubs.map((s) => s.id),
+    ...merged.map((s) => s.id),
+  ]);
   await pushSubscriptions(userId, merged);
+  clearPendingLocalSubscriptionImport();
   return merged;
 }
 

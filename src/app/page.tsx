@@ -35,6 +35,7 @@ import { ServiceTemplate } from '@/lib/services';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
 import { generateId } from '@/lib/utils';
 import { getAuthToken } from '@/lib/supabase';
+import { deletePersonalSubscription } from '@/lib/sync';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -226,8 +227,11 @@ export default function Home() {
       await refreshWorkspaceSubs();
     } else {
       deleteSubscription(id);
+      if (user) {
+        await deletePersonalSubscription(user.id, id);
+      }
     }
-  }, [isWorkspaceActive, workspace, deleteSubscription, refreshWorkspaceSubs]);
+  }, [isWorkspaceActive, workspace, user, deleteSubscription, refreshWorkspaceSubs]);
 
   // Computed functions derived from activeSubscriptions (used by HomeTab)
   const getActiveSubs = useCallback(() => activeSubscriptions.filter((s) => s.isActive), [activeSubscriptions]);

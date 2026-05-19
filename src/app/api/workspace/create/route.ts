@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,20 +27,22 @@ export async function POST(req: NextRequest) {
 
     const supabase = createServiceClient();
 
-    // Check PRO status
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_pro, pro_until')
-      .eq('id', userId)
-      .single();
+    if (isMonetizationEnabled()) {
+      // Check PRO status only when paid monetization is enabled.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_pro, pro_until')
+        .eq('id', userId)
+        .single();
 
-    if (!profile?.is_pro) {
-      return NextResponse.json({ error: 'PRO required' }, { status: 403 });
-    }
+      if (!profile?.is_pro) {
+        return NextResponse.json({ error: 'PRO required' }, { status: 403 });
+      }
 
-    const proUntil = profile.pro_until ? new Date(profile.pro_until) : null;
-    if (proUntil && proUntil < new Date()) {
-      return NextResponse.json({ error: 'PRO expired' }, { status: 403 });
+      const proUntil = profile.pro_until ? new Date(profile.pro_until) : null;
+      if (proUntil && proUntil < new Date()) {
+        return NextResponse.json({ error: 'PRO expired' }, { status: 403 });
+      }
     }
 
     // Check if user already owns a workspace

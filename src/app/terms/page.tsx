@@ -102,69 +102,29 @@ export default function TermsPage() {
         </Section>
 
         <Section>
-          <H2>3. Подписка PRO / PRO Subscription</H2>
-          <P>SubEasy предлагает бесплатный план и платный план PRO.</P>
-
-          <div style={{ margin: '10px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { plan: 'Месяц / Monthly', stars: '249 ⭐' },
-              { plan: 'Год / Yearly', stars: '1 799 ⭐' },
-              { plan: 'Навсегда / Lifetime', stars: '2 999 ⭐' },
-            ].map((row) => (
-              <div
-                key={row.plan}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  background: 'var(--color-surface-3)',
-                  borderRadius: 10,
-                  padding: '10px 14px',
-                }}
-              >
-                <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 600 }}>{row.plan}</span>
-                <span style={{ fontSize: 14, color: '#f5c842', fontWeight: 800 }}>{row.stars}</span>
-              </div>
-            ))}
-          </div>
-
+          <H2>3. Доступ к функциям / Feature Access</H2>
           <P>
-            Оплата производится через <b>Telegram Stars</b> — официальную платёжную систему Telegram.
-            Мы не обрабатываем и не храним данные банковских карт.
+            На текущий момент доступные функции SubEasy предоставляются бесплатно. Мы можем
+            изменить модель доступа в будущем, но заранее сообщим об этом в приложении.
           </P>
           <P>
-            Payment is processed via <b>Telegram Stars</b> — Telegram's official payment system.
-            We do not process or store bank card details.
-          </P>
-          <P>
-            PRO активируется мгновенно после успешной оплаты. Годовой и месячный планы
-            автоматически не продлеваются — вы выбираете продление вручную.
-          </P>
-          <P>
-            PRO is activated instantly after successful payment. Monthly and yearly plans do not
-            auto-renew — you choose to renew manually.
+            SubEasy currently provides its available features for free. We may change the access
+            model in the future, but we will notify users in the app before doing so.
           </P>
         </Section>
 
         <Section>
-          <H2>4. Возвраты / Refunds</H2>
+          <H2>4. Поддержка / Support</H2>
           <P>
-            Возвраты Stars рассматриваются индивидуально. Если PRO не был активирован после
-            оплаты по техническим причинам — напишите нам @by_arto, мы разберёмся.
+            Если у вас возник вопрос или техническая проблема, напишите @by_arto.
           </P>
           <P>
-            По вопросам оплаты вы также можете обратиться напрямую к Telegram через команду
-            /paysupport в боте.
-          </P>
-          <P>
-            Refunds of Stars are handled on a case-by-case basis. If PRO was not activated after
-            payment due to a technical issue — contact us @by_arto. You may also contact Telegram
-            directly via /paysupport in the bot.
+            If you have a question or technical issue, contact @by_arto.
           </P>
         </Section>
 
         <Section>
-          <H2>5. Что входит в PRO / What's Included in PRO</H2>
+          <H2>5. Возможности / Features</H2>
           <ul style={{ paddingLeft: 20, margin: '8px 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <Li>Семейный план (Shared Workspace) — до 6 участников.</Li>
             <Li>Telegram-уведомления за 1–7 дней до списания.</Li>
@@ -174,11 +134,11 @@ export default function TermsPage() {
             <Li>AI-аудит портфеля (в разработке).</Li>
           </ul>
           <P>
-            Мы оставляем за собой право добавлять новые PRO-функции и изменять набор
-            бесплатных функций с предварительным уведомлением.
+            Мы оставляем за собой право добавлять новые функции и изменять набор возможностей
+            с предварительным уведомлением.
           </P>
           <P>
-            We reserve the right to add new PRO features and adjust the free tier with prior notice.
+            We reserve the right to add new features and adjust available functionality with prior notice.
           </P>
         </Section>
 
@@ -193,8 +153,8 @@ export default function TermsPage() {
           </ul>
           <P>
             By using SubEasy you agree not to violate applicable law; not to attempt to bypass
-            restrictions or access other users' data; not to use the service for automated data
-            collection or spam; to comply with Telegram's Terms of Service.
+            restrictions or access other users&apos; data; not to use the service for automated data
+            collection or spam; to comply with Telegram&apos;s Terms of Service.
           </P>
         </Section>
 
@@ -207,17 +167,17 @@ export default function TermsPage() {
             и не являются финансовым советом.
           </P>
           <P>
-            SubEasy is provided "as is". We do not guarantee uninterrupted service and are not
+            SubEasy is provided &quot;as is&quot;. We do not guarantee uninterrupted service and are not
             liable for financial decisions made based on app data. Subscription data is entered
             manually by users and does not constitute financial advice.
           </P>
           <P>
-            В максимально допустимой законом мере наша ответственность ограничена суммой,
-            уплаченной вами за PRO в течение последних 12 месяцев.
+            В максимально допустимой законом мере наша ответственность ограничена
+            прямым документально подтверждённым ущербом.
           </P>
           <P>
-            To the maximum extent permitted by law, our liability is limited to the amount you paid
-            for PRO in the last 12 months.
+            To the maximum extent permitted by law, our liability is limited to direct,
+            documented damages.
           </P>
         </Section>
 
@@ -254,7 +214,7 @@ export default function TermsPage() {
           </P>
           <P>
             Disputes are resolved through negotiation. If not possible — in accordance with
-            the law applicable to the developer's jurisdiction.
+            the law applicable to the developer&apos;s jurisdiction.
           </P>
         </Section>
 

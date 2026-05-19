@@ -4,6 +4,7 @@ import { Redis } from '@upstash/redis';
 import { createServiceClient } from '@/lib/supabase-server';
 
 import { env } from '@/lib/env';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 const BOT_TOKEN       = env('TELEGRAM_BOT_TOKEN');
 const WEBHOOK_SECRET  = env('TELEGRAM_WEBHOOK_SECRET');
@@ -128,12 +129,14 @@ function kbOpen(lang: Lang) {
 }
 
 function replyKeyboard(lang: Lang) {
+  const firstRow = [
+    { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } },
+    ...(isMonetizationEnabled() ? [{ text: lang === 'en' ? '👑 Get PRO' : '👑 Получить PRO' }] : []),
+  ];
+
   return {
     keyboard: [
-      [
-        { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } },
-        { text: lang === 'en' ? '👑 Get PRO' : '👑 Получить PRO' },
-      ],
+      firstRow,
       [
         { text: lang === 'en' ? '📊 My Status' : '📊 Мой статус' },
         { text: lang === 'en' ? '🌐 Language' : '🌐 Язык' },
@@ -178,6 +181,19 @@ async function cmdStart(chatId: number, lang: Lang) {
 // ─── Command: /pro (also used as callback) ────────────────────────────────────
 
 async function cmdPro(chatId: number, lang: Lang, editMsgId?: number) {
+  if (!isMonetizationEnabled()) {
+    const text = lang === 'en'
+      ? '<b>SubEasy is free right now.</b>\n\nAll available features are included.'
+      : '<b>SubEasy сейчас бесплатный.</b>\n\nВсе доступные функции уже включены.';
+    const extra = { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } };
+    if (editMsgId) {
+      await edit(chatId, editMsgId, text, extra);
+    } else {
+      await send(chatId, text, extra);
+    }
+    return;
+  }
+
   const text = lang === 'en'
     ? '👑 <b>SubEasy PRO</b>\n\nUnlock everything:\n📊 Budget control &amp; alerts\n👨‍👩‍👧 Family Plan — up to 6 people\n🔔 Smart Telegram reminders\n📄 PDF / CSV export\n🤖 AI audit — <i>coming soon</i>\n\n<b>Choose a plan:</b>'
     : '👑 <b>SubEasy PRO</b>\n\nОткрой всё:\n📊 Бюджетный контроль и алерты\n👨‍👩‍👧 Семейный план — до 6 человек\n🔔 Умные Telegram-уведомления\n📄 PDF / CSV экспорт\n🤖 AI аудит — <i>скоро</i>\n\n<b>Выбери план:</b>';
@@ -209,7 +225,9 @@ async function cmdStatus(chatId: number, telegramId: number, lang: Lang) {
   }
 
   let statusLine: string;
-  if (profile.is_pro) {
+  if (!isMonetizationEnabled()) {
+    statusLine = lang === 'en' ? 'All features included' : 'Все функции включены';
+  } else if (profile.is_pro) {
     if (!profile.pro_until) {
       statusLine = lang === 'en' ? '👑 PRO · Lifetime ♾' : '👑 PRO · Навсегда ♾';
     } else {
@@ -229,7 +247,7 @@ async function cmdStatus(chatId: number, telegramId: number, lang: Lang) {
     reply_markup: {
       inline_keyboard: [
         [kbOpen(lang)],
-        ...(!profile.is_pro ? [[{ text: lang === 'en' ? '👑 Upgrade to PRO' : '👑 Перейти на PRO', callback_data: 'pro' }]] : []),
+        ...(isMonetizationEnabled() && !profile.is_pro ? [[{ text: lang === 'en' ? '👑 Upgrade to PRO' : '👑 Перейти на PRO', callback_data: 'pro' }]] : []),
       ],
     },
   });
@@ -252,9 +270,13 @@ async function cmdLanguage(chatId: number, lang: Lang) {
 // ─── Command: /help ───────────────────────────────────────────────────────────
 
 async function cmdHelp(chatId: number, lang: Lang) {
-  const text = lang === 'en'
-    ? '❓ <b>SubEasy Bot</b>\n\n<b>Commands:</b>\n/start — Open SubEasy\n/pro — Get PRO access\n/status — Your account status\n/language — Switch language\n/support — Contact support\n/delete_data — Delete my data'
-    : '❓ <b>Бот SubEasy</b>\n\n<b>Команды:</b>\n/start — Открыть SubEasy\n/pro — Получить PRO\n/status — Статус аккаунта\n/language — Сменить язык\n/support — Поддержка\n/delete_data — Удалить данные';
+  const text = isMonetizationEnabled()
+    ? (lang === 'en'
+      ? '❓ <b>SubEasy Bot</b>\n\n<b>Commands:</b>\n/start — Open SubEasy\n/pro — Get PRO access\n/status — Your account status\n/language — Switch language\n/support — Contact support\n/delete_data — Delete my data'
+      : '❓ <b>Бот SubEasy</b>\n\n<b>Команды:</b>\n/start — Открыть SubEasy\n/pro — Получить PRO\n/status — Статус аккаунта\n/language — Сменить язык\n/support — Поддержка\n/delete_data — Удалить данные')
+    : (lang === 'en'
+      ? '❓ <b>SubEasy Bot</b>\n\n<b>Commands:</b>\n/start — Open SubEasy\n/status — Your account status\n/language — Switch language\n/support — Contact support\n/delete_data — Delete my data'
+      : '❓ <b>Бот SubEasy</b>\n\n<b>Команды:</b>\n/start — Открыть SubEasy\n/status — Статус аккаунта\n/language — Сменить язык\n/support — Поддержка\n/delete_data — Удалить данные');
 
   await send(chatId, text, { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } });
 }
@@ -280,6 +302,16 @@ async function cmdDeleteData(chatId: number, lang: Lang) {
 // ─── Callback: plan selection → payment method ────────────────────────────────
 
 async function cbPlan(chatId: number, msgId: number, plan: Plan, lang: Lang) {
+  if (!isMonetizationEnabled()) {
+    await edit(chatId, msgId,
+      lang === 'en'
+        ? '<b>SubEasy is free right now.</b>\n\nAll available features are included.'
+        : '<b>SubEasy сейчас бесплатный.</b>\n\nВсе доступные функции уже включены.',
+      { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } },
+    );
+    return;
+  }
+
   const cfg  = PLANS[plan];
   const label = PLAN_LABEL[plan][lang];
   const dur   = PLAN_DURATION[plan][lang];
@@ -293,6 +325,16 @@ async function cbPlan(chatId: number, msgId: number, plan: Plan, lang: Lang) {
 // ─── Callback: Stars payment ──────────────────────────────────────────────────
 
 async function cbStars(chatId: number, plan: Plan, lang: Lang) {
+  if (!isMonetizationEnabled()) {
+    await send(chatId,
+      lang === 'en'
+        ? 'SubEasy is free right now. No payment is needed.'
+        : 'SubEasy сейчас бесплатный. Оплата не нужна.',
+      { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } },
+    );
+    return;
+  }
+
   const cfg   = PLANS[plan];
   const label = PLAN_LABEL[plan][lang];
   const dur   = PLAN_DURATION[plan][lang];
@@ -310,6 +352,18 @@ async function cbStars(chatId: number, plan: Plan, lang: Lang) {
 // ─── Callback: TON payment ────────────────────────────────────────────────────
 
 async function cbTon(chatId: number, telegramId: number, plan: Plan, lang: Lang) {
+  if (!isMonetizationEnabled()) {
+    void telegramId;
+    void plan;
+    await send(chatId,
+      lang === 'en'
+        ? 'SubEasy is free right now. No payment is needed.'
+        : 'SubEasy сейчас бесплатный. Оплата не нужна.',
+      { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } },
+    );
+    return;
+  }
+
   const supabase = createServiceClient();
 
   const { data: profile } = await supabase
@@ -371,6 +425,18 @@ async function cbTon(chatId: number, telegramId: number, plan: Plan, lang: Lang)
 // ─── Callback: check TON payment ─────────────────────────────────────────────
 
 async function cbCheckTon(chatId: number, memo: string, cbId: string, lang: Lang) {
+  if (!isMonetizationEnabled()) {
+    void memo;
+    await answerCB(cbId, lang === 'en' ? 'No payment is needed right now.' : 'Сейчас оплата не нужна.', true);
+    await send(chatId,
+      lang === 'en'
+        ? 'SubEasy is free right now. All available features are included.'
+        : 'SubEasy сейчас бесплатный. Все доступные функции уже включены.',
+      { reply_markup: { inline_keyboard: [[kbOpen(lang)]] } },
+    );
+    return;
+  }
+
   const supabase = createServiceClient();
   const { data: payment } = await supabase
     .from('ton_payments')
@@ -500,7 +566,9 @@ export async function POST(req: NextRequest) {
   // ── pre_checkout_query (Stars) ──
   if (update.pre_checkout_query) {
     const pcq: Record<string, unknown> = update.pre_checkout_query;
-    if (!VALID_PLANS.has(pcq.invoice_payload as string)) {
+    if (!isMonetizationEnabled()) {
+      await answerPreCheckout(pcq.id as string, false, 'Payments are disabled');
+    } else if (!VALID_PLANS.has(pcq.invoice_payload as string)) {
       await answerPreCheckout(pcq.id as string, false, 'Unknown plan');
     } else {
       await answerPreCheckout(pcq.id as string, true);
@@ -510,6 +578,10 @@ export async function POST(req: NextRequest) {
 
   // ── successful_payment (Stars) ──
   if (update.message?.successful_payment) {
+    if (!isMonetizationEnabled()) {
+      return NextResponse.json({ ok: true });
+    }
+
     const chatId = update.message.chat.id as number;
     const lang   = await getLang(chatId);
     await handleStarsPayment(update, lang);
@@ -527,12 +599,12 @@ export async function POST(req: NextRequest) {
     const lang       = await getLang(chatId, tgLangCode);
 
     // Reply keyboard button texts (must come before command checks)
-    if (text === '👑 Get PRO' || text === '👑 Получить PRO')      { await cmdPro(chatId, lang); }
+    if (isMonetizationEnabled() && (text === '👑 Get PRO' || text === '👑 Получить PRO')) { await cmdPro(chatId, lang); }
     else if (text === '📊 My Status' || text === '📊 Мой статус') { await cmdStatus(chatId, userId, lang); }
     else if (text === '🌐 Language' || text === '🌐 Язык')         { await cmdLanguage(chatId, lang); }
     // Commands
     else if (text.startsWith('/start'))       { await cmdStart(chatId, lang); }
-    else if (text.startsWith('/pro'))         { await cmdPro(chatId, lang); }
+    else if (isMonetizationEnabled() && text.startsWith('/pro')) { await cmdPro(chatId, lang); }
     else if (text.startsWith('/status'))      { await cmdStatus(chatId, userId, lang); }
     else if (text.startsWith('/language') || text.startsWith('/lang')) { await cmdLanguage(chatId, lang); }
     else if (text.startsWith('/help'))        { await cmdHelp(chatId, lang); }
@@ -575,30 +647,30 @@ export async function POST(req: NextRequest) {
     }
 
     // pro — show plan selector
-    else if (cbData === 'pro') {
+    else if (isMonetizationEnabled() && cbData === 'pro') {
       await cmdPro(chatId, lang, msgId);
     }
 
     // plan:monthly | plan:yearly | plan:lifetime
-    else if (cbData.startsWith('plan:')) {
+    else if (isMonetizationEnabled() && cbData.startsWith('plan:')) {
       const plan = cbData.split(':')[1] as Plan;
       if (plan in PLANS) await cbPlan(chatId, msgId, plan, lang);
     }
 
     // stars:plan
-    else if (cbData.startsWith('stars:')) {
+    else if (isMonetizationEnabled() && cbData.startsWith('stars:')) {
       const plan = cbData.split(':')[1] as Plan;
       if (plan in PLANS) await cbStars(chatId, plan, lang);
     }
 
     // ton:plan
-    else if (cbData.startsWith('ton:')) {
+    else if (isMonetizationEnabled() && cbData.startsWith('ton:')) {
       const plan = cbData.split(':')[1] as Plan;
       if (plan in PLANS) await cbTon(chatId, userId, plan, lang);
     }
 
     // check_ton:memo
-    else if (cbData.startsWith('check_ton:')) {
+    else if (isMonetizationEnabled() && cbData.startsWith('check_ton:')) {
       const memo = cbData.slice('check_ton:'.length);
       await cbCheckTon(chatId, memo, cbId, lang);
     }
@@ -619,7 +691,7 @@ export async function GET(req: NextRequest) {
 
   const enCommands = [
     { command: 'start',       description: '🚀 Open SubEasy' },
-    { command: 'pro',         description: '👑 Get PRO access' },
+    ...(isMonetizationEnabled() ? [{ command: 'pro', description: '👑 Get PRO access' }] : []),
     { command: 'status',      description: '📊 My account status' },
     { command: 'language',    description: '🌐 Switch language / Сменить язык' },
     { command: 'help',        description: '❓ Help & commands' },
@@ -628,7 +700,7 @@ export async function GET(req: NextRequest) {
   ];
   const ruCommands = [
     { command: 'start',       description: '🚀 Открыть SubEasy' },
-    { command: 'pro',         description: '👑 Получить PRO доступ' },
+    ...(isMonetizationEnabled() ? [{ command: 'pro', description: '👑 Получить PRO доступ' }] : []),
     { command: 'status',      description: '📊 Статус аккаунта' },
     { command: 'language',    description: '🌐 Сменить язык / Switch language' },
     { command: 'help',        description: '❓ Помощь и команды' },

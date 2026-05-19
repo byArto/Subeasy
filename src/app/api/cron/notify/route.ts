@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase-server';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { env } from '@/lib/env';
+import {
+  getNotifyCronMaxUsers,
+  getNotifyCronTelegramBatchSize,
+  shouldIncludeFreeUsersInTelegramCron,
+} from '@/lib/monetization';
 
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 const CRON_SECRET = env('CRON_SECRET');
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://subeasy.org';
+
+export const maxDuration = 60;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -126,6 +133,10 @@ async function sendTelegramMessage(chatId: number, text: string, lang: string) {
   });
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -147,66 +158,89 @@ export async function GET(req: NextRequest) {
   let failed = 0;
 
   try {
-    // All PRO users with a linked Telegram chat_id
-    const { data: profiles, error: profilesError } = await supabase
+    let profilesQuery = supabase
       .from('profiles')
       .select('id, telegram_chat_id')
       .not('telegram_chat_id', 'is', null)
-      .eq('is_pro', true);
+      .order('id', { ascending: true })
+      .limit(getNotifyCronMaxUsers());
+
+    if (!shouldIncludeFreeUsersInTelegramCron()) {
+      profilesQuery = profilesQuery.eq('is_pro', true);
+    }
+
+    const { data: profiles, error: profilesError } = await profilesQuery;
 
     if (profilesError) throw profilesError;
     if (!profiles || profiles.length === 0) {
-      return NextResponse.json({ sent: 0, message: 'No eligible PRO users' });
+      return NextResponse.json({ sent: 0, message: 'No eligible users' });
     }
 
-    await Promise.allSettled(
-      profiles.map(async (profile) => {
-        try {
-          // Load user settings
-          const { data: settings } = await supabase
-            .from('user_settings')
-            .select('notify_days_before, notifications_enabled, display_currency, exchange_rate, eur_exchange_rate, lang')
-            .eq('user_id', profile.id)
-            .single();
+    const batchSize = getNotifyCronTelegramBatchSize();
 
-          if (!settings?.notifications_enabled) { skipped++; return; }
+    for (let start = 0; start < profiles.length; start += batchSize) {
+      const batch = profiles.slice(start, start + batchSize);
 
-          const daysUntil  = settings.notify_days_before ?? 3;
-          const displayCur = settings.display_currency ?? 'RUB';
-          const usdRate    = Number(settings.exchange_rate ?? 96);
-          const eurRate    = Number(settings.eur_exchange_rate ?? 105);
-          const lang       = settings.lang ?? 'ru';
+      await Promise.allSettled(
+        batch.map(async (profile) => {
+          try {
+            // Load user settings
+            const { data: settings } = await supabase
+              .from('user_settings')
+              .select('notify_days_before, notifications_enabled, display_currency, exchange_rate, eur_exchange_rate, lang')
+              .eq('user_id', profile.id)
+              .single();
 
-          // Window end date
-          const target = new Date(today);
-          target.setUTCDate(today.getUTCDate() + daysUntil);
-          const targetDateStr = target.toISOString().split('T')[0];
+            if (!settings?.notifications_enabled) { skipped++; return; }
 
-          // All subscriptions due within [today, today + daysUntil]
-          const { data: subs } = await supabase
-            .from('subscriptions')
-            .select('name, icon, price, currency, cycle, next_payment_date')
-            .eq('user_id', profile.id)
-            .eq('is_active', true)
-            .gte('next_payment_date', todayStr)
-            .lte('next_payment_date', targetDateStr)
-            .order('next_payment_date', { ascending: true });
+            const daysUntil  = settings.notify_days_before ?? 3;
+            const displayCur = settings.display_currency ?? 'RUB';
+            const usdRate    = Number(settings.exchange_rate ?? 96);
+            const eurRate    = Number(settings.eur_exchange_rate ?? 105);
+            const lang       = settings.lang ?? 'ru';
 
-          if (!subs || subs.length === 0) { skipped++; return; }
+            // Window end date
+            const target = new Date(today);
+            target.setUTCDate(today.getUTCDate() + daysUntil);
+            const targetDateStr = target.toISOString().split('T')[0];
 
-          const text = buildMessage(subs, todayStr, displayCur, usdRate, eurRate, lang);
-          const res = await sendTelegramMessage(Number(profile.telegram_chat_id), text, lang);
+            // All subscriptions due within [today, today + daysUntil]
+            const { data: subs } = await supabase
+              .from('subscriptions')
+              .select('name, icon, price, currency, cycle, next_payment_date')
+              .eq('user_id', profile.id)
+              .eq('is_active', true)
+              .gte('next_payment_date', todayStr)
+              .lte('next_payment_date', targetDateStr)
+              .order('next_payment_date', { ascending: true });
 
-          if (res.ok) sent++;
-          else { failed++; console.error('[cron/notify] Telegram API error for', profile.id, await res.text()); }
-        } catch (err) {
-          failed++;
-          console.error('[cron/notify] user error:', profile.id, err);
-        }
-      }),
-    );
+            if (!subs || subs.length === 0) { skipped++; return; }
 
-    return NextResponse.json({ sent, skipped, failed, total: profiles.length });
+            const text = buildMessage(subs, todayStr, displayCur, usdRate, eurRate, lang);
+            const res = await sendTelegramMessage(Number(profile.telegram_chat_id), text, lang);
+
+            if (res.ok) sent++;
+            else { failed++; console.error('[cron/notify] Telegram API error for', profile.id, await res.text()); }
+          } catch (err) {
+            failed++;
+            console.error('[cron/notify] user error:', profile.id, err);
+          }
+        }),
+      );
+
+      if (start + batchSize < profiles.length) {
+        await sleep(1000);
+      }
+    }
+
+    return NextResponse.json({
+      sent,
+      skipped,
+      failed,
+      total: profiles.length,
+      maxUsers: getNotifyCronMaxUsers(),
+      batchSize,
+    });
   } catch (err) {
     console.error('[cron/notify] fatal:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

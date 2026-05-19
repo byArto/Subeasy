@@ -36,6 +36,7 @@ import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
 import { generateId } from '@/lib/utils';
 import { getAuthToken } from '@/lib/supabase';
 import { deletePersonalSubscription } from '@/lib/sync';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -91,6 +92,7 @@ export default function Home() {
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
+  const monetizationEnabled = isMonetizationEnabled();
   const [showShareModal, setShowShareModal] = useState(false);
   const [joinToken, setJoinToken] = useState<string | null>(null);
   const [joinWorkspaceName, setJoinWorkspaceName] = useState('');
@@ -378,7 +380,7 @@ export default function Home() {
     <div className="app-container app-gradient-bg fixed inset-0 min-h-dvh flex flex-col max-w-[430px] mx-auto overflow-hidden">
       <Header
         title={t(TAB_TITLE_KEYS[activeTab])}
-        titleBadge={activeTab === 'home' ? <ProBadge onOpen={() => setShowProModal(true)} /> : undefined}
+        titleBadge={monetizationEnabled && activeTab === 'home' ? <ProBadge onOpen={() => setShowProModal(true)} /> : undefined}
         collapsed={headerCollapsed}
         onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
         onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
@@ -685,7 +687,7 @@ export default function Home() {
       </Modal>
 
       {/* PRO Modal */}
-      <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} />
+      {monetizationEnabled && <ProModal isOpen={showProModal} onClose={() => setShowProModal(false)} />}
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />

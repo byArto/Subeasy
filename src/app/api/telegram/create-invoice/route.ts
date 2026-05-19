@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkRateLimit } from '@/lib/ratelimit';
 import { env, requireEnv } from '@/lib/env';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 
@@ -27,6 +28,10 @@ const PLANS = {
 } as const;
 
 export async function POST(req: NextRequest) {
+  if (!isMonetizationEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
+  }
+
   // Verify Supabase JWT
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) {

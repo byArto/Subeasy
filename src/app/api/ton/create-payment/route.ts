@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beginCell } from '@ton/core';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 import { env } from '@/lib/env';
 
@@ -28,6 +29,10 @@ async function getTonUsdPrice(): Promise<number> {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isMonetizationEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
+  }
+
   const user = await verifyAuth(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

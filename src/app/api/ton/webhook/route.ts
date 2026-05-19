@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
-
-const WEBHOOK_SECRET = process.env.TONCONSOLE_WEBHOOK_SECRET;
 import { env } from '@/lib/env';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
+const WEBHOOK_SECRET = env('TONCONSOLE_WEBHOOK_SECRET');
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 
 function calcProUntil(plan: string, currentProUntil: string | null): string | null {
@@ -27,20 +27,21 @@ async function sendTelegramMessage(chatId: number, text: string) {
 }
 
 export async function POST(req: NextRequest) {
-  // Verify webhook secret if configured
-  if (WEBHOOK_SECRET) {
-    const incoming = req.headers.get('x-webhook-token')
-      ?? req.headers.get('authorization')?.replace('Bearer ', '')
-      ?? '';
-    try {
-      const a = Buffer.from(incoming);
-      const b = Buffer.from(WEBHOOK_SECRET);
-      if (a.length !== b.length || !timingSafeEqual(a, b)) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-    } catch {
+  if (!isMonetizationEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
+  }
+
+  const incoming = req.headers.get('x-webhook-token')
+    ?? req.headers.get('authorization')?.replace('Bearer ', '')
+    ?? '';
+  try {
+    const a = Buffer.from(incoming);
+    const b = Buffer.from(WEBHOOK_SECRET());
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);

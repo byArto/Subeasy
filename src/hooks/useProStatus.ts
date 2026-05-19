@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { getEffectiveProStatus, getMonetizationConfig } from '@/lib/monetization';
 
 export interface ProStatus {
   isPro: boolean;
@@ -19,6 +20,13 @@ export function useProStatus(): ProStatus {
 
   // Pure fetch — doesn't care about authLoading, used for manual refresh too
   const doFetch = useCallback(async () => {
+    if (getMonetizationConfig().freeProAccess) {
+      setIsPro(true);
+      setProUntil(null);
+      setLoading(false);
+      return;
+    }
+
     if (!user) {
       setIsPro(false);
       setProUntil(null);
@@ -36,9 +44,9 @@ export function useProStatus(): ProStatus {
 
       if (data) {
         const until = data.pro_until ? new Date(data.pro_until) : null;
-        const active = data.is_pro && (!until || until > new Date());
-        setIsPro(active);
-        setProUntil(until);
+        const effective = getEffectiveProStatus({ isPro: data.is_pro, proUntil: until });
+        setIsPro(effective.isPro);
+        setProUntil(effective.proUntil);
       } else {
         setIsPro(false);
         setProUntil(null);

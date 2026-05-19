@@ -19,7 +19,6 @@ SubEasy is a Telegram Mini App + PWA for managing recurring subscriptions and pa
 - **Multi-currency support** - display everything in your preferred currency with live exchange rates
 - **Categories & icons** - organize subscriptions with custom categories
 - **Shared workspaces** - track subscriptions together with family or teammates
-- **PRO via TON / Telegram Stars** - in-app payments with no external checkout
 - **Telegram Bot** - get notified about upcoming payments directly in Telegram
 - **Daily reminders** - cron-based push notifications at 6 AM UTC
 - **PWA** — installable on iOS 16.4+ and Android, works offline
@@ -35,7 +34,6 @@ SubEasy is a Telegram Mini App + PWA for managing recurring subscriptions and pa
 | UI | React 19 + Tailwind CSS v4 + Framer Motion |
 | Database | Supabase (PostgreSQL + Auth) |
 | Bot | Telegram Bot API |
-| Payments | TON Connect + Telegram Stars |
 | Rate limiting | Upstash Redis |
 | Hosting | Vercel |
 | Platform | Telegram Mini App + PWA |
@@ -90,8 +88,10 @@ See [.env.example](.env.example) for the full list with descriptions.
 | `TELEGRAM_WEBHOOK_SECRET` | Yes | Random secret for webhook verification |
 | `UPSTASH_REDIS_REST_URL` | Yes | Upstash Redis REST URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Yes | Upstash Redis REST token |
-| `TON_WALLET_ADDRESS` | Yes | TON wallet for receiving payments |
-| `TONCONSOLE_WEBHOOK_SECRET` | Yes | TonConsole webhook secret |
+| `NEXT_PUBLIC_MONETIZATION_ENABLED` | No | Enables legacy paid flows when set to `true` |
+| `TELEGRAM_NOTIFICATIONS_FOR_FREE_USERS` | No | Includes non-paying users in the Telegram notification cron, defaults to enabled; set `false` to restrict back to paid users |
+| `NOTIFY_CRON_MAX_USERS` | No | Max Telegram-linked users processed per daily notification cron, defaults to `500` |
+| `NOTIFY_CRON_TELEGRAM_BATCH_SIZE` | No | Max users processed in parallel per notification batch, defaults to `20` |
 | `NEXT_PUBLIC_APP_URL` | Yes | Your app's public URL |
 | `CRON_SECRET` | Auto | Injected by Vercel for cron jobs |
 
@@ -103,8 +103,6 @@ See [.env.example](.env.example) for the full list with descriptions.
 |---|---|---|
 | `/api/telegram/webhook` | POST | Telegram Bot webhook handler |
 | `/api/cron/notify` | GET | Daily notification cron job |
-| `/api/ton/webhook` | POST | TON payment webhook |
-| `/api/ton/create-payment` | POST | Create a TON payment session |
 | `/api/workspace/*` | Various | Workspace management |
 
 ---

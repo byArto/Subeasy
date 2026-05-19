@@ -20,6 +20,7 @@ import { upsertWorkspaceSubscription } from '@/lib/sync';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
 import { APP_VERSION } from '@/lib/version';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 /* ── Props ── */
 
@@ -75,6 +76,7 @@ export function SettingsPage({
   const { isTelegram } = useTelegramContext();
   const { lang, setLang, t } = useLanguage();
   const { isPro, proUntil } = usePro();
+  const monetizationEnabled = isMonetizationEnabled();
   const { theme, setTheme } = useTheme();
   const {
     workspace,
@@ -520,45 +522,47 @@ export function SettingsPage({
       </AnimatePresence>
 
       {/* ── PRO Plan Banner ── */}
-      <div
-        onClick={isPro ? undefined : onOpenPro}
-        style={{
-          background: 'rgba(245,200,66,0.06)',
-          border: '1px solid rgba(245,200,66,0.2)',
-          borderRadius: 14,
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 16,
-          cursor: isPro ? 'default' : 'pointer',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: isPro ? '#f5c842' : '#39ff84', letterSpacing: '0.08em' }}>
-            {isPro ? '👑 PRO' : 'FREE'}
-          </span>
-          <span style={{ width: 1, height: 14, background: 'var(--color-border-subtle)', display: 'inline-block' }} />
-          <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-            {lang === 'ru' ? 'Текущий план' : 'Current plan'}
-          </span>
+      {monetizationEnabled && (
+        <div
+          onClick={isPro ? undefined : onOpenPro}
+          style={{
+            background: 'rgba(245,200,66,0.06)',
+            border: '1px solid rgba(245,200,66,0.2)',
+            borderRadius: 14,
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+            cursor: isPro ? 'default' : 'pointer',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: isPro ? '#f5c842' : '#39ff84', letterSpacing: '0.08em' }}>
+              {isPro ? '👑 PRO' : 'FREE'}
+            </span>
+            <span style={{ width: 1, height: 14, background: 'var(--color-border-subtle)', display: 'inline-block' }} />
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
+              {lang === 'ru' ? 'Текущий план' : 'Current plan'}
+            </span>
+          </div>
+          {isPro ? (
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(245,200,66,0.75)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {proUntil
+                ? `${Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} ${lang === 'ru' ? 'дней' : 'days'}`
+                : lang === 'ru' ? '♾ Навсегда' : '♾ Lifetime'
+              }
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
+              👑 {lang === 'ru' ? 'Получить PRO →' : 'Get PRO →'}
+            </span>
+          )}
         </div>
-        {isPro ? (
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(245,200,66,0.75)', display: 'flex', alignItems: 'center', gap: 4 }}>
-            {proUntil
-              ? `${Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24))} ${lang === 'ru' ? 'дней' : 'days'}`
-              : lang === 'ru' ? '♾ Навсегда' : '♾ Lifetime'
-            }
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#f5c842" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </span>
-        ) : (
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#f5c842' }}>
-            👑 {lang === 'ru' ? 'Получить PRO →' : 'Get PRO →'}
-          </span>
-        )}
-      </div>
+      )}
 
       {/* ── 0. Язык / Language ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
@@ -1442,8 +1446,8 @@ export function SettingsPage({
                                   </p>
                                   <p className="text-[11px] text-text-secondary leading-relaxed">
                                     {lang === 'ru'
-                                      ? 'Все подписки, настройки и аккаунт будут удалены навсегда. PRO-статус аннулируется.'
-                                      : 'All subscriptions, settings and your account will be permanently deleted. PRO status will be revoked.'}
+                                      ? 'Все подписки, настройки и аккаунт будут удалены навсегда.'
+                                      : 'All subscriptions, settings and your account will be permanently deleted.'}
                                   </p>
                                 </div>
                               </div>

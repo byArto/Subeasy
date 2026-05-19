@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase-server';
 import { env } from '@/lib/env';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
 const WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET');
 
 export async function POST(req: NextRequest) {
+  if (!isMonetizationEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
+  }
+
   // Admin-only: protected by the same webhook secret
   const secret = req.headers.get('x-admin-secret');
   if (secret !== WEBHOOK_SECRET()) {

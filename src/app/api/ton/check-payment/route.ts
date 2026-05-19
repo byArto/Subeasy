@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
+import { isMonetizationEnabled } from '@/lib/monetization';
 
 export async function GET(req: NextRequest) {
+  if (!isMonetizationEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
+  }
+
   const user = await verifyAuth(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 

@@ -92,15 +92,13 @@ export default function PrivacyPage() {
             <Li><b>Данные семейного плана (Workspace)</b> — название плана, список участников (их Telegram ID), invite-токены.</Li>
             <Li><b>Настройки приложения</b> — валюта, язык, уведомления, бюджетный лимит.</Li>
             <Li><b>IP-адрес</b> — автоматически при обращении к нашему серверу (стандартное поведение веб-сервисов).</Li>
-            <Li><b>Данные об оплате PRO</b> — тип плана (monthly/yearly/lifetime), дата оплаты. Реквизиты карт мы не получаем и не храним — платёж обрабатывает Telegram.</Li>
             <Li><b>Локальное хранилище (localStorage)</b> — язык интерфейса, активный воркспейс и настройки хранятся локально в вашем браузере. Эти данные не передаются на сервер.</Li>
           </ul>
           <P>
             <b>We collect only data necessary to provide the service:</b> Telegram ID, name and
             username; email (if signed in); subscription data you enter (names, amounts, dates,
             categories); workspace/family plan data; app settings; IP address (standard web
-            behavior); PRO payment metadata (plan type, date — not card details). We also use
-            localStorage to store UI preferences (language, active workspace) locally in your
+            behavior). We also use localStorage to store UI preferences (language, active workspace) locally in your
             browser — this data is never sent to our servers.
           </P>
         </Section>
@@ -110,13 +108,11 @@ export default function PrivacyPage() {
           <ul style={{ paddingLeft: 20, margin: '8px 0', display: 'flex', flexDirection: 'column', gap: 6 }}>
             <Li>Предоставление функций приложения (трекинг подписок, уведомления, отчёты).</Li>
             <Li>Синхронизация данных между устройствами через Supabase.</Li>
-            <Li>Активация и проверка PRO-статуса.</Li>
             <Li>Отправка Telegram-уведомлений (если вы подключили бота).</Li>
           </ul>
           <P>
             We use your data to: provide app features (subscription tracking, notifications, reports);
-            sync data across devices via Supabase; verify PRO status; send Telegram notifications
-            if you connected the bot.
+            sync data across devices via Supabase; send Telegram notifications if you connected the bot.
           </P>
           <P>
             Мы <b>не продаём</b> ваши данные, не передаём третьим лицам в маркетинговых целях, не
@@ -155,7 +151,7 @@ export default function PrivacyPage() {
             </thead>
             <tbody>
               {[
-                { name: 'Telegram', purpose: 'Авторизация, уведомления, Stars-оплата', policy: 'telegram.org/privacy' },
+                { name: 'Telegram', purpose: 'Авторизация и уведомления', policy: 'telegram.org/privacy' },
                 { name: 'Supabase', purpose: 'Хранение данных (БД)', policy: 'supabase.com/privacy' },
                 { name: 'Vercel', purpose: 'Хостинг и CDN', policy: 'vercel.com/legal/privacy-policy' },
               ].map((row) => (
@@ -219,7 +215,7 @@ export default function PrivacyPage() {
           </P>
           <P>
             SubEasy is not intended for children under 13. We do not knowingly collect data from
-            children under 13. Telegram's age restrictions apply automatically.
+            children under 13. Telegram&apos;s age restrictions apply automatically.
           </P>
         </Section>
 
@@ -230,7 +226,7 @@ export default function PrivacyPage() {
             приложения. Дата «Последнее обновление» всегда актуальна.
           </P>
           <P>
-            For material changes we will notify users via the bot or in-app. The "Last updated"
+            For material changes we will notify users via the bot or in-app. The &quot;Last updated&quot;
             date is always current.
           </P>
         </Section>
@@ -266,7 +262,7 @@ export default function PrivacyPage() {
           <div style={{ fontSize: 20, marginBottom: 8 }}>🛡️</div>
           <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.6 }}>
             Ваши данные — ваши. Мы храним только то, что нужно для работы сервиса.<br />
-            Your data is yours. We only store what's needed to run the service.
+            Your data is yours. We only store what&apos;s needed to run the service.
           </p>
         </div>
 

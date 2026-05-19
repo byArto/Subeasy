@@ -128,22 +128,9 @@ function kbOpen(lang: Lang) {
   return { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } };
 }
 
-function replyKeyboard(lang: Lang) {
-  const firstRow = [
-    { text: lang === 'en' ? '🚀 Open SubEasy' : '🚀 Открыть SubEasy', web_app: { url: APP_URL } },
-    ...(isMonetizationEnabled() ? [{ text: lang === 'en' ? '👑 Get PRO' : '👑 Получить PRO' }] : []),
-  ];
-
+function removeReplyKeyboard() {
   return {
-    keyboard: [
-      firstRow,
-      [
-        { text: lang === 'en' ? '📊 My Status' : '📊 Мой статус' },
-        { text: lang === 'en' ? '🌐 Language' : '🌐 Язык' },
-      ],
-    ],
-    resize_keyboard: true,
-    persistent: true,
+    remove_keyboard: true,
   };
 }
 
@@ -175,7 +162,7 @@ async function cmdStart(chatId: number, lang: Lang) {
     ? '👋 <b>Welcome to SubEasy!</b>\n\nTrack all your subscriptions in one place — never miss a renewal.\n\n💡 Add subscriptions, set budgets, get reminders before charges.'
     : '👋 <b>Добро пожаловать в SubEasy!</b>\n\nВсе подписки в одном месте — никогда не пропустите списание.\n\n💡 Добавляйте подписки, устанавливайте бюджеты, получайте напоминания.';
 
-  await send(chatId, text, { reply_markup: replyKeyboard(lang) });
+  await send(chatId, text, { reply_markup: removeReplyKeyboard() });
 }
 
 // ─── Command: /pro (also used as callback) ────────────────────────────────────

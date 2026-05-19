@@ -447,9 +447,12 @@ const dict: Translations = {
 
   'settings.notifications.title': { ru: 'Уведомления', en: 'Notifications' },
   'settings.notifications.enable': { ru: 'Включить уведомления', en: 'Enable notifications' },
+  'settings.notifications.telegramEnable': { ru: 'Telegram-оповещения', en: 'Telegram alerts' },
+  'settings.notifications.telegramSubhint': { ru: 'Этот тумблер включает или отключает сообщения от бота.', en: 'This toggle turns bot messages on or off.' },
   'settings.notifications.remindBefore': { ru: 'Напоминать за', en: 'Remind before' },
   'settings.notifications.daySuffix': { ru: 'д', en: 'd' },
   'settings.notifications.hint': { ru: 'Вы получите push-уведомление перед каждым платежом', en: 'You will get a push notification before each payment' },
+  'settings.notifications.telegramHint': { ru: 'Бот пришлёт напоминание утром, если списание попадает в выбранное окно', en: 'The bot will send a morning reminder when a charge falls within this window' },
   'settings.notifications.denied': { ru: 'Уведомления заблокированы браузером. Разрешите их в настройках сайта (🔒 рядом с адресом).', en: 'Notifications are blocked by the browser. Allow them in site settings (🔒 next to the address bar).' },
   'settings.notifications.unsupported': { ru: 'Push-уведомления не поддерживаются в этом браузере.', en: 'Push notifications are not supported in this browser.' },
 

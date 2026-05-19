@@ -128,6 +128,12 @@ export function SettingsPage({
   const [migrateLoading, setMigrateLoading] = useState(false);
 
   let sectionIdx = 0;
+  const notificationsToggleLabel = isTelegram
+    ? t('settings.notifications.telegramEnable')
+    : t('settings.notifications.enable');
+  const notificationsHint = isTelegram
+    ? t('settings.notifications.telegramHint')
+    : t('settings.notifications.hint');
 
   /* ── Handlers ── */
 
@@ -724,7 +730,14 @@ export function SettingsPage({
         <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-4">
           {/* Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-sm text-text-primary font-medium">{t('settings.notifications.enable')}</span>
+            <div className="min-w-0 pr-4">
+              <span className="text-sm text-text-primary font-medium">{notificationsToggleLabel}</span>
+              {isTelegram && (
+                <p className="text-[11px] text-text-muted mt-0.5 leading-snug">
+                  {t('settings.notifications.telegramSubhint')}
+                </p>
+              )}
+            </div>
             <NeonToggle
               value={settings.notificationsEnabled}
               onToggle={handleToggleNotifications}
@@ -774,7 +787,7 @@ export function SettingsPage({
                 </div>
               </div>
               <p className="text-[11px] text-text-muted mt-2 pl-0.5">
-                {t('settings.notifications.hint')}
+                {notificationsHint}
               </p>
             </motion.div>
           )}

@@ -6,6 +6,7 @@ import { ShareCard } from './ShareCard';
 import { Subscription, DisplayCurrency } from '@/lib/types';
 import { Lang } from '@/lib/translations';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { ArrowDownTrayIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { buildShareCanvas } from '@/lib/shareCanvas';
 
@@ -33,10 +34,11 @@ export function ShareModal({
   exchangeRate,
 }: ShareModalProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [generating, setGenerating] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
 
-  const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate };
+  const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate, theme };
 
   async function handleShare() {
     setGenerating(true);

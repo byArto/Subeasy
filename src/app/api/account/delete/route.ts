@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient, verifyAuth } from '@/lib/supabase-server';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 /**
  * DELETE /api/account/delete
@@ -11,6 +12,10 @@ export async function POST(req: NextRequest) {
     const authUser = await verifyAuth(req);
     if (!authUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!await checkRateLimit('account-delete', authUser.id, 5, 60)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
 
     const userId = authUser.id;

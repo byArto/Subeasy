@@ -11,6 +11,7 @@ import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { haptic } from '@/lib/haptic';
+import { parsePaymentMethod, encodePaymentMethod, type PaymentType, type CardType } from '@/lib/paymentMethod';
 
 /* ── Constants ── */
 
@@ -37,10 +38,7 @@ const CYCLE_KEY_MAP: Record<BillingCycle, string> = {
   trial: 'cycle.trial.label',
 };
 
-/* ── Payment method encoding ── */
-
-type PaymentType = 'card' | 'crypto' | 'sbp' | 'other';
-type CardType = 'physical' | 'virtual';
+/* ── Payment method (codec in lib/paymentMethod.ts) ── */
 
 const PAYMENT_TYPE_KEYS: { type: PaymentType; labelKey: string }[] = [
   { type: 'card', labelKey: 'payment.card' },
@@ -48,38 +46,6 @@ const PAYMENT_TYPE_KEYS: { type: PaymentType; labelKey: string }[] = [
   { type: 'sbp', labelKey: 'payment.sbp' },
   { type: 'other', labelKey: 'payment.other' },
 ];
-
-function parsePaymentMethod(raw: string): { type: PaymentType; cardType: CardType; detail: string } {
-  if (raw.startsWith('card:')) {
-    const rest = raw.substring(5);
-    const idx = rest.indexOf(':');
-    if (idx >= 0) {
-      const ct = rest.substring(0, idx) === 'virtual' ? 'virtual' : 'physical';
-      return { type: 'card', cardType: ct, detail: rest.substring(idx + 1) };
-    }
-    return { type: 'card', cardType: 'physical', detail: '' };
-  }
-  if (raw.startsWith('crypto:')) return { type: 'crypto', cardType: 'physical', detail: raw.substring(7) };
-  if (raw.startsWith('sbp:')) return { type: 'sbp', cardType: 'physical', detail: raw.substring(4) };
-  if (raw.startsWith('paypal:')) return { type: 'sbp', cardType: 'physical', detail: raw.substring(7) }; // migrate paypal → sbp
-  if (raw.startsWith('other:')) return { type: 'other', cardType: 'physical', detail: raw.substring(6) };
-
-  // Legacy values
-  if (raw === 'Карта' || raw === 'Apple Pay' || raw === 'Google Pay') return { type: 'card', cardType: 'physical', detail: '' };
-  if (raw === 'Крипто') return { type: 'crypto', cardType: 'physical', detail: '' };
-  if (raw === 'PayPal' || raw === 'СБП') return { type: 'sbp', cardType: 'physical', detail: '' };
-  return { type: 'other', cardType: 'physical', detail: raw === 'Другое' ? '' : raw };
-}
-
-function encodePaymentMethod(type: PaymentType, cardType: CardType, detail: string): string {
-  const d = detail.trim();
-  switch (type) {
-    case 'card': return `card:${cardType}:${d}`;
-    case 'crypto': return `crypto:${d}`;
-    case 'sbp': return `sbp:${d}`;
-    case 'other': return `other:${d}`;
-  }
-}
 
 /* ── Types ── */
 
@@ -157,14 +123,17 @@ export function SubForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [shake, setShake] = useState(false);
 
-  // Auto-calculate nextPaymentDate when startDate or cycle changes.
+  // Re-suggest nextPaymentDate when the billing inputs change. nextPaymentDate
+  // is a user-editable field (not pure derived state), so this is an intentional
+  // "reset on dependency change" effect, not a render-time computation.
   // In edit mode we skip the first run to preserve the stored date.
   const skipFirst = useRef(mode === 'edit');
   useEffect(() => {
     if (skipFirst.current) { skipFirst.current = false; return; }
     if (cycle === 'one-time' || cycle === 'trial') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset-on-change of an editable field
     setNextPaymentDate(calcNextPaymentFromStart(startDate, cycle, cycleAnchor));
-  }, [startDate, cycle, cycleAnchor]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [startDate, cycle, cycleAnchor]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');

@@ -3,44 +3,9 @@
  * No browser globals — safe to import in Next.js API routes.
  */
 import type { Subscription, Category, AppSettings } from './types';
-import { convertCurrency, getMonthlyPrice } from './utils';
+import { convertCurrency, getMonthlyPrice, escapeHtml as esc } from './utils';
 import { CURRENCY_SYMBOLS } from './constants';
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function getCategoryName(sub: Subscription, categories: Category[]): string {
-  return categories.find((c) => c.id === sub.category)?.name ?? sub.category;
-}
-
-function formatCycleLabel(cycle: string, isRu: boolean): string {
-  const labels: Record<string, [string, string]> = {
-    monthly:    ['Ежемесячно', 'Monthly'],
-    yearly:     ['Ежегодно',   'Yearly'],
-    weekly:     ['Еженедельно','Weekly'],
-    quarterly:  ['Ежеквартально', 'Quarterly'],
-    'one-time': ['Разовый',   'One-time'],
-    trial:      ['Пробный',   'Trial'],
-  };
-  const pair = labels[cycle];
-  return pair ? pair[isRu ? 0 : 1] : cycle;
-}
-
-function formatDate(iso: string, isRu: boolean): string {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
-}
+import { getCategoryName, formatCycleLabel, formatReportDate as formatDate } from './reportFormat';
 
 export function generateReportHtml(
   subscriptions: Subscription[],

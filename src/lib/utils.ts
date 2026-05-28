@@ -136,3 +136,17 @@ export function calcNextPaymentFromStart(
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
 }
+
+/**
+ * Escape a string for safe interpolation into HTML — used for Telegram
+ * `parse_mode: HTML` messages and PDF/HTML reports. Without this, a `<` or `&`
+ * in a user-controlled subscription name breaks Telegram's HTML parser (the
+ * message silently fails to send) and risks markup injection.
+ */
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}

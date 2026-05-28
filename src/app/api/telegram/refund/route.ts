@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
 import { env } from '@/lib/env';
 import { isMonetizationEnabled } from '@/lib/monetization';
 
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
-const WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET');
+// Dedicated admin secret if set, otherwise falls back to the webhook secret.
+const ADMIN_SECRET = env('ADMIN_API_SECRET' in process.env ? 'ADMIN_API_SECRET' : 'TELEGRAM_WEBHOOK_SECRET');
 
 export async function POST(req: NextRequest) {
   if (!isMonetizationEnabled()) {
     return NextResponse.json({ error: 'Payments are disabled' }, { status: 404 });
   }
 
-  // Admin-only: protected by the same webhook secret
-  const secret = req.headers.get('x-admin-secret');
-  if (secret !== WEBHOOK_SECRET()) {
+  // Admin-only (constant-time secret comparison)
+  const secret = req.headers.get('x-admin-secret') ?? '';
+  const secretBuf = Buffer.from(secret);
+  const expectedBuf = Buffer.from(ADMIN_SECRET());
+  if (secretBuf.length !== expectedBuf.length || !timingSafeEqual(secretBuf, expectedBuf)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -55,7 +59,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       warning: 'Stars refunded but PRO revocation failed — fix manually in Supabase.',
-      error: updateError.message,
     });
   }
 

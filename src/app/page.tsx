@@ -65,8 +65,6 @@ const AuthScreen = dynamic(() =>
   { ssr: false }
 );
 
-const TAB_ORDER: TabId[] = ['home', 'analytics', 'calendar', 'settings'];
-
 const TAB_TITLE_KEYS: Record<TabId, string> = {
   home: 'nav.home',
   analytics: 'nav.analytics',
@@ -88,7 +86,6 @@ export default function Home() {
   const [prefillService, setPrefillService] = useState<ServiceTemplate | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
-  const [tabDirection, setTabDirection] = useState(0);
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
@@ -139,7 +136,7 @@ export default function Home() {
   // Auth
   const { user, loading: authLoading, skipAuth } = useAuth();
   const { t, lang } = useLanguage();
-  const { workspace, isWorkspaceActive, workspaceSubscriptions, refreshWorkspaceSubs, reloadWorkspace } = useWorkspace();
+  const { workspace, isWorkspaceActive, workspaceSubscriptions, refreshWorkspaceSubs, reloadWorkspace, subsError, subsLoading } = useWorkspace();
 
   // Handle ?join=TOKEN invite link
   useEffect(() => {
@@ -299,9 +296,6 @@ export default function Home() {
 
   const handleTabChange = useCallback((tab: TabId) => {
     if (tab === activeTab) return;
-    const prevIdx = TAB_ORDER.indexOf(activeTab);
-    const nextIdx = TAB_ORDER.indexOf(tab);
-    setTabDirection(nextIdx > prevIdx ? 1 : -1);
     setHeaderCollapsed(false);
     if (mainRef.current) {
       mainRef.current.scrollTop = 0;
@@ -391,6 +385,21 @@ export default function Home() {
       {/* ── Workspace Switcher Banner — only when workspace mode is active ── */}
       {workspace && isWorkspaceActive && activeTab === 'home' && (
         <WorkspaceBanner workspaceName={workspace.name} lang={lang} />
+      )}
+
+      {/* ── Workspace load error — distinguishes a failed fetch from an empty group ── */}
+      {workspace && isWorkspaceActive && activeTab === 'home' && subsError && (
+        <div className="mx-4 mb-2 flex items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5">
+          <span className="text-[13px] text-text-secondary">{t('workspace.loadError')}</span>
+          <button
+            type="button"
+            onClick={() => { void refreshWorkspaceSubs(); }}
+            disabled={subsLoading}
+            className="shrink-0 rounded-lg bg-surface-3 px-3 py-1.5 text-[12px] font-semibold text-text-primary active:scale-95 transition-transform disabled:opacity-50"
+          >
+            {subsLoading ? '…' : t('common.retry')}
+          </button>
+        </div>
       )}
 
       {/* ── Join Invite Dialog ── */}

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 import { Button } from '@/components/ui';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 type Platform = 'ios' | 'android' | 'desktop';
 
@@ -21,6 +22,7 @@ const SESSION_KEY = 'neonsub-a2hs-dismissed';
 export function PWAInstallPrompt() {
   const isInstalled = useStandaloneMode();
   const { isTelegram } = useTelegramContext();
+  const { t } = useLanguage();
   const [show, setShow] = useState(false);
   const [platform, setPlatform] = useState<Platform>('desktop');
 
@@ -84,10 +86,10 @@ export function PWAInstallPrompt() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-text-primary">
-                    Установите SubEasy
+                    {t('pwa.title')}
                   </h3>
                   <p className="text-xs text-text-muted mt-0.5">
-                    Быстрый доступ с домашнего экрана
+                    {t('pwa.subtitle')}
                   </p>
                 </div>
               </div>
@@ -104,7 +106,7 @@ export function PWAInstallPrompt() {
                         <line x1="12" y1="2" x2="12" y2="15" />
                       </svg>
                     }
-                    text='Нажмите "Поделиться" внизу Safari'
+                    text={t('pwa.ios.step1')}
                   />
                   <Step
                     number={2}
@@ -115,7 +117,7 @@ export function PWAInstallPrompt() {
                         <line x1="8" y1="12" x2="16" y2="12" />
                       </svg>
                     }
-                    text='"На экран «Домой»"'
+                    text={t('pwa.ios.step2')}
                   />
                 </div>
               ) : (
@@ -129,7 +131,7 @@ export function PWAInstallPrompt() {
                         <circle cx="12" cy="19" r="1" />
                       </svg>
                     }
-                    text="Нажмите ⋮ в правом верхнем углу браузера"
+                    text={t('pwa.android.step1')}
                   />
                   <Step
                     number={2}
@@ -140,14 +142,14 @@ export function PWAInstallPrompt() {
                         <line x1="12" y1="15" x2="12" y2="3" />
                       </svg>
                     }
-                    text='"Добавить на главный экран"'
+                    text={t('pwa.android.step2')}
                   />
                 </div>
               )}
 
               {/* CTA button */}
               <Button fullWidth variant="primary" size="lg" onClick={handleDismiss}>
-                Понятно
+                {t('pwa.cta')}
               </Button>
             </div>
           </motion.div>

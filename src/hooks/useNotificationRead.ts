@@ -15,12 +15,21 @@ export function useNotificationRead() {
     lastSeenAt: null,
   });
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount. Done in an effect (not lazy useState init)
+  // on purpose: it keeps the first client render identical to the server render
+  // (empty default), avoiding a hydration mismatch, then syncs the persisted value.
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setReadState(JSON.parse(stored));
-    } catch {}
+      if (!stored) return;
+      const parsed = JSON.parse(stored);
+      if (parsed && Array.isArray(parsed.readIds)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration-safe localStorage sync (first render matches SSR empty state)
+        setReadState({ readIds: parsed.readIds, lastSeenAt: parsed.lastSeenAt ?? null });
+      }
+    } catch (err) {
+      console.error('[useNotificationRead] failed to read stored state:', err);
+    }
   }, []);
 
   const persist = useCallback((state: ReadState) => {

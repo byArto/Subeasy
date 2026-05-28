@@ -3,20 +3,10 @@ import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
 import { env } from '@/lib/env';
 import { isMonetizationEnabled } from '@/lib/monetization';
+import { calcProUntil } from '@/lib/plans';
 
 const WEBHOOK_SECRET = env('TONCONSOLE_WEBHOOK_SECRET');
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
-
-function calcProUntil(plan: string, currentProUntil: string | null): string | null {
-  if (plan === 'lifetime') return null;
-  const now = new Date();
-  const base = currentProUntil && new Date(currentProUntil) > now
-    ? new Date(currentProUntil)
-    : now;
-  if (plan === 'monthly') base.setDate(base.getDate() + 30);
-  if (plan === 'yearly')  base.setDate(base.getDate() + 365);
-  return base.toISOString();
-}
 
 async function sendTelegramMessage(chatId: number, text: string) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN()}/sendMessage`, {

@@ -42,11 +42,19 @@ export async function checkRateLimit(
 ): Promise<boolean> {
   try {
     const limiter = getLimiter(routeKey, requests, windowSeconds);
-    if (!limiter) return true; // No Redis configured — allow all (local dev)
+    if (!limiter) {
+      // No Redis configured — allow all (expected in local dev, unexpected in prod).
+      if (process.env.NODE_ENV === 'production') {
+        console.error(`[ratelimit] Redis not configured in production — '${routeKey}' is UNLIMITED`);
+      }
+      return true;
+    }
 
     const { success } = await limiter.limit(identifier);
     return success;
-  } catch {
-    return true; // Fail open — never break the app due to rate limit errors
+  } catch (err) {
+    // Fail open — never break the app due to rate limit errors — but make it visible.
+    console.error(`[ratelimit] check failed for '${routeKey}', failing open:`, err);
+    return true;
   }
 }

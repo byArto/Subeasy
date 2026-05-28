@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useDragControls, PanInfo } from 'framer-motion';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 type ModalSize = 'compact' | 'full';
 
@@ -31,6 +32,9 @@ export function Modal({
   className,
 }: ModalProps) {
   const dragControls = useDragControls();
+  const { t } = useLanguage();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   // Block main content scroll when modal is open
   useEffect(() => {
@@ -47,6 +51,29 @@ export function Modal({
       }
     };
   }, [open]);
+
+  // Close on Escape; restore focus to the trigger on close.
+  useEffect(() => {
+    if (!open) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+
+    // Move focus into the sheet so the keyboard/AT context follows the dialog.
+    const focusTimer = window.setTimeout(() => sheetRef.current?.focus(), 0);
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      window.clearTimeout(focusTimer);
+      previouslyFocused?.focus?.();
+    };
+  }, [open, onClose]);
 
   const handleDragEnd = (_: unknown, info: PanInfo) => {
     // Close if dragged down more than 100px or with enough velocity
@@ -66,11 +93,18 @@ export function Modal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
+            aria-hidden="true"
             className="fixed inset-0 z-[110] modal-backdrop-bg backdrop-blur-sm"
           />
 
           {/* Sheet */}
           <motion.div
+            ref={sheetRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title ? undefined : t('common.close')}
+            aria-labelledby={title ? titleId : undefined}
+            tabIndex={-1}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -81,6 +115,7 @@ export function Modal({
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={handleDragEnd}
             className={cn(
+              'outline-none',
               'fixed bottom-0 left-0 right-0 z-[120]',
               'mx-auto max-w-[430px]',
               'bg-surface-2 rounded-t-2xl',
@@ -101,6 +136,7 @@ export function Modal({
               </div>
               <button
                 onClick={onClose}
+                aria-label={t('common.close')}
                 className="absolute right-3 top-1 p-1.5 rounded-full text-text-muted active:text-text-primary active:bg-surface-3 transition-colors"
               >
                 <XMarkIcon className="w-5 h-5" />
@@ -109,7 +145,7 @@ export function Modal({
 
             {/* Title */}
             {title && (
-              <h2 className="px-5 pb-3 text-base font-display font-semibold text-text-primary">
+              <h2 id={titleId} className="px-5 pb-3 text-base font-display font-semibold text-text-primary">
                 {title}
               </h2>
             )}

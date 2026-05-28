@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <div
       style={{
-        height: '100vh',
+        height: '100dvh',
         overflowY: 'auto',
         background: 'linear-gradient(to bottom, var(--color-surface), var(--color-surface-bottom))',
         color: 'var(--color-text-primary)',

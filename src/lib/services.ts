@@ -175,6 +175,67 @@ export const SERVICE_CATALOG: ServiceTemplate[] = [
   { name: 'Фитнес клуб', emoji: '💪', categoryId: '9', defaultPrice: 3000, defaultCurrency: 'RUB', color: '#FF2D55', cycle: 'monthly' },
   { name: 'Домашний интернет', emoji: '🌐', categoryId: '9', defaultPrice: 800, defaultCurrency: 'RUB', color: '#007AFF', cycle: 'monthly' },
   { name: 'Мобильная связь', emoji: '📱', categoryId: '9', defaultPrice: 500, defaultCurrency: 'RUB', color: '#34C759', cycle: 'monthly' },
+
+  // ════════════════════════════════════════════════════════════════════
+  // 2026 refresh — currently popular services (RU + global). Prices are
+  // editable starting defaults; logos resolve automatically from `domain`.
+  // ════════════════════════════════════════════════════════════════════
+
+  // ── Стриминг (RU + global) ──
+  { name: 'Premier', emoji: '🎬', categoryId: '1', defaultPrice: 299, defaultCurrency: 'RUB', color: '#E10915', cycle: 'monthly', domain: 'premier.one' },
+  { name: 'KION', emoji: '🎬', categoryId: '1', defaultPrice: 299, defaultCurrency: 'RUB', color: '#7B2FF7', cycle: 'monthly', domain: 'kion.ru' },
+  { name: 'Амедиатека', emoji: '🎞️', categoryId: '1', defaultPrice: 649, defaultCurrency: 'RUB', color: '#111111', cycle: 'monthly', domain: 'amediateka.ru' },
+  { name: 'Premier Sport', emoji: '⚽', categoryId: '1', defaultPrice: 399, defaultCurrency: 'RUB', color: '#0A8F4E', cycle: 'monthly', domain: 'premier.one' },
+
+  // ── Музыка ──
+  { name: 'Qobuz', emoji: '🎼', categoryId: '2', defaultPrice: 13, defaultCurrency: 'USD', color: '#0E1216', cycle: 'monthly', domain: 'qobuz.com' },
+
+  // ── Софт / Продуктивность ──
+  { name: 'Bitwarden', emoji: '🔐', categoryId: '3', defaultPrice: 10, defaultCurrency: 'USD', color: '#175DDC', cycle: 'yearly', domain: 'bitwarden.com' },
+  { name: 'Proton Unlimited', emoji: '🛡️', categoryId: '3', defaultPrice: 10, defaultCurrency: 'USD', color: '#6D4AFF', cycle: 'monthly', domain: 'proton.me' },
+  { name: 'DeepL Pro', emoji: '🌐', categoryId: '3', defaultPrice: 9, defaultCurrency: 'USD', color: '#0F2B46', cycle: 'monthly', domain: 'deepl.com' },
+  { name: 'Framer', emoji: '🖌️', categoryId: '3', defaultPrice: 10, defaultCurrency: 'USD', color: '#0099FF', cycle: 'monthly', domain: 'framer.com' },
+  { name: 'Webflow', emoji: '🌐', categoryId: '3', defaultPrice: 18, defaultCurrency: 'USD', color: '#146EF5', cycle: 'monthly', domain: 'webflow.com' },
+  { name: 'ClickUp', emoji: '📋', categoryId: '3', defaultPrice: 7, defaultCurrency: 'USD', color: '#7B68EE', cycle: 'monthly', domain: 'clickup.com' },
+  { name: 'monday.com', emoji: '📊', categoryId: '3', defaultPrice: 9, defaultCurrency: 'USD', color: '#FF3D57', cycle: 'monthly', domain: 'monday.com' },
+  { name: 'Vercel Pro', emoji: '▲', categoryId: '3', defaultPrice: 20, defaultCurrency: 'USD', color: '#000000', cycle: 'monthly', domain: 'vercel.com' },
+  { name: 'Replit Core', emoji: '💻', categoryId: '3', defaultPrice: 20, defaultCurrency: 'USD', color: '#F26207', cycle: 'monthly', domain: 'replit.com' },
+  { name: 'Apple One', emoji: '🍏', categoryId: '4', defaultPrice: 20, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'apple.com' },
+
+  // ── Игры ──
+  { name: 'Roblox Premium', emoji: '🎮', categoryId: '5', defaultPrice: 5, defaultCurrency: 'USD', color: '#E2231A', cycle: 'monthly', domain: 'roblox.com' },
+  { name: 'Discord Nitro', emoji: '🎮', categoryId: '5', defaultPrice: 10, defaultCurrency: 'USD', color: '#5865F2', cycle: 'monthly', domain: 'discord.com' },
+
+  // ── Обучение (RU + global) ──
+  { name: 'Нетология', emoji: '🎓', categoryId: '6', defaultPrice: 3300, defaultCurrency: 'RUB', color: '#6E3AFF', cycle: 'monthly', domain: 'netology.ru' },
+  { name: 'GeekBrains', emoji: '🧑‍💻', categoryId: '6', defaultPrice: 2500, defaultCurrency: 'RUB', color: '#FF3E3E', cycle: 'monthly', domain: 'gb.ru' },
+  { name: 'Codecademy', emoji: '💻', categoryId: '6', defaultPrice: 18, defaultCurrency: 'USD', color: '#1F4056', cycle: 'monthly', domain: 'codecademy.com' },
+  { name: 'Memrise', emoji: '🧠', categoryId: '6', defaultPrice: 9, defaultCurrency: 'USD', color: '#FFA320', cycle: 'monthly', domain: 'memrise.com' },
+
+  // ── AI ──
+  { name: 'Character.AI', emoji: '🤖', categoryId: '7', defaultPrice: 10, defaultCurrency: 'USD', color: '#4A4AEF', cycle: 'monthly', domain: 'character.ai' },
+  { name: 'Poe', emoji: '🤖', categoryId: '7', defaultPrice: 20, defaultCurrency: 'USD', color: '#5D3FD3', cycle: 'monthly', domain: 'poe.com' },
+  { name: 'Le Chat (Mistral)', emoji: '🐱', categoryId: '7', defaultPrice: 15, defaultCurrency: 'USD', color: '#FF7000', cycle: 'monthly', domain: 'mistral.ai' },
+  { name: 'Leonardo AI', emoji: '🎨', categoryId: '7', defaultPrice: 12, defaultCurrency: 'USD', color: '#9B5DE5', cycle: 'monthly', domain: 'leonardo.ai' },
+  { name: 'Luma Dream Machine', emoji: '🎬', categoryId: '7', defaultPrice: 10, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'lumalabs.ai' },
+  { name: 'Pika', emoji: '🎬', categoryId: '7', defaultPrice: 10, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'pika.art' },
+  { name: 'HeyGen', emoji: '🗣️', categoryId: '7', defaultPrice: 24, defaultCurrency: 'USD', color: '#8B5CF6', cycle: 'monthly', domain: 'heygen.com' },
+  { name: 'v0', emoji: '▲', categoryId: '7', defaultPrice: 20, defaultCurrency: 'USD', color: '#000000', cycle: 'monthly', domain: 'v0.app' },
+  { name: 'Windsurf', emoji: '⌨️', categoryId: '7', defaultPrice: 15, defaultCurrency: 'USD', color: '#09B6A2', cycle: 'monthly', domain: 'windsurf.com' },
+
+  // ── VPN / Безопасность ──
+  { name: 'AdGuard', emoji: '🛡️', categoryId: '8', defaultPrice: 3, defaultCurrency: 'USD', color: '#66B574', cycle: 'monthly', domain: 'adguard.com' },
+  { name: 'Dr.Web', emoji: '🕷️', categoryId: '8', defaultPrice: 1290, defaultCurrency: 'RUB', color: '#2A9E2A', cycle: 'yearly', domain: 'drweb.ru' },
+  { name: 'CyberGhost VPN', emoji: '🔒', categoryId: '8', defaultPrice: 13, defaultCurrency: 'USD', color: '#FFCC00', cycle: 'monthly', domain: 'cyberghostvpn.com' },
+  { name: 'Avast One', emoji: '🛡️', categoryId: '8', defaultPrice: 5, defaultCurrency: 'USD', color: '#FF7800', cycle: 'monthly', domain: 'avast.com' },
+  { name: 'hidemy.name', emoji: '🌐', categoryId: '8', defaultPrice: 390, defaultCurrency: 'RUB', color: '#2E7D32', cycle: 'monthly', domain: 'hidemyna.me' },
+
+  // ── Другое / Подписки ──
+  { name: 'Audible', emoji: '🎧', categoryId: '9', defaultPrice: 15, defaultCurrency: 'USD', color: '#F8991C', cycle: 'monthly', domain: 'audible.com' },
+  { name: 'MyBook', emoji: '📚', categoryId: '9', defaultPrice: 379, defaultCurrency: 'RUB', color: '#4B9CD3', cycle: 'monthly', domain: 'mybook.ru' },
+  { name: 'Т-Банк Pro', emoji: '💛', categoryId: '9', defaultPrice: 199, defaultCurrency: 'RUB', color: '#FFDD2D', cycle: 'monthly', domain: 'tbank.ru' },
+  { name: 'The New York Times', emoji: '📰', categoryId: '9', defaultPrice: 17, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'nytimes.com' },
+  { name: 'Whoop', emoji: '⌚', categoryId: '9', defaultPrice: 30, defaultCurrency: 'USD', color: '#FF0000', cycle: 'monthly', domain: 'whoop.com' },
 ];
 
 /** Search services by name (case-insensitive, partial match) */

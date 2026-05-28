@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { getAuthToken } from '@/lib/supabase';
+import { dbToSubscription, type SubscriptionRow } from '@/lib/dbMappers';
 import type { Workspace, WorkspaceMember, Subscription } from '@/lib/types';
 
 interface WorkspaceContextValue {
@@ -26,6 +27,10 @@ interface WorkspaceContextValue {
    */
   isWorkspaceActive: boolean;
   loading: boolean;
+  /** true when the last workspace-subscriptions fetch failed (network/HTTP) */
+  subsError: boolean;
+  /** true while (re)loading workspace subscriptions */
+  subsLoading: boolean;
   /** Activate workspace mode and load its subscriptions */
   activateWorkspace: (ws: Workspace, members: WorkspaceMember[]) => Promise<void>;
   /** Switch to personal mode. Keeps workspace data — doesn't clear it. */
@@ -47,36 +52,24 @@ const LS_KEY = 'neonsub-active-workspace-id';
 const MODE_KEY = 'neonsub-workspace-mode';
 const POLL_INTERVAL_MS = 60_000; // refresh workspace subs every 60s when active
 
-/** Fetch workspace subscriptions via service-client API (bypasses RLS for all members) */
-async function fetchWorkspaceSubs(workspaceId: string, token: string): Promise<Subscription[]> {
+/**
+ * Fetch workspace subscriptions via service-client API (bypasses RLS for all members).
+ * Returns { ok } so callers can distinguish a real network/HTTP failure from a
+ * genuinely empty workspace (otherwise a failed fetch looks like "no subscriptions").
+ */
+async function fetchWorkspaceSubs(
+  workspaceId: string,
+  token: string,
+): Promise<{ ok: boolean; subs: Subscription[] }> {
   try {
     const res = await fetch(`/api/workspace/subscriptions?workspaceId=${workspaceId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!res.ok) return [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows: any[] = await res.json();
-    return rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      price: Number(row.price),
-      currency: row.currency,
-      category: row.category,
-      cycle: row.cycle,
-      nextPaymentDate: row.next_payment_date,
-      startDate: row.start_date,
-      paymentMethod: row.payment_method ?? '',
-      notes: row.notes ?? '',
-      color: row.color ?? '#00FF41',
-      icon: row.icon ?? '📦',
-      managementUrl: row.management_url ?? '',
-      isActive: row.is_active ?? true,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      workspaceId: row.workspace_id,
-    }));
+    if (!res.ok) return { ok: false, subs: [] };
+    const rows: SubscriptionRow[] = await res.json();
+    return { ok: true, subs: rows.map(dbToSubscription) };
   } catch {
-    return [];
+    return { ok: false, subs: [] };
   }
 }
 
@@ -87,6 +80,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspaceSubscriptions, setWorkspaceSubs] = useState<Subscription[]>([]);
   const [isWorkspaceActive, setIsWorkspaceActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [subsError, setSubsError] = useState(false);
+  const [subsLoading, setSubsLoading] = useState(false);
   const loadedForUser = useRef<string | null>(null);
   // Read MODE_KEY synchronously at render time — before any effect can clear localStorage.
   // This survives the logout-watcher effect that runs on initial mount with user=null.
@@ -128,8 +123,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (!workspace) return;
     const token = await getAuthToken();
     if (!token) return;
-    const subs = await fetchWorkspaceSubs(workspace.id, token);
-    setWorkspaceSubs(subs);
+    setSubsLoading(true);
+    const { ok, subs } = await fetchWorkspaceSubs(workspace.id, token);
+    if (ok) {
+      setWorkspaceSubs(subs);
+      setSubsError(false);
+    } else {
+      setSubsError(true);
+    }
+    setSubsLoading(false);
   }, [workspace]);
 
   /**
@@ -144,13 +146,16 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(MODE_KEY, 'workspace');
     } catch { /* ignore */ }
     const token = await getAuthToken();
-    if (!token) return;
+    if (!token) { setSubsError(true); return; }
+    setSubsLoading(true);
     // Load subs and full members list in parallel (service client — no RLS issues)
-    const [subs] = await Promise.all([
+    const [subsRes] = await Promise.all([
       fetchWorkspaceSubs(ws.id, token),
       refreshMembers(ws.id),
     ]);
-    setWorkspaceSubs(subs);
+    setWorkspaceSubs(subsRes.subs);
+    setSubsError(!subsRes.ok);
+    setSubsLoading(false);
   }, [refreshMembers]);
 
   /**
@@ -160,6 +165,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const switchToPersonal = useCallback(() => {
     setIsWorkspaceActive(false);
     setWorkspaceSubs([]);
+    setSubsError(false);
     try {
       localStorage.removeItem(LS_KEY);
       localStorage.setItem(MODE_KEY, 'personal');
@@ -174,6 +180,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setMembers([]);
     setWorkspaceSubs([]);
     setIsWorkspaceActive(false);
+    setSubsError(false);
     loadedForUser.current = null;
     try {
       localStorage.removeItem(LS_KEY);
@@ -262,8 +269,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const timer = setInterval(async () => {
       const token = await getAuthToken();
       if (!token) return;
-      const subs = await fetchWorkspaceSubs(workspace.id, token);
-      setWorkspaceSubs(subs);
+      // Background refresh: update on success, flag error but keep current subs on failure.
+      const { ok, subs } = await fetchWorkspaceSubs(workspace.id, token);
+      if (ok) {
+        setWorkspaceSubs(subs);
+        setSubsError(false);
+      } else {
+        setSubsError(true);
+      }
     }, POLL_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [isWorkspaceActive, workspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -285,6 +298,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     isOwner,
     isWorkspaceActive,
     loading,
+    subsError,
+    subsLoading,
     activateWorkspace,
     switchToPersonal,
     refreshWorkspaceSubs,

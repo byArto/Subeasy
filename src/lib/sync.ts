@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase';
 import type { Subscription, Category, AppSettings, Workspace, WorkspaceMember } from '@/lib/types';
 import { DEFAULT_CATEGORIES } from '@/lib/constants';
 import { mergePersonalSubscriptionsForSync } from '@/lib/syncMerge';
+import { dbToSubscription, dbToCategory } from '@/lib/dbMappers';
 
 const supabase = () => createClient();
 const KNOWN_SUBS_KEY_PREFIX = 'neonsub-known-subscription-ids:';
@@ -268,29 +269,6 @@ export async function syncSettings(
    DB ↔ App type converters
    ═══════════════════════════════════════ */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function dbToSubscription(row: any): Subscription {
-  return {
-    id: row.id,
-    name: row.name,
-    price: Number(row.price),
-    currency: row.currency,
-    category: row.category,
-    cycle: row.cycle,
-    nextPaymentDate: row.next_payment_date,
-    startDate: row.start_date,
-    paymentMethod: row.payment_method ?? '',
-    notes: row.notes ?? '',
-    color: row.color ?? '#00FF41',
-    icon: row.icon ?? '📦',
-    managementUrl: row.management_url ?? '',
-    isActive: row.is_active ?? true,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    ...(row.workspace_id ? { workspaceId: row.workspace_id } : {}),
-  };
-}
-
 function subscriptionToDb(s: Subscription, userId: string) {
   return {
     id: s.id,
@@ -310,16 +288,6 @@ function subscriptionToDb(s: Subscription, userId: string) {
     is_active: s.isActive,
     created_at: s.createdAt,
     updated_at: s.updatedAt,
-  };
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function dbToCategory(row: any): Category {
-  return {
-    id: row.id,
-    name: row.name,
-    emoji: row.emoji,
-    color: row.color,
   };
 }
 

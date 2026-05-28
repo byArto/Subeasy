@@ -1,7 +1,8 @@
 import type { Subscription, Category, AppSettings } from './types';
-import { convertCurrency, getMonthlyPrice } from './utils';
+import { convertCurrency } from './utils';
 import { CURRENCY_SYMBOLS } from './constants';
 import { generateReportHtml } from './reportHtml';
+import { getCategoryName, formatCycleLabel, formatReportDate } from './reportFormat';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
@@ -14,35 +15,6 @@ function isTelegramWebApp(): boolean {
 function isMobileBrowser(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-}
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getCategoryName(sub: Subscription, categories: Category[]): string {
-  return categories.find((c) => c.id === sub.category)?.name ?? sub.category;
-}
-
-function formatCycleLabel(cycle: string, isRu: boolean): string {
-  const labels: Record<string, [string, string]> = {
-    monthly:   ['Ежемесячно', 'Monthly'],
-    yearly:    ['Ежегодно',   'Yearly'],
-    weekly:    ['Еженедельно','Weekly'],
-    'one-time':['Разовый',   'One-time'],
-    trial:     ['Пробный',   'Trial'],
-  };
-  const pair = labels[cycle];
-  return pair ? pair[isRu ? 0 : 1] : cycle;
-}
-
-function formatDate(iso: string, isRu: boolean): string {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleDateString(isRu ? 'ru-RU' : 'en-US', {
-      day: '2-digit', month: '2-digit', year: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
 }
 
 // ─── CSV ─────────────────────────────────────────────────────────────────────
@@ -72,8 +44,8 @@ export function exportCSV(
       `${converted} ${sym}`,
       settings.displayCurrency,
       formatCycleLabel(sub.cycle, isRu),
-      formatDate(sub.nextPaymentDate, isRu),
-      formatDate(sub.startDate, isRu),
+      formatReportDate(sub.nextPaymentDate, isRu),
+      formatReportDate(sub.startDate, isRu),
       sub.paymentMethod || '—',
       sub.isActive ? (isRu ? 'Активна' : 'Active') : (isRu ? 'Неактивна' : 'Inactive'),
       sub.notes || '',
@@ -145,13 +117,4 @@ export function exportPDF(
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 30000);
-}
-
-// ─── HTML escape ─────────────────────────────────────────────────────────────
-function esc(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

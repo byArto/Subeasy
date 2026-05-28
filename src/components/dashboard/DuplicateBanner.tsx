@@ -103,7 +103,7 @@ function DupGroup({
 
   // For groups of exactly 2: show both + actions on pair
   // For groups of 3+: show all, actions target every sub except the first
-  const [first, ...rest] = group;
+  const [, ...rest] = group;
 
   return (
     <div

@@ -582,6 +582,24 @@ const dict: Translations = {
   'settings.themes.claude': { ru: 'Claude', en: 'Claude' },
   'settings.themes.free': { ru: 'Текущая', en: 'Current' },
   'settings.themes.proOnly': { ru: 'PRO', en: 'PRO' },
+
+  // ── Workspace data states ──
+  'workspace.loadError': { ru: 'Не удалось загрузить подписки группы', en: 'Couldn’t load group subscriptions' },
+  'common.retry': { ru: 'Повторить', en: 'Retry' },
+
+  // ── Accessibility (icon-only button labels) ──
+  'a11y.search': { ru: 'Поиск', en: 'Search' },
+  'a11y.notifications': { ru: 'Уведомления', en: 'Notifications' },
+  'a11y.back': { ru: 'Назад', en: 'Back' },
+
+  // ── PWA install prompt ──
+  'pwa.title': { ru: 'Установите SubEasy', en: 'Install SubEasy' },
+  'pwa.subtitle': { ru: 'Быстрый доступ с домашнего экрана', en: 'Quick access from your home screen' },
+  'pwa.ios.step1': { ru: 'Нажмите «Поделиться» внизу Safari', en: 'Tap “Share” at the bottom of Safari' },
+  'pwa.ios.step2': { ru: 'Выберите «На экран „Домой“»', en: 'Choose “Add to Home Screen”' },
+  'pwa.android.step1': { ru: 'Нажмите ⋮ в правом верхнем углу браузера', en: 'Tap ⋮ in the top-right of the browser' },
+  'pwa.android.step2': { ru: 'Выберите «Добавить на главный экран»', en: 'Choose “Add to Home screen”' },
+  'pwa.cta': { ru: 'Понятно', en: 'Got it' },
 };
 
 

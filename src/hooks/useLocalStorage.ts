@@ -17,11 +17,13 @@ export function useLocalStorage<T>(
   key: string,
   initialValue: T
 ): [T, (value: SetValue<T>) => void, () => void] {
-  // Capture initialValue once to avoid re-running the effect on every render
-  // when the caller passes an inline object/array literal
+  // Capture initialValue once so the cross-tab effect / removeValue have a stable
+  // fallback without adding initialValue (often an inline literal) to their deps.
   const initialRef = useRef(initialValue);
 
-  const [storedValue, setStoredValue] = useState<T>(() => readStorage(key, initialRef.current));
+  // Lazy init runs exactly once — read initialValue directly here (not the ref) so
+  // we don't touch ref.current during render.
+  const [storedValue, setStoredValue] = useState<T>(() => readStorage(key, initialValue));
 
   // Sync across tabs
   useEffect(() => {

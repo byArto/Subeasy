@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { getThemeChrome, isValidTheme, Theme } from '@/lib/themes';
+import { DEFAULT_THEME, getThemeChrome, isValidTheme, Theme } from '@/lib/themes';
 
 export type { Theme };
 
@@ -14,7 +14,7 @@ const THEME_STORAGE_KEY = 'subeasy-theme';
 const LEGACY_THEME_STORAGE_KEY = 'neonsub-theme';
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'green',
+  theme: DEFAULT_THEME,
   setTheme: () => {},
 });
 
@@ -41,14 +41,14 @@ function applyTheme(t: Theme) {
 function getStoredTheme(): Theme {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY) ?? localStorage.getItem(LEGACY_THEME_STORAGE_KEY);
-    return isValidTheme(saved) ? saved : 'green';
+    return isValidTheme(saved) ? saved : DEFAULT_THEME;
   } catch {
-    return 'green';
+    return DEFAULT_THEME;
   }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('green');
+  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
 
   // Sync from localStorage on mount (avoids SSR mismatch)
   useEffect(() => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
@@ -8,13 +9,15 @@ export function ProBadge({ onOpen }: { onOpen: () => void }) {
   const { lang } = useLanguage();
   const { isPro, proUntil, loading } = usePro();
 
+  // Compute once per proUntil change rather than reading Date.now() during render (purity).
+  const daysLeft = useMemo(
+    () => (proUntil ? Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null),
+    [proUntil],
+  );
+
   if (loading) return null;
 
   if (isPro) {
-    const daysLeft = proUntil
-      ? Math.ceil((proUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-      : null;
-
     const label = daysLeft !== null
       ? `PRO · ${daysLeft}${lang === 'ru' ? 'д' : 'd'}`
       : 'PRO';

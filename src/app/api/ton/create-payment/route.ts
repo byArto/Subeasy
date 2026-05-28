@@ -5,14 +5,9 @@ import { checkRateLimit } from '@/lib/ratelimit';
 import { isMonetizationEnabled } from '@/lib/monetization';
 
 import { env } from '@/lib/env';
+import { PRO_PLANS, isPlanKey } from '@/lib/plans';
 
 const MERCHANT_WALLET = env('TON_WALLET_ADDRESS');
-
-const PLAN_USD = {
-  monthly:  2.99,
-  yearly:   19.99,
-  lifetime: 34.99,
-} as const;
 
 async function getTonUsdPrice(): Promise<number> {
   try {
@@ -41,13 +36,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const plan = body?.plan as keyof typeof PLAN_USD | undefined;
-  if (!plan || !PLAN_USD[plan]) {
+  const plan = body?.plan;
+  if (!isPlanKey(plan)) {
     return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
   }
 
   const tonPrice = await getTonUsdPrice();
-  const usdAmount = PLAN_USD[plan];
+  const usdAmount = PRO_PLANS[plan].usd;
 
   // Add 2% buffer for price fluctuations, round up to nearest 0.01 TON
   const tonAmount = Math.ceil((usdAmount * 1.02) / tonPrice * 100) / 100;

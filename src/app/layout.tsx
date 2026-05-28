@@ -14,7 +14,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#0A0A0F',
+  // Default theme is Claude (light); the inline theme-init script overrides this
+  // per-user before paint for anyone who picked a dark theme.
+  themeColor: '#faf9f5',
 };
 
 export const metadata: Metadata = {
@@ -55,11 +57,12 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         {/* Theme init — reads localStorage before paint to avoid flash.
+            Default theme is 'claude' (light) for anyone who hasn't chosen one.
             dangerouslySetInnerHTML is safe here: __html is a hardcoded
             compile-time string with no user input. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('subeasy-theme')||localStorage.getItem('neonsub-theme');if(t==='purple'||t==='blue'||t==='claude')document.documentElement.dataset.theme=t;}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('subeasy-theme')||localStorage.getItem('neonsub-theme');if(t!=='green'&&t!=='purple'&&t!=='blue'&&t!=='claude')t='claude';if(t!=='green')document.documentElement.dataset.theme=t;var tc={green:'#00FF41',purple:'#A855F7',blue:'#06B6D4',claude:'#faf9f5'};var m=document.querySelector('meta[name="theme-color"]');if(m&&tc[t])m.setAttribute('content',tc[t]);}catch(e){}`,
           }}
         />
         {/* Non-blocking font load via preload.
@@ -81,7 +84,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="SubEasy" />
-        <meta name="theme-color" content="#0A0A0F" />
+        <meta name="theme-color" content="#faf9f5" />
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">

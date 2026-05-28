@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase-server';
 
 import { env } from '@/lib/env';
 import { isMonetizationEnabled } from '@/lib/monetization';
+import { PRO_PLANS, calcProUntil, isValidPayload, isPlanKey, type PlanKey } from '@/lib/plans';
 
 const BOT_TOKEN       = env('TELEGRAM_BOT_TOKEN');
 const WEBHOOK_SECRET  = env('TELEGRAM_WEBHOOK_SECRET');
@@ -13,7 +14,7 @@ const MERCHANT_WALLET = env('TON_WALLET_ADDRESS');
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Lang = 'en' | 'ru';
-type Plan = 'monthly' | 'yearly' | 'lifetime';
+type Plan = PlanKey;
 
 // ─── Language (Redis) ─────────────────────────────────────────────────────────
 
@@ -47,12 +48,8 @@ async function setLang(chatId: number, lang: Lang): Promise<void> {
 }
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
-
-const PLANS = {
-  monthly:  { stars: 249,  payload: 'pro_monthly',  usd: 2.99,  days: 30  },
-  yearly:   { stars: 1799, payload: 'pro_yearly',   usd: 19.99, days: 365 },
-  lifetime: { stars: 2999, payload: 'pro_lifetime', usd: 34.99, days: 0   },
-} as const;
+// Pricing & expiry math live in lib/plans.ts (single source of truth).
+// Only localized display labels remain here.
 
 const PLAN_LABEL: Record<Plan, Record<Lang, string>> = {
   monthly:  { en: 'Monthly',       ru: 'Месяц'    },
@@ -65,8 +62,6 @@ const PLAN_DURATION: Record<Plan, Record<Lang, string>> = {
   yearly:   { en: '365 days',  ru: '365 дней'     },
   lifetime: { en: 'Forever ♾', ru: 'Навсегда ♾'  },
 };
-
-const VALID_PLANS = new Set(['pro_monthly', 'pro_yearly', 'pro_lifetime']);
 
 // ─── Telegram API ─────────────────────────────────────────────────────────────
 
@@ -100,16 +95,6 @@ function answerPreCheckout(queryId: string, ok: boolean, errorMessage?: string) 
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function calcProUntil(payload: string, currentProUntil: string | null): string | null {
-  if (payload === 'pro_lifetime') return null;
-  const now  = new Date();
-  const base = currentProUntil && new Date(currentProUntil) > now
-    ? new Date(currentProUntil) : now;
-  if (payload === 'pro_monthly') base.setDate(base.getDate() + 30);
-  if (payload === 'pro_yearly')  base.setDate(base.getDate() + 365);
-  return base.toISOString();
-}
 
 async function getTonPrice(): Promise<number> {
   try {
@@ -145,7 +130,7 @@ function proKeyboard(lang: Lang) {
 }
 
 function planKeyboard(plan: Plan, lang: Lang) {
-  const cfg = PLANS[plan];
+  const cfg = PRO_PLANS[plan];
   return {
     inline_keyboard: [
       [{ text: `⭐ ${lang === 'en' ? 'Pay with Stars' : 'Оплатить Stars'} · ${cfg.stars} ⭐`, callback_data: `stars:${plan}` }],
@@ -299,13 +284,11 @@ async function cbPlan(chatId: number, msgId: number, plan: Plan, lang: Lang) {
     return;
   }
 
-  const cfg  = PLANS[plan];
   const label = PLAN_LABEL[plan][lang];
   const dur   = PLAN_DURATION[plan][lang];
   const text  = lang === 'en'
     ? `👑 <b>PRO · ${label}</b>\n\n${dur} of full PRO access\n\n<b>Choose payment method:</b>`
     : `👑 <b>PRO · ${label}</b>\n\n${dur} полного PRO-доступа\n\n<b>Выбери способ оплаты:</b>`;
-  void cfg;
   await edit(chatId, msgId, text, { reply_markup: planKeyboard(plan, lang) });
 }
 
@@ -322,7 +305,7 @@ async function cbStars(chatId: number, plan: Plan, lang: Lang) {
     return;
   }
 
-  const cfg   = PLANS[plan];
+  const cfg   = PRO_PLANS[plan];
   const label = PLAN_LABEL[plan][lang];
   const dur   = PLAN_DURATION[plan][lang];
 
@@ -370,7 +353,7 @@ async function cbTon(chatId: number, telegramId: number, plan: Plan, lang: Lang)
   }
 
   const tonPrice  = await getTonPrice();
-  const cfg       = PLANS[plan];
+  const cfg       = PRO_PLANS[plan];
   const tonAmount = Math.ceil((cfg.usd * 1.02) / tonPrice * 100) / 100;
   const nanoAmount = Math.round(tonAmount * 1e9);
   const memo      = `sub-${crypto.randomUUID().replace(/-/g, '').slice(0, 10)}`;
@@ -464,15 +447,17 @@ async function handleStarsPayment(update: Record<string, unknown>, lang: Lang) {
   const chatId         = (payment.chat as Record<string, unknown>).id as number;
   const payload        = paymentData.invoice_payload as string;
 
-  if (!VALID_PLANS.has(payload)) {
+  if (!isValidPayload(payload)) {
     console.error('[webhook/payment] unknown payload:', payload);
     return;
   }
 
+  const chargeId = paymentData.telegram_payment_charge_id as string | undefined;
+
   const supabase = createServiceClient();
   const { data: profile, error: lookupError } = await supabase
     .from('profiles')
-    .select('id, pro_until')
+    .select('id, pro_until, last_stars_charge_id')
     .eq('telegram_chat_id', telegramUserId)
     .maybeSingle();
 
@@ -483,6 +468,13 @@ async function handleStarsPayment(update: Record<string, unknown>, lang: Lang) {
       ? '❌ <b>Account not found.</b>\n\nOpen SubEasy to link your account, then contact support.'
       : '❌ <b>Аккаунт не найден.</b>\n\nОткройте SubEasy, привяжите аккаунт и обратитесь в поддержку.',
     );
+    return;
+  }
+
+  // Idempotency: Telegram re-delivers the webhook on timeout/non-200. The same
+  // charge id must never extend pro_until twice. Ack silently on a repeat.
+  if (chargeId && profile.last_stars_charge_id === chargeId) {
+    console.warn('[webhook/payment] duplicate charge ignored:', chargeId);
     return;
   }
 
@@ -555,7 +547,7 @@ export async function POST(req: NextRequest) {
     const pcq: Record<string, unknown> = update.pre_checkout_query;
     if (!isMonetizationEnabled()) {
       await answerPreCheckout(pcq.id as string, false, 'Payments are disabled');
-    } else if (!VALID_PLANS.has(pcq.invoice_payload as string)) {
+    } else if (!isValidPayload(pcq.invoice_payload as string)) {
       await answerPreCheckout(pcq.id as string, false, 'Unknown plan');
     } else {
       await answerPreCheckout(pcq.id as string, true);
@@ -641,19 +633,19 @@ export async function POST(req: NextRequest) {
     // plan:monthly | plan:yearly | plan:lifetime
     else if (isMonetizationEnabled() && cbData.startsWith('plan:')) {
       const plan = cbData.split(':')[1] as Plan;
-      if (plan in PLANS) await cbPlan(chatId, msgId, plan, lang);
+      if (isPlanKey(plan)) await cbPlan(chatId, msgId, plan, lang);
     }
 
     // stars:plan
     else if (isMonetizationEnabled() && cbData.startsWith('stars:')) {
       const plan = cbData.split(':')[1] as Plan;
-      if (plan in PLANS) await cbStars(chatId, plan, lang);
+      if (isPlanKey(plan)) await cbStars(chatId, plan, lang);
     }
 
     // ton:plan
     else if (isMonetizationEnabled() && cbData.startsWith('ton:')) {
       const plan = cbData.split(':')[1] as Plan;
-      if (plan in PLANS) await cbTon(chatId, userId, plan, lang);
+      if (isPlanKey(plan)) await cbTon(chatId, userId, plan, lang);
     }
 
     // check_ton:memo

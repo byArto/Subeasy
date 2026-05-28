@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { BellIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface HeaderProps {
   title: string;
@@ -27,6 +28,7 @@ export function Header({
   className,
 }: HeaderProps) {
   const { isTelegram } = useTelegramContext();
+  const { t } = useLanguage();
 
   return (
     <motion.header
@@ -74,6 +76,7 @@ export function Header({
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={onSearchTap}
+              aria-label={t('a11y.search')}
               className="flex items-center justify-center w-10 h-10 rounded-full active:bg-surface-3 transition-colors"
             >
               <MagnifyingGlassIcon className="w-[22px] h-[22px] text-text-secondary" />
@@ -83,6 +86,7 @@ export function Header({
             <motion.button
               whileTap={{ scale: 0.85 }}
               onClick={onNotificationTap}
+              aria-label={t('a11y.notifications')}
               className="relative flex items-center justify-center w-10 h-10 rounded-full active:bg-surface-3 transition-colors"
             >
               <BellIcon className="w-[22px] h-[22px] text-text-secondary" />

@@ -1,10 +1,14 @@
 # SubEasy — Project Rules
 
 ## Overview
-SubEasy — PWA subscription & recurring payment tracker. Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Framer Motion. Data in localStorage, deployed on Vercel. Target device — iPhone, iOS 16.4+, PWA standalone.
+SubEasy — PWA subscription & recurring payment tracker, also runs as a Telegram Mini App. Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4 + Framer Motion. Deployed on Vercel. Target device — iPhone, iOS 16.4+, PWA standalone.
+
+Data is **offline-first**: localStorage is the primary store; when the user is signed in (Supabase auth), data syncs to Supabase (Postgres) and is shared across devices and Family-Plan workspaces. Server API routes handle Telegram/TON payments, the Telegram bot webhook, the daily reminder cron, and account deletion.
+
+> **Monetization is currently DISABLED** (`NEXT_PUBLIC_MONETIZATION_ENABLED=false`) — the whole app is free, PRO is granted to everyone (`lib/monetization.ts`), and the payment UI/flows are hidden. The payment code paths (Telegram Stars + TON) remain in place behind that flag for when monetization returns. Plan pricing & expiry math live in `lib/plans.ts` (single source of truth).
 
 ## Version
-Current: 1.4.0
+Current: 1.6.5
 
 ## Design
 - Dark cyberpunk: black (#0A0A0F) + neon green (#00FF41, #39FF14)
@@ -136,15 +140,13 @@ All data in localStorage with prefix `neonsub-`:
 - No `eval()`, `innerHTML`, `dangerouslySetInnerHTML` without sanitization
 - Dependencies: regularly `npm audit`, update critical packages
 
-## Supabase (future v2.0)
+## Supabase (in use)
 
-- NOT currently used — all data in localStorage
-- When migrating to Supabase:
-  - Row Level Security on all tables
-  - Migrations via supabase migration
-  - Generate types from DB schema
-  - Optimistic UI updates (update localStorage first, then sync with Supabase)
-  - Offline-first: localStorage as primary, Supabase as sync layer
+- Used for auth + cross-device/workspace sync (`lib/sync.ts`, `lib/supabase.ts`, `lib/supabase-server.ts`).
+- Offline-first: localStorage is primary, Supabase is the sync layer (optimistic UI: update localStorage first, then sync).
+- Server routes use the **service-role** client only in trusted contexts (`createServiceClient`) and ALWAYS verify the caller first (`verifyAuth` for user routes; Telegram `initData` HMAC for `/api/telegram/connect`; webhook secrets / `CRON_SECRET` for webhooks & cron). Never trust a client-supplied user/chat id.
+- DB↔app row mapping: `lib/dbMappers.ts` (`dbToSubscription`/`dbToCategory`). Keep RLS enabled on all tables.
+- There is no Next.js middleware; every API route enforces its own auth (do not rely on a global guard).
 
 ## Git
 

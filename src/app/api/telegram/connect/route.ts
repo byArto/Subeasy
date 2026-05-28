@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
   const supabaseAnon = createClient(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    { auth: { autoRefreshToken: false, persistSession: false } },
   );
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {

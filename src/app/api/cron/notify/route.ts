@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
+import { escapeHtml } from '@/lib/utils';
 import { env } from '@/lib/env';
 import {
   getNotifyCronMaxUsers,
@@ -85,16 +87,19 @@ function buildMessage(
     const label = dateLabel(days, dateStr, isRu);
 
     const rows = dateSubs.map((sub) => {
+      // sub.name / sub.icon are user-controlled — escape before HTML interpolation.
+      const safeName = escapeHtml(String(sub.name ?? ''));
+      const safeIcon = escapeHtml(String(sub.icon ?? ''));
       if (sub.cycle === 'trial') {
         const trialLabel = isRu ? 'FREE (пробный заканчивается)' : 'FREE (trial ending)';
-        return `⏰ ${sub.icon} ${sub.name}  <b>${trialLabel}</b>`;
+        return `⏰ ${safeIcon} ${safeName}  <b>${trialLabel}</b>`;
       }
       const converted = convertPrice(sub.price, sub.currency, displayCurrency, usdRate, eurRate);
       total += converted;
       const approx = sub.currency !== displayCurrency ? '~' : '';
       const amount = converted >= 10 ? Math.round(converted) : converted.toFixed(2);
       const cycle = cycleStr(sub.cycle, isRu);
-      return `${sub.icon} ${sub.name}  <b>${approx}${amount} ${sym}${cycle}</b>`;
+      return `${safeIcon} ${safeName}  <b>${approx}${amount} ${sym}${cycle}</b>`;
     });
 
     sections.push(`${label}:\n${rows.join('\n')}`);
@@ -140,9 +145,12 @@ function sleep(ms: number): Promise<void> {
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  // Validate Vercel cron secret
-  const auth = req.headers.get('authorization');
-  if (auth !== `Bearer ${CRON_SECRET()}`) {
+  // Validate Vercel cron secret (constant-time comparison)
+  const auth = req.headers.get('authorization') ?? '';
+  const expected = `Bearer ${CRON_SECRET()}`;
+  const authBuf = Buffer.from(auth);
+  const expBuf = Buffer.from(expected);
+  if (authBuf.length !== expBuf.length || !timingSafeEqual(authBuf, expBuf)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

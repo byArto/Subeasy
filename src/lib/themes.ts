@@ -2,6 +2,9 @@ export const VALID_THEMES = ['green', 'purple', 'blue', 'claude'] as const;
 
 export type Theme = (typeof VALID_THEMES)[number];
 
+/** Theme applied to everyone who hasn't explicitly chosen one. */
+export const DEFAULT_THEME: Theme = 'claude';
+
 export interface ThemeOption {
   value: Theme;
   label: string;

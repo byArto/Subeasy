@@ -3,34 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase-server';
 import { generateReportHtml } from '@/lib/reportHtml';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { dbToSubscription, dbToCategory } from '@/lib/dbMappers';
 import type { Subscription, Category, AppSettings } from '@/lib/types';
 
 import { env, requireEnv } from '@/lib/env';
 
 const BOT_TOKEN = env('TELEGRAM_BOT_TOKEN');
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function dbToSubscription(row: any): Subscription {
-  return {
-    id: row.id,
-    name: row.name,
-    price: Number(row.price),
-    currency: row.currency,
-    category: row.category,
-    cycle: row.cycle,
-    nextPaymentDate: row.next_payment_date ?? '',
-    startDate: row.start_date ?? '',
-    paymentMethod: row.payment_method ?? '',
-    notes: row.notes ?? '',
-    color: row.color ?? '#00FF41',
-    icon: row.icon ?? '📦',
-    managementUrl: row.management_url ?? '',
-    isActive: row.is_active ?? true,
-    createdAt: row.created_at ?? '',
-    updatedAt: row.updated_at ?? '',
-    workspaceId: row.workspace_id ?? undefined,
-  };
-}
 
 export async function POST(req: NextRequest) {
   // Verify Supabase JWT
@@ -42,6 +20,7 @@ export async function POST(req: NextRequest) {
   const supabaseAnon = createClient(
     requireEnv('NEXT_PUBLIC_SUPABASE_URL'),
     requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+    { auth: { autoRefreshToken: false, persistSession: false } },
   );
   const { data: { user }, error: authError } = await supabaseAnon.auth.getUser(token);
   if (authError || !user) {
@@ -77,10 +56,7 @@ export async function POST(req: NextRequest) {
   ]);
 
   const subscriptions: Subscription[] = (subsResult.data ?? []).map(dbToSubscription);
-  const categories: Category[] = (catsResult.data ?? []).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (row: any): Category => ({ id: row.id, name: row.name, emoji: row.emoji, color: row.color }),
-  );
+  const categories: Category[] = (catsResult.data ?? []).map(dbToCategory);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const s: any = settingsResult.data;

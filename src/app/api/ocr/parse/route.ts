@@ -16,6 +16,9 @@ import { verifyAuth } from '@/lib/supabase-server';
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 const MODEL = process.env.OCR_MODEL || 'gpt-4o-mini';
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024; // ~6MB decoded budget
+// 'high' tiles the image at higher resolution → much better on small/blurry
+// text (a few extra tokens). Set OCR_IMAGE_DETAIL=low to cut cost.
+const IMAGE_DETAIL: 'high' | 'low' = process.env.OCR_IMAGE_DETAIL === 'low' ? 'low' : 'high';
 
 const PER_USER_PER_DAY = Number(process.env.OCR_LIMIT_PER_DAY || 20);
 const PER_USER_BURST = Number(process.env.OCR_LIMIT_BURST || 5);
@@ -67,14 +70,17 @@ export async function POST(req: NextRequest) {
   const b64 = image.slice(image.indexOf(',') + 1);
   if (b64.length * 0.75 > MAX_IMAGE_BYTES) return json({ error: 'too_large' }, 413);
 
-  const system = `You read a screenshot or receipt of a paid subscription or recurring payment and extract its details. Return ONLY a JSON object with these keys:
-- "name": service name as a short string (e.g. "Netflix"); "" if not visible
-- "price": number — the recurring amount with no currency symbol; 0 if unknown
-- "currency": one of "RUB","USD","EUR" (₽=RUB, $=USD, €=EUR); default "RUB"
-- "cycle": one of "monthly","yearly","quarterly","one-time","trial"; default "monthly"
-- "nextPaymentDate": ISO "YYYY-MM-DD" only if a clear next charge / renewal date is visible, else ""
-- "confidence": number 0..1 — how confident you are this is a real subscription with these values
-If the image is not a subscription/payment, set confidence to 0. Never invent values you cannot see.`;
+  const system = `You extract subscription / recurring-payment details from an image. It may be a receipt, an order or payment-confirmation email, an App Store or Google Play receipt, a bank push/SMS, or an in-app billing screen, in ANY language.
+
+Return ONLY a JSON object with exactly these keys:
+- "name": the service/brand being paid for, short (e.g. "Netflix", "Spotify", "ChatGPT"). Drop plan words like "Premium"/"Plus" unless they are part of the brand. "" if not visible.
+- "price": the recurring charge as a number — no currency symbol, no thousands separators, dot for decimals. Examples: "599,00 руб." -> 599, "1 199 ₽" -> 1199, "$9.99" -> 9.99, "€12,50" -> 12.5. 0 if not visible.
+- "currency": one of "RUB","USD","EUR". Infer from symbols/codes: ₽ / руб / р. / RUB -> RUB; $ / USD / US$ -> USD; € / EUR -> EUR. If unclear but the text is Russian, prefer "RUB". Default "RUB".
+- "cycle": one of "monthly","yearly","quarterly","one-time","trial". Infer from wording in any language: month / мес / в месяц / monthly / /mo -> monthly; year / год / в год / annual / /yr -> yearly; quarter / квартал -> quarterly; single purchase / разовый / lifetime -> one-time; free trial / пробный период / trial -> trial. Default "monthly".
+- "nextPaymentDate": the NEXT charge / renewal date as ISO "YYYY-MM-DD". Use the upcoming renewal date when shown ("Следующее списание", "Renews on", "Next billing date"). Do NOT use the date the receipt/email was issued. "" if no clear future date is shown.
+- "confidence": number 0..1. Be honest: >0.7 only when both name and price are clearly readable; lower it for blurry, partial, or ambiguous text; 0 if the image is not a subscription/payment at all.
+
+Never invent values you cannot actually read — leave them "" or 0. Output JSON only, no prose.`;
 
   let aiResp: Response;
   try {
@@ -92,7 +98,7 @@ If the image is not a subscription/payment, set confidence to 0. Never invent va
             role: 'user',
             content: [
               { type: 'text', text: 'Extract the subscription details as JSON.' },
-              { type: 'image_url', image_url: { url: image, detail: 'low' } },
+              { type: 'image_url', image_url: { url: image, detail: IMAGE_DETAIL } },
             ],
           },
         ],

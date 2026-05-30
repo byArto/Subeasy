@@ -118,6 +118,7 @@ const dict: Translations = {
   'ocr.scanHint': { ru: 'Распознаем название, цену и цикл', en: 'We read the name, price and cycle' },
   'ocr.scanning': { ru: 'Распознаём…', en: 'Scanning…' },
   'ocr.filled': { ru: 'Готово — проверьте поля', en: 'Done — please review the fields' },
+  'ocr.review': { ru: 'Заполнено, но проверьте — распознано неуверенно', en: 'Filled in, but double-check — low confidence' },
   'ocr.notFound': { ru: 'Не удалось распознать подписку. Заполните вручную.', en: 'Couldn’t recognize a subscription. Fill it in manually.' },
   'ocr.errRate': { ru: 'Слишком часто. Попробуйте через минуту.', en: 'Too many scans. Try again in a minute.' },
   'ocr.errDaily': { ru: 'Лимит сканов на сегодня исчерпан.', en: 'Daily scan limit reached.' },

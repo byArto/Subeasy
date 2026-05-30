@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Subscription, Currency, BillingCycle, Category, AppSettings, CycleAnchor } from '@/lib/types';
-import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency, calcNextPaymentFromStart } from '@/lib/utils';
+import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency, calcNextPaymentFromStart, getDaysUntilPayment } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -127,7 +127,7 @@ export function SubForm({
   // OCR scan (add mode only) — see lib/ocr.ts
   const [ocrAvailable, setOcrAvailable] = useState(false);
   const [ocrScanning, setOcrScanning] = useState(false);
-  const [ocrMsg, setOcrMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [ocrMsg, setOcrMsg] = useState<{ type: 'error' | 'warn' | 'success'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // When OCR prefills an explicit next-payment date, suppress the one cycle-driven
@@ -235,20 +235,28 @@ export function SubForm({
     }
 
     const d = res.data;
-    if (d.confidence < 0.2 && !d.name && d.price <= 0) {
+    // Nothing usable recognized at all.
+    if (d.confidence < 0.15 && !d.name && d.price <= 0) {
       setOcrMsg({ type: 'error', text: t('ocr.notFound') });
       return;
     }
 
+    // Only trust a recognized date if it's today or later — a past date is almost
+    // always the receipt's issue date, not the next charge. Otherwise let the
+    // cycle-driven recalc compute a sensible future date.
+    const futureDate = d.nextPaymentDate && getDaysUntilPayment(d.nextPaymentDate) >= 0
+      ? d.nextPaymentDate
+      : '';
+
     // Set the skip flag only when the cycle actually changes, so the cycle-driven
     // recalc effect doesn't clobber a scanned next-payment date.
-    if (d.nextPaymentDate && d.cycle !== cycle) skipDateRecalcRef.current = true;
+    if (futureDate && d.cycle !== cycle) skipDateRecalcRef.current = true;
 
     if (d.name) { setName(d.name); setSuggestions([]); }
     if (d.price > 0) setPrice(String(d.price));
     setCurrency(d.currency);
     setCycle(d.cycle);
-    if (d.nextPaymentDate) setNextPaymentDate(d.nextPaymentDate);
+    if (futureDate) setNextPaymentDate(futureDate);
 
     // Match the catalog for a logo / colour / category.
     if (d.name) {
@@ -262,7 +270,12 @@ export function SubForm({
 
     setErrors({});
     setShowExtra(true);
-    setOcrMsg({ type: 'success', text: t('ocr.filled') });
+    // High confidence → "done"; low/medium → nudge the user to verify.
+    setOcrMsg(
+      d.confidence >= 0.5
+        ? { type: 'success', text: t('ocr.filled') }
+        : { type: 'warn', text: t('ocr.review') },
+    );
     haptic.success();
   }
 
@@ -455,7 +468,7 @@ export function SubForm({
                 exit={{ opacity: 0 }}
                 className={cn(
                   'text-[11px] text-center mt-1.5 font-medium',
-                  ocrMsg.type === 'error' ? 'text-danger' : 'text-neon',
+                  ocrMsg.type === 'error' ? 'text-danger' : ocrMsg.type === 'warn' ? 'text-warning' : 'text-neon',
                 )}
               >
                 {ocrMsg.text}

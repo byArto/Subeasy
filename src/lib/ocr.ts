@@ -27,7 +27,7 @@ export type OcrError =
  * most `maxDim`. Keeps upload small (cheaper, faster OCR) without touching the
  * original file.
  */
-export async function fileToDownscaledDataUrl(file: File, maxDim = 1280, quality = 0.8): Promise<string> {
+export async function fileToDownscaledDataUrl(file: File, maxDim = 1600, quality = 0.85): Promise<string> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const w = Math.max(1, Math.round(bitmap.width * scale));

@@ -66,7 +66,7 @@ export default function PrivacyPage() {
           }}
         >
           <span style={{ fontSize: 10, color: 'var(--color-neon)', fontWeight: 700, letterSpacing: '0.06em' }}>
-            Последнее обновление / Last updated: 2 марта 2026
+            Последнее обновление / Last updated: 30 мая 2026
           </span>
         </div>
 
@@ -197,13 +197,48 @@ export default function PrivacyPage() {
         <Section>
           <H2>Безопасность / Security</H2>
           <P>
-            Данные хранятся в Supabase с шифрованием в состоянии покоя. Доступ к данным
-            защищён политиками Row Level Security (RLS) — каждый пользователь видит только
-            свои данные. Все соединения используют HTTPS/TLS.
+            <b>Без доступа к банку.</b> SubEasy <b>никогда</b> не запрашивает доступ к вашим
+            банковским счетам, картам или платёжным данным и не подключается к банкам. Подписки
+            вы добавляете сами. Приложением можно пользоваться вообще без аккаунта (анонимный
+            режим), а данные могут храниться только локально на вашем устройстве.
           </P>
           <P>
-            Data is stored in Supabase with encryption at rest. Access is protected by Row Level
-            Security (RLS) — each user sees only their own data. All connections use HTTPS/TLS.
+            <b>Шифрование.</b> При включённой синхронизации данные хранятся в Supabase
+            (PostgreSQL на инфраструктуре AWS) с шифрованием в состоянии покоя (AES-256). Все
+            соединения защищены HTTPS/TLS (TLS 1.2+). Доступ ограничен политиками Row Level
+            Security (RLS) — каждый пользователь видит только свои данные. Мы не продаём ваши
+            данные и не обучаем на них AI-модели.
+          </P>
+          <P>
+            <b>No bank access.</b> SubEasy <b>never</b> requests access to your bank accounts,
+            cards, or payment credentials, and never connects to banks. You add subscriptions
+            yourself. The app works fully without an account (anonymous mode), and your data can
+            be kept entirely on your own device.
+          </P>
+          <P>
+            <b>Encryption.</b> When sync is enabled, data is stored in Supabase (PostgreSQL on
+            AWS infrastructure) encrypted at rest (AES-256). All connections use HTTPS/TLS
+            (TLS 1.2+). Access is restricted by Row Level Security (RLS) — each user sees only
+            their own data. We do not sell your data or train AI models on it.
+          </P>
+        </Section>
+
+        <Section>
+          <H2>Сканирование чеков (OCR) / Receipt scanning (OCR)</H2>
+          <P>
+            Если вы используете функцию «Сканировать чек», изображение отправляется нашему
+            AI-провайдеру (OpenAI) <b>только</b> для распознавания названия, суммы и цикла
+            подписки и <b>только</b> по вашему явному действию (нажатию кнопки). Мы <b>не
+            храним</b> загруженные изображения, а провайдер не использует переданные через API
+            данные для обучения моделей. Это единственная функция, при которой данные покидают
+            ваше устройство.
+          </P>
+          <P>
+            If you use the “Scan receipt” feature, the image is sent to our AI provider (OpenAI)
+            <b> only</b> to extract the subscription name, amount and cycle, and only when you
+            explicitly tap the button. We do <b>not</b> store uploaded images, and the provider
+            does not use API data to train its models. This is the only feature where any data
+            leaves your device.
           </P>
         </Section>
 

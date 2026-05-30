@@ -134,9 +134,16 @@ export function checkAndSchedulePaymentReminders(
     const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
     const daysText =
       days === 0 ? 'сегодня' : days === 1 ? 'завтра' : `через ${days} дн.`;
+    const priceText = `${sub.price.toLocaleString('ru-RU')} ${symbol}`;
+    const isRecurring = sub.cycle === 'monthly' || sub.cycle === 'quarterly' || sub.cycle === 'yearly';
 
     const title = `${sub.icon} ${sub.name}`;
-    const body = `Оплата ${daysText} — ${sub.price.toLocaleString('ru-RU')} ${symbol}`;
+    // On the charge day itself, prompt to verify the amount — catches silent
+    // price hikes (Netflix/Spotify, etc.) without needing bank access.
+    const body =
+      days === 0 && isRecurring
+        ? `Спишется ${priceText}. Цена не изменилась? Проверь в приложении.`
+        : `Оплата ${daysText} — ${priceText}`;
     const tag = `payment-${sub.id}`;
 
     // Schedule with a small stagger (1s apart) to avoid flooding

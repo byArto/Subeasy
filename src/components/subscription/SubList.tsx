@@ -41,6 +41,7 @@ interface SubListProps {
   onDelete?: (sub: Subscription) => void;
   onAddTap?: () => void;
   onAddWithService?: (svc: ServiceTemplate) => void;
+  onTryDemo?: () => void;
   mostExpensiveId?: string | null;
   longestId?: string | null;
   notifyDaysBefore?: number;
@@ -58,6 +59,7 @@ export function SubList({
   onDelete,
   onAddTap,
   onAddWithService,
+  onTryDemo,
   mostExpensiveId,
   longestId,
   notifyDaysBefore = 7,
@@ -83,7 +85,7 @@ export function SubList({
 
   // Show empty state
   if (subscriptions.length === 0) {
-    return <EmptyOnboarding onAddTap={onAddTap} onAddWithService={onAddWithService} />;
+    return <EmptyOnboarding onAddTap={onAddTap} onAddWithService={onAddWithService} onTryDemo={onTryDemo} />;
   }
 
   // Show "no results for filter"
@@ -163,7 +165,7 @@ function ServiceIcon({ domain, emoji, name, size = 20 }: { domain: string; emoji
   );
 }
 
-function EmptyOnboarding({ onAddTap, onAddWithService }: { onAddTap?: () => void; onAddWithService?: (svc: ServiceTemplate) => void }) {
+function EmptyOnboarding({ onAddTap, onAddWithService, onTryDemo }: { onAddTap?: () => void; onAddWithService?: (svc: ServiceTemplate) => void; onTryDemo?: () => void }) {
   const { t } = useLanguage();
   const [carouselIdx, setCarouselIdx] = useState(0);
 
@@ -220,6 +222,28 @@ function EmptyOnboarding({ onAddTap, onAddWithService }: { onAddTap?: () => void
         </p>
       </motion.div>
 
+      {/* Trust strip — privacy-first positioning */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, type: 'spring', stiffness: 300, damping: 30 }}
+        className="flex flex-wrap items-center justify-center gap-2 -mt-1"
+      >
+        {[
+          { icon: '🔒', label: t('trust.noBank') },
+          { icon: '🆓', label: t('trust.free') },
+          { icon: '📡', label: t('trust.offline') },
+        ].map((it) => (
+          <span
+            key={it.label}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-2 border border-border-subtle text-[11px] font-medium text-text-secondary"
+          >
+            <span>{it.icon}</span>
+            {it.label}
+          </span>
+        ))}
+      </motion.div>
+
       {/* Quick-start service chips */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -268,6 +292,21 @@ function EmptyOnboarding({ onAddTap, onAddWithService }: { onAddTap?: () => void
             {t('empty.addButton')}
           </Button>
         </motion.div>
+      )}
+
+      {/* Try with sample data */}
+      {onTryDemo && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={onTryDemo}
+          className="text-xs font-semibold text-neon/80 active:text-neon underline underline-offset-4 decoration-neon/30"
+        >
+          {t('empty.tryDemo')}
+        </motion.button>
       )}
     </motion.div>
   );

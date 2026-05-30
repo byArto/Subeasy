@@ -13,6 +13,7 @@ import { useTelegramContext } from '@/components/providers/TelegramProvider';
 
 export interface NotificationItem {
   id: string;
+  subId: string;
   type: 'danger' | 'warning' | 'info';
   icon: string;
   title: string;
@@ -29,6 +30,7 @@ interface NotificationPanelProps {
   isRead: (id: string) => boolean;
   onMarkAsRead: (id: string) => void;
   onMarkAllAsRead: (ids: string[]) => void;
+  onOpenSubscription?: (subId: string) => void;
 }
 
 /* ── Helpers ── */
@@ -65,6 +67,7 @@ export function generateNotifications(
     const daysUntil = getDaysUntilPayment(sub.nextPaymentDate);
     const price = formatPrice(sub.price, sub.currency);
     const isTrial = sub.cycle === 'trial';
+    const isRecurring = sub.cycle === 'monthly' || sub.cycle === 'quarterly' || sub.cycle === 'yearly';
     const dateKey = sub.nextPaymentDate;
 
     // Skip future payments outside the notification window
@@ -75,6 +78,7 @@ export function generateNotifications(
     if (daysUntil < 0) {
       items.push({
         id: `${sub.id}-overdue-${dateKey}`,
+        subId: sub.id,
         type: 'danger',
         icon: isTrial ? '⏳' : '🔴',
         title: isTrial
@@ -89,20 +93,26 @@ export function generateNotifications(
     } else if (daysUntil === 0) {
       items.push({
         id: `${sub.id}-today-${dateKey}`,
+        subId: sub.id,
         type: 'danger',
-        icon: isTrial ? '⏳' : '⚡',
+        icon: isTrial ? '⏳' : isRecurring ? '💲' : '⚡',
         title: isTrial
           ? t('notif.trialEndingTitle', { name: sub.name })
           : t('notif.paymentTodayTitle', { name: sub.name }),
+        // On the charge date, nudge the user to verify the price still matches —
+        // catches silent price hikes (Netflix/Spotify, etc.) without bank access.
         subtitle: isTrial
           ? (sub.price > 0 ? t('notif.further', { price }) : t('notif.lastDay'))
-          : price,
+          : isRecurring
+            ? t('notif.priceCheck', { price })
+            : price,
         time: t('notif.today'),
         daysUntil,
       });
     } else if (daysUntil <= 3) {
       items.push({
         id: `${sub.id}-soon-${dateKey}`,
+        subId: sub.id,
         type: 'warning',
         icon: isTrial ? '⏳' : '⏰',
         title: isTrial
@@ -117,6 +127,7 @@ export function generateNotifications(
     } else if (daysUntil <= 7) {
       items.push({
         id: `${sub.id}-week-${dateKey}`,
+        subId: sub.id,
         type: 'info',
         icon: isTrial ? '⏳' : '📅',
         title: isTrial
@@ -144,6 +155,7 @@ export function NotificationPanel({
   isRead,
   onMarkAsRead,
   onMarkAllAsRead,
+  onOpenSubscription,
 }: NotificationPanelProps) {
   const { t, lang } = useLanguage();
   const { isTelegram } = useTelegramContext();
@@ -277,7 +289,7 @@ export function NotificationPanel({
                         notif={notif}
                         index={i}
                         isRead
-                        onTap={() => {}}
+                        onTap={() => onOpenSubscription?.(notif.subId)}
                       />
                     ))}
                   </div>
@@ -297,7 +309,7 @@ export function NotificationPanel({
                             notif={notif}
                             index={i}
                             isRead={false}
-                            onTap={() => onMarkAsRead(notif.id)}
+                            onTap={() => { onMarkAsRead(notif.id); onOpenSubscription?.(notif.subId); }}
                           />
                         ))}
                       </div>

@@ -11,6 +11,7 @@ import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { haptic } from '@/lib/haptic';
+import { scanReceipt, isOcrAvailable, type OcrError } from '@/lib/ocr';
 import { parsePaymentMethod, encodePaymentMethod, type PaymentType, type CardType } from '@/lib/paymentMethod';
 
 /* ── Constants ── */
@@ -123,6 +124,16 @@ export function SubForm({
   const [errors, setErrors] = useState<FormErrors>({});
   const [shake, setShake] = useState(false);
 
+  // OCR scan (add mode only) — see lib/ocr.ts
+  const [ocrAvailable, setOcrAvailable] = useState(false);
+  const [ocrScanning, setOcrScanning] = useState(false);
+  const [ocrMsg, setOcrMsg] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // When OCR prefills an explicit next-payment date, suppress the one cycle-driven
+  // recalc below so the scanned date isn't overwritten.
+  const skipDateRecalcRef = useRef(false);
+
   // Re-suggest nextPaymentDate when the billing inputs change. nextPaymentDate
   // is a user-editable field (not pure derived state), so this is an intentional
   // "reset on dependency change" effect, not a render-time computation.
@@ -130,10 +141,19 @@ export function SubForm({
   const skipFirst = useRef(mode === 'edit');
   useEffect(() => {
     if (skipFirst.current) { skipFirst.current = false; return; }
+    if (skipDateRecalcRef.current) { skipDateRecalcRef.current = false; return; }
     if (cycle === 'one-time' || cycle === 'trial') return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional reset-on-change of an editable field
     setNextPaymentDate(calcNextPaymentFromStart(startDate, cycle, cycleAnchor));
   }, [startDate, cycle, cycleAnchor]);
+
+  // Probe whether OCR is configured on the server (hides the button otherwise).
+  useEffect(() => {
+    if (mode !== 'add') return;
+    let alive = true;
+    isOcrAvailable().then((ok) => { if (alive) setOcrAvailable(ok); });
+    return () => { alive = false; };
+  }, [mode]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');
@@ -183,6 +203,67 @@ export function SubForm({
       return next;
     });
     setSuggestions([]);
+  }
+
+  /* ── OCR scan ── */
+
+  function ocrErrorText(error: OcrError): string {
+    switch (error) {
+      case 'rate_limited':
+      case 'busy':
+        return t('ocr.errRate');
+      case 'daily_limit':
+        return t('ocr.errDaily');
+      default:
+        return t('ocr.errGeneric');
+    }
+  }
+
+  async function handleScanFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+
+    setOcrMsg(null);
+    setOcrScanning(true);
+    const res = await scanReceipt(file);
+    setOcrScanning(false);
+
+    if (!res.ok) {
+      setOcrMsg({ type: 'error', text: ocrErrorText(res.error) });
+      return;
+    }
+
+    const d = res.data;
+    if (d.confidence < 0.2 && !d.name && d.price <= 0) {
+      setOcrMsg({ type: 'error', text: t('ocr.notFound') });
+      return;
+    }
+
+    // Set the skip flag only when the cycle actually changes, so the cycle-driven
+    // recalc effect doesn't clobber a scanned next-payment date.
+    if (d.nextPaymentDate && d.cycle !== cycle) skipDateRecalcRef.current = true;
+
+    if (d.name) { setName(d.name); setSuggestions([]); }
+    if (d.price > 0) setPrice(String(d.price));
+    setCurrency(d.currency);
+    setCycle(d.cycle);
+    if (d.nextPaymentDate) setNextPaymentDate(d.nextPaymentDate);
+
+    // Match the catalog for a logo / colour / category.
+    if (d.name) {
+      const match = searchServices(d.name)[0];
+      if (match && match.name.toLowerCase() === d.name.toLowerCase()) {
+        setIcon(match.emoji);
+        setColor(match.color);
+        setCategory(match.categoryId);
+      }
+    }
+
+    setErrors({});
+    setShowExtra(true);
+    setOcrMsg({ type: 'success', text: t('ocr.filled') });
+    haptic.success();
   }
 
   /* ── Validation ── */
@@ -335,6 +416,54 @@ export function SubForm({
           )}
         </AnimatePresence>
       </motion.div>
+
+      {/* ── OCR scan (add mode) ── */}
+      {mode === 'add' && ocrAvailable && (
+        <motion.div
+          custom={fieldIndex++}
+          variants={fieldVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleScanFile}
+          />
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.97 }}
+            disabled={ocrScanning}
+            onClick={() => { haptic.tap(); fileInputRef.current?.click(); }}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 min-h-[48px] px-3.5 rounded-xl',
+              'border border-dashed border-neon/40 bg-neon/5 text-sm font-semibold text-neon',
+              'active:bg-neon/10 transition-colors disabled:opacity-60',
+            )}
+          >
+            <span className="text-base">{ocrScanning ? '⏳' : '📷'}</span>
+            {ocrScanning ? t('ocr.scanning') : t('ocr.scan')}
+          </motion.button>
+          <p className="text-[11px] text-text-muted text-center mt-1.5">{t('ocr.scanHint')}</p>
+          <AnimatePresence>
+            {ocrMsg && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className={cn(
+                  'text-[11px] text-center mt-1.5 font-medium',
+                  ocrMsg.type === 'error' ? 'text-danger' : 'text-neon',
+                )}
+              >
+                {ocrMsg.text}
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
 
       {/* ── Name + Autocomplete ── */}
       <motion.div

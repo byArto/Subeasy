@@ -3,6 +3,7 @@ import type { Subscription, Category, AppSettings, Workspace, WorkspaceMember } 
 import { DEFAULT_CATEGORIES } from '@/lib/constants';
 import { mergePersonalSubscriptionsForSync } from '@/lib/syncMerge';
 import { dbToSubscription, dbToCategory } from '@/lib/dbMappers';
+import { isDemoId } from '@/lib/demoData';
 
 const supabase = () => createClient();
 const KNOWN_SUBS_KEY_PREFIX = 'neonsub-known-subscription-ids:';
@@ -80,7 +81,8 @@ export async function pullSubscriptions(userId: string): Promise<Subscription[]>
 
 export async function pushSubscriptions(userId: string, subs: Subscription[]): Promise<void> {
   const client = supabase();
-  const personalSubs = subs.filter((s) => !s.workspaceId);
+  // Never push workspace subs (handled separately) or local-only demo data.
+  const personalSubs = subs.filter((s) => !s.workspaceId && !isDemoId(s.id));
   const keepIds = new Set(personalSubs.map((s) => s.id));
 
   // Step 1: upsert all current subs — never deletes, safe if interrupted
@@ -125,9 +127,11 @@ export async function syncSubscriptions(
   const remoteSubs = await pullSubscriptions(userId); // already personal-only
   const knownSyncedIds = readKnownSubscriptionIds(userId);
   const importLocalOnly = hasPendingLocalSubscriptionImport();
+  // Demo/sample data is local-only — it must never be merged into or pushed to
+  // the cloud. Dropping it here also clears it from local state on sign-in.
   const merged = mergePersonalSubscriptionsForSync({
     remoteSubs,
-    localSubs,
+    localSubs: localSubs.filter((s) => !isDemoId(s.id)),
     knownSyncedIds,
     importLocalOnly,
   });

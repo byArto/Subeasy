@@ -37,6 +37,7 @@ import { generateId } from '@/lib/utils';
 import { getAuthToken } from '@/lib/supabase';
 import { deletePersonalSubscription } from '@/lib/sync';
 import { isMonetizationEnabled } from '@/lib/monetization';
+import { getDemoSubscriptions, hasDemoData, isDemoId } from '@/lib/demoData';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -177,6 +178,14 @@ export default function Home() {
 
   // When workspace mode is active, show workspace pool instead of personal subs
   const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
+
+  // Demo / sample data (personal mode only) — local-only, never synced.
+  const hasDemoActive = useMemo(() => hasDemoData(subscriptions), [subscriptions]);
+  const loadDemoData = useCallback(() => setSubscriptions(getDemoSubscriptions()), [setSubscriptions]);
+  const clearDemoData = useCallback(
+    () => setSubscriptions((prev) => prev.filter((s) => !isDemoId(s.id))),
+    [setSubscriptions],
+  );
 
   // Workspace-aware CRUD: routes through service-client API (bypasses RLS)
   const wsAddSubscription = useCallback(async (data: Omit<Subscription, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -402,6 +411,11 @@ export default function Home() {
         </div>
       )}
 
+      {/* ── Demo data banner — personal mode only ── */}
+      {!isWorkspaceActive && hasDemoActive && activeTab === 'home' && (
+        <DemoBanner onClear={clearDemoData} label={t('demo.banner')} clearLabel={t('demo.clear')} />
+      )}
+
       {/* ── Join Invite Dialog ── */}
       <AnimatePresence>
         {joinToken && user && (
@@ -524,6 +538,7 @@ export default function Home() {
                 onDeleteSub={handleDeleteSub}
                 onDeactivateSub={(id) => wsUpdateSubscription(id, { isActive: false })}
                 onShare={() => setShowShareModal(true)}
+                onTryDemo={isWorkspaceActive ? undefined : loadDemoData}
               />
             )}
             {activeTab === 'analytics' && (
@@ -602,6 +617,10 @@ export default function Home() {
         isRead={isRead}
         onMarkAsRead={markAsRead}
         onMarkAllAsRead={markAllAsRead}
+        onOpenSubscription={(subId) => {
+          const sub = activeSubscriptions.find((s) => s.id === subId);
+          if (sub) { setShowNotifications(false); openDetail(sub); }
+        }}
       />
 
       {/* Add Modal */}
@@ -616,6 +635,8 @@ export default function Home() {
           categories={categories}
           existingSubscriptions={activeSubscriptions}
           onSubmit={async (data) => {
+            // Adding a real subscription clears the sample data so the two never mix.
+            if (hasDemoActive) clearDemoData();
             await wsAddSubscription(data);
             closeAdd();
           }}
@@ -720,6 +741,7 @@ function HomeTab({
   onDeleteSub,
   onDeactivateSub,
   onShare,
+  onTryDemo,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -735,6 +757,7 @@ function HomeTab({
   onDeleteSub: (sub: Subscription) => void;
   onDeactivateSub: (id: string) => void;
   onShare: () => void;
+  onTryDemo?: () => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -863,11 +886,35 @@ function HomeTab({
         onDelete={onDeleteSub}
         onAddTap={onAddTap}
         onAddWithService={onAddWithService}
+        onTryDemo={onTryDemo}
         mostExpensiveId={mostExpensiveId}
         longestId={longestId}
         notifyDaysBefore={settings.notifyDaysBefore}
       />
     </div>
+  );
+}
+
+/* ── Demo Data Banner ── */
+function DemoBanner({ onClear, label, clearLabel }: { onClear: () => void; label: string; clearLabel: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-4 mb-2 flex items-center justify-between gap-3 rounded-xl border border-neon/25 bg-neon/5 px-3.5 py-2.5"
+    >
+      <div className="flex items-center gap-2 min-w-0">
+        <span className="text-sm">🎬</span>
+        <span className="text-[13px] font-medium text-text-secondary truncate">{label}</span>
+      </div>
+      <button
+        type="button"
+        onClick={onClear}
+        className="shrink-0 rounded-lg bg-surface-3 px-3 py-1.5 text-[12px] font-semibold text-text-primary active:scale-95 transition-transform"
+      >
+        {clearLabel}
+      </button>
+    </motion.div>
   );
 }
 

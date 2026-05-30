@@ -102,6 +102,26 @@ const dict: Translations = {
   'empty.subtitle': { ru: 'Добавьте подписки, чтобы видеть расходы, получать напоминания и контролировать бюджет', en: 'Add subscriptions to see expenses, get reminders and control your budget' },
   'empty.popularServices': { ru: 'Популярные сервисы', en: 'Popular services' },
   'empty.addButton': { ru: 'Добавить подписку', en: 'Add subscription' },
+  'empty.tryDemo': { ru: 'Посмотреть на примере', en: 'Try with sample data' },
+
+  // ── Trust strip (privacy-first positioning) ──
+  'trust.noBank': { ru: 'Без банка', en: 'No bank' },
+  'trust.free': { ru: 'Бесплатно', en: 'Free' },
+  'trust.offline': { ru: 'Работает офлайн', en: 'Works offline' },
+
+  // ── Demo / sample data ──
+  'demo.banner': { ru: 'Демо-данные для примера', en: 'Sample data for preview' },
+  'demo.clear': { ru: 'Очистить', en: 'Clear' },
+
+  // ── OCR scan ──
+  'ocr.scan': { ru: 'Сканировать чек или скриншот', en: 'Scan receipt or screenshot' },
+  'ocr.scanHint': { ru: 'Распознаем название, цену и цикл', en: 'We read the name, price and cycle' },
+  'ocr.scanning': { ru: 'Распознаём…', en: 'Scanning…' },
+  'ocr.filled': { ru: 'Готово — проверьте поля', en: 'Done — please review the fields' },
+  'ocr.notFound': { ru: 'Не удалось распознать подписку. Заполните вручную.', en: 'Couldn’t recognize a subscription. Fill it in manually.' },
+  'ocr.errRate': { ru: 'Слишком часто. Попробуйте через минуту.', en: 'Too many scans. Try again in a minute.' },
+  'ocr.errDaily': { ru: 'Лимит сканов на сегодня исчерпан.', en: 'Daily scan limit reached.' },
+  'ocr.errGeneric': { ru: 'Не удалось распознать. Попробуйте другое фото.', en: 'Recognition failed. Try another photo.' },
 
   // ── Search ──
   'search.placeholder': { ru: 'Найти подписку...', en: 'Find subscription...' },
@@ -130,6 +150,7 @@ const dict: Translations = {
   'notif.overdueTitle': { ru: '{{name}} — платёж просрочен', en: '{{name}} — payment overdue' },
   'notif.trialEndingTitle': { ru: '{{name}} — триал заканчивается!', en: '{{name}} — trial ending!' },
   'notif.paymentTodayTitle': { ru: '{{name}} — платёж сегодня!', en: '{{name}} — payment today!' },
+  'notif.priceCheck': { ru: 'Спишется {{price}} · цена не изменилась?', en: 'Charging {{price}} · did the price change?' },
   'notif.trialSoonTitle': { ru: '{{name}} — триал через {{days}} дн.', en: '{{name}} — trial in {{days}} d.' },
   'notif.soonTitle': { ru: '{{name}} — через {{days}} дн.', en: '{{name}} — in {{days}} d.' },
   'notif.overdueDate': { ru: 'Дата была {{date}}', en: 'Due date was {{date}}' },
@@ -179,6 +200,7 @@ const dict: Translations = {
   'detail.edit': { ru: 'Редактировать', en: 'Edit' },
   'detail.pause': { ru: 'Приостановить', en: 'Pause' },
   'detail.resume': { ru: 'Возобновить', en: 'Resume' },
+  'detail.howToCancel': { ru: '🚪 Как отменить', en: '🚪 How to cancel' },
   'detail.delete': { ru: 'Удалить (удерживайте)', en: 'Delete (hold)' },
   'detail.holdToDelete': { ru: 'Удерживайте...', en: 'Hold to delete...' },
   'detail.cancel': { ru: 'Отмена', en: 'Cancel' },

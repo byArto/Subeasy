@@ -9,6 +9,7 @@ import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { haptic } from '@/lib/haptic';
+import { getCancelLink } from '@/lib/cancelGuides';
 
 /* ── Types ── */
 
@@ -588,6 +589,25 @@ export function SubDetail({
                   onClick={onToggleActive}
                 >
                   {sub.isActive ? t('detail.pause') : t('detail.resume')}
+                </Button>
+              </motion.div>
+
+              {/* How to cancel — verified official page if known, else the user's
+                  saved link, else a web search (never a wrong instruction). */}
+              <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
+                <Button
+                  fullWidth
+                  variant="ghost"
+                  size="md"
+                  onClick={() => {
+                    haptic.tap();
+                    const link = getCancelLink(sub.name, sanitizeUrl(sub.managementUrl));
+                    const tgWebApp = window.Telegram?.WebApp;
+                    if (tgWebApp) tgWebApp.openLink(link.url);
+                    else window.open(link.url, '_blank', 'noopener,noreferrer');
+                  }}
+                >
+                  {t('detail.howToCancel')}
                 </Button>
               </motion.div>
 

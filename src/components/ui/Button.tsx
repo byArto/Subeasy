@@ -25,7 +25,7 @@ interface ButtonProps
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    'bg-neon text-surface font-semibold shadow-neon active:shadow-neon-strong',
+    'bg-neon text-surface font-semibold shadow-[var(--shadow-neon)] active:shadow-[var(--shadow-neon-strong)]',
   secondary:
     'bg-surface-3 text-text-primary border border-border-subtle active:bg-surface-4',
   danger:

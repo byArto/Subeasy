@@ -5,17 +5,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { SERVICE_CATALOG } from '@/lib/services';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
+import { getThemeAccentColor } from '@/lib/utils';
+import type { Theme } from '@/lib/themes';
 
 /* ── Split services into 3 rows ── */
 const ROW_1 = SERVICE_CATALOG.filter((_, i) => i % 3 === 0);
 const ROW_2 = SERVICE_CATALOG.filter((_, i) => i % 3 === 1);
 const ROW_3 = SERVICE_CATALOG.filter((_, i) => i % 3 === 2);
 
-function MarqueePill({ name, emoji, color }: { name: string; emoji: string; color: string }) {
+function MarqueePill({
+  name,
+  emoji,
+  color,
+  theme,
+}: {
+  name: string;
+  emoji: string;
+  color: string;
+  theme: Theme;
+}) {
+  const accentColor = getThemeAccentColor(color, theme);
+
   return (
     <div
       className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border-subtle shrink-0"
-      style={{ background: `${color}10` }}
+      style={{ background: `${accentColor}10` }}
     >
       <ServiceLogo name={name} emoji={emoji} size={20} />
       <span className="text-xs text-text-muted whitespace-nowrap font-medium">
@@ -28,10 +43,12 @@ function MarqueePill({ name, emoji, color }: { name: string; emoji: string; colo
 function MarqueeRow({
   items,
   direction,
+  theme,
   speed = 35,
 }: {
   items: typeof SERVICE_CATALOG;
   direction: 'left' | 'right';
+  theme: Theme;
   speed?: number;
 }) {
   return (
@@ -44,10 +61,10 @@ function MarqueeRow({
         }}
       >
         {items.map((svc, i) => (
-          <MarqueePill key={`a-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} />
+          <MarqueePill key={`a-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} theme={theme} />
         ))}
         {items.map((svc, i) => (
-          <MarqueePill key={`b-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} />
+          <MarqueePill key={`b-${i}`} name={svc.name} emoji={svc.emoji} color={svc.color} theme={theme} />
         ))}
       </div>
     </div>
@@ -57,6 +74,7 @@ function MarqueeRow({
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [visible, setVisible] = useState(true);
   const { lang } = useLanguage();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => setVisible(false), 1200);
@@ -87,9 +105,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
                 WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 40%, black 60%, transparent 100%)',
               }}
             >
-              <MarqueeRow items={ROW_1} direction="left" speed={40} />
-              <MarqueeRow items={ROW_2} direction="right" speed={35} />
-              <MarqueeRow items={ROW_3} direction="left" speed={45} />
+              <MarqueeRow items={ROW_1} direction="left" speed={40} theme={theme} />
+              <MarqueeRow items={ROW_2} direction="right" speed={35} theme={theme} />
+              <MarqueeRow items={ROW_3} direction="left" speed={45} theme={theme} />
             </motion.div>
           </div>
 

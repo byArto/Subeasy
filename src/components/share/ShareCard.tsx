@@ -88,7 +88,7 @@ export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
           pointerEvents: 'none',
         }} />
 
-        {/* Background: top-right neon green glow */}
+        {/* Background: top-right accent glow */}
         <div style={{
           position: 'absolute', top: '-50px', right: '-50px',
           width: '200px', height: '200px',

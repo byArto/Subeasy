@@ -6,9 +6,10 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import { Subscription, BillingCycle } from '@/lib/types';
 import { Badge } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
-import { cn, getDaysUntilPayment } from '@/lib/utils';
+import { cn, getDaysUntilPayment, getThemeAccentColor } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { Lang } from '@/lib/translations';
 import { haptic } from '@/lib/haptic';
 
@@ -80,7 +81,9 @@ export function SubCard({
   className,
 }: SubCardProps) {
   const { lang, t } = useLanguage();
+  const { theme } = useTheme();
   const status = getPaymentStatus(sub, notifyDaysBefore, t);
+  const accentColor = getThemeAccentColor(sub.color, theme);
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
   const days = getDaysUntilPayment(sub.nextPaymentDate);
   const isOverdue = sub.isActive && days < 0 && sub.cycle !== 'one-time' && sub.cycle !== 'trial';
@@ -220,8 +223,8 @@ export function SubCard({
             <div
               className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-lg"
               style={{
-                background: `linear-gradient(135deg, ${sub.color}22, ${sub.color}44)`,
-                boxShadow: `inset 0 0 0 1px ${sub.color}30`,
+                background: `linear-gradient(135deg, ${accentColor}22, ${accentColor}44)`,
+                boxShadow: `inset 0 0 0 1px ${accentColor}30`,
               }}
             >
               <ServiceLogo name={sub.name} emoji={sub.icon} size={24} />

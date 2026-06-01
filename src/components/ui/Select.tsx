@@ -119,7 +119,10 @@ export function Select({
                 <motion.button
                   key={option.value}
                   type="button"
-                  whileTap={{ scale: 0.98, backgroundColor: 'rgba(0, 255, 65, 0.06)' }}
+                  whileTap={{
+                    scale: 0.98,
+                    backgroundColor: 'color-mix(in srgb, var(--color-neon) 6%, transparent)',
+                  }}
                   onClick={() => {
                     onChange(option.value);
                     setOpen(false);

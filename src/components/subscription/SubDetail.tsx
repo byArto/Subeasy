@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
-import { cn, getDaysUntilPayment, convertCurrency, sanitizeUrl } from '@/lib/utils';
+import { cn, getDaysUntilPayment, convertCurrency, getThemeAccentColor, sanitizeUrl } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
 import { getCancelLink } from '@/lib/cancelGuides';
 
@@ -212,7 +213,9 @@ export function SubDetail({
   onRenewOneTime,
 }: SubDetailProps) {
   const { t, lang } = useLanguage();
+  const { theme } = useTheme();
   const symbol = CURRENCY_SYMBOLS[sub.currency] || sub.currency;
+  const accentColor = getThemeAccentColor(sub.color, theme);
   const days = getDaysUntilPayment(sub.nextPaymentDate);
   const status = getStatusBadge(sub, t);
   const totalSpent = getTotalSpent(sub);
@@ -379,8 +382,8 @@ export function SubDetail({
         <div
           className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
           style={{
-            background: `linear-gradient(135deg, ${sub.color}30, ${sub.color}10)`,
-            boxShadow: `0 0 24px ${sub.color}15`,
+            background: `linear-gradient(135deg, ${accentColor}30, ${accentColor}10)`,
+            boxShadow: `0 0 24px ${accentColor}15`,
           }}
         >
           <ServiceLogo name={sub.name} emoji={sub.icon} size={36} />

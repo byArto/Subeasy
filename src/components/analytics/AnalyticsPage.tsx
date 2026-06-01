@@ -9,11 +9,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
-import { getMonthlyPrice, convertCurrency, cn } from '@/lib/utils';
+import { getMonthlyPrice, convertCurrency, cn, getThemeAccentColor } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 /* ── Props ── */
 
@@ -641,6 +642,7 @@ function InsightsBadges({
   onSubTap?: (sub: Subscription) => void;
 }) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
 
   const dominant = useMemo(() => {
     if (active.length === 0 || monthlyTotal <= 0) return null;
@@ -669,6 +671,9 @@ function InsightsBadges({
 
   if (!dominant && !longest) return null;
 
+  const dominantColor = dominant ? getThemeAccentColor(dominant.sub.color, theme) : '';
+  const longestColor = longest ? getThemeAccentColor(longest.sub.color, theme) : '';
+
   return (
     <div>
       <SectionHeader title={t('analytics.insights')} />
@@ -685,7 +690,7 @@ function InsightsBadges({
           >
             <div
               className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
-              style={{ backgroundColor: dominant.sub.color }}
+              style={{ backgroundColor: dominantColor }}
             />
             <div className="relative">
               <div className="flex items-center gap-1.5 mb-3">
@@ -696,12 +701,12 @@ function InsightsBadges({
               </div>
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2.5"
-                style={{ background: `linear-gradient(135deg, ${dominant.sub.color}30, ${dominant.sub.color}10)` }}
+                style={{ background: `linear-gradient(135deg, ${dominantColor}30, ${dominantColor}10)` }}
               >
                 <ServiceLogo name={dominant.sub.name} emoji={dominant.sub.icon} size={24} />
               </div>
               <p className="text-sm font-semibold text-text-primary truncate">{dominant.sub.name}</p>
-              <p className="text-lg font-bold tabular-nums mt-1" style={{ color: dominant.sub.color }}>
+              <p className="text-lg font-bold tabular-nums mt-1" style={{ color: dominantColor }}>
                 {dominant.pct}%
                 <span className="text-xs text-text-muted ml-1 font-normal">{t('analytics.ofExpenses')}</span>
               </p>
@@ -721,7 +726,7 @@ function InsightsBadges({
           >
             <div
               className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
-              style={{ backgroundColor: longest.sub.color }}
+              style={{ backgroundColor: longestColor }}
             />
 
             <div className="relative">
@@ -735,7 +740,7 @@ function InsightsBadges({
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mb-2.5"
                 style={{
-                  background: `linear-gradient(135deg, ${longest.sub.color}30, ${longest.sub.color}10)`,
+                  background: `linear-gradient(135deg, ${longestColor}30, ${longestColor}10)`,
                 }}
               >
                 <ServiceLogo name={longest.sub.name} emoji={longest.sub.icon} size={24} />
@@ -993,6 +998,7 @@ function TopExpensive({
   onSubTap?: (sub: Subscription) => void;
 }) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
 
   const top3 = useMemo(() => {
     return active
@@ -1013,6 +1019,7 @@ function TopExpensive({
         {top3.map(({ sub, monthly }, i) => {
           const pct = monthlyTotal > 0 ? (monthly / monthlyTotal) * 100 : 0;
           const isYearly = sub.cycle === 'yearly';
+          const accentColor = getThemeAccentColor(sub.color, theme);
 
           return (
             <motion.button
@@ -1046,8 +1053,8 @@ function TopExpensive({
                   transition={{ delay: 0.3 + i * 0.1, duration: 0.6, ease: 'easeOut' }}
                   className="h-full rounded-full"
                   style={{
-                    backgroundColor: sub.color,
-                    boxShadow: i === 0 ? `0 0 8px ${sub.color}60` : undefined,
+                    backgroundColor: accentColor,
+                    boxShadow: i === 0 ? `0 0 8px ${accentColor}60` : undefined,
                   }}
                 />
               </div>

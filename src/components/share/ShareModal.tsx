@@ -115,7 +115,7 @@ export function ShareModal({
             <button
               onClick={handleShare}
               disabled={generating}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-neon text-black font-bold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-neon text-surface font-bold text-sm active:opacity-80 transition-opacity disabled:opacity-50"
             >
               <ShareIcon className="w-4 h-4" />
               {generating ? t('share.generating') : t('share.title')}

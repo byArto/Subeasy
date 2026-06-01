@@ -1,3 +1,4 @@
+import type { Theme } from './themes';
 import { Subscription, Currency, BillingCycle, CycleAnchor } from './types';
 import { CURRENCY_SYMBOLS } from './constants';
 
@@ -135,6 +136,25 @@ export function calcNextPaymentFromStart(
 
 export function cn(...classes: (string | boolean | undefined | null)[]): string {
   return classes.filter(Boolean).join(' ');
+}
+
+function isNearBlackNeutral(hex: string): boolean {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return false;
+
+  const value = match[1];
+  const r = Number.parseInt(value.slice(0, 2), 16);
+  const g = Number.parseInt(value.slice(2, 4), 16);
+  const b = Number.parseInt(value.slice(4, 6), 16);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+
+  return max <= 48 && max - min <= 10;
+}
+
+export function getThemeAccentColor(color: string, theme?: Theme): string {
+  if (theme !== 'claude') return color;
+  return isNearBlackNeutral(color) ? '#d97757' : color;
 }
 
 /**

@@ -4,12 +4,21 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { Subscription, Currency, BillingCycle, Category, AppSettings, CycleAnchor } from '@/lib/types';
-import { cn, sanitizeUrl, getMonthlyPrice, convertCurrency, calcNextPaymentFromStart, getDaysUntilPayment } from '@/lib/utils';
+import {
+  cn,
+  sanitizeUrl,
+  getMonthlyPrice,
+  convertCurrency,
+  calcNextPaymentFromStart,
+  getDaysUntilPayment,
+  getThemeAccentColor,
+} from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
 import { scanReceipt, isOcrAvailable, type OcrError } from '@/lib/ocr';
 import { parsePaymentMethod, encodePaymentMethod, type PaymentType, type CardType } from '@/lib/paymentMethod';
@@ -98,6 +107,7 @@ export function SubForm({
   currentMonthlyTotal,
 }: SubFormProps) {
   const { t } = useLanguage();
+  const { theme } = useTheme();
 
   /* ── State ── */
   const [icon, setIcon] = useState(initialData?.icon || serviceTemplate?.emoji || '📺');
@@ -163,6 +173,7 @@ export function SubForm({
   const [showExtra, setShowExtra] = useState(mode === 'edit');
   const [dupWarning, setDupWarning] = useState<Subscription | null>(null);
   const [budgetOverBy, setBudgetOverBy] = useState<number | null>(null);
+  const accentColor = getThemeAccentColor(color, theme);
 
   function clearError(field: keyof FormErrors) {
     setErrors((prev) => {
@@ -389,7 +400,7 @@ export function SubForm({
             'bg-surface-3 border-2 transition-colors',
             showEmojiPicker ? 'border-neon/50' : 'border-border-subtle'
           )}
-          style={{ background: `${color}15` }}
+          style={{ background: `${accentColor}15` }}
         >
           <ServiceLogo name={name} emoji={icon} size={48} />
         </motion.button>

@@ -262,11 +262,11 @@ export function buildShareCanvas(input: ShareCanvasInput): HTMLCanvasElement {
   ctx.fillStyle = blueGlow;
   ctx.fillRect(-80, H - 200, 360, 360);
 
-  // Green glow — top right
-  const greenGlow = ctx.createRadialGradient(W + 40, -40, 0, W + 40, -40, 220);
-  greenGlow.addColorStop(0, palette.accentGlow);
-  greenGlow.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = greenGlow;
+  // Accent glow — top right
+  const accentGlow = ctx.createRadialGradient(W + 40, -40, 0, W + 40, -40, 220);
+  accentGlow.addColorStop(0, palette.accentGlow);
+  accentGlow.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = accentGlow;
   ctx.fillRect(W - 180, -60, 300, 300);
 
   // Subtle centre glow behind the main number
@@ -295,7 +295,7 @@ export function buildShareCanvas(input: ShareCanvasInput): HTMLCanvasElement {
   ctx.fillStyle = topBorder;
   ctx.fillRect(W * 0.08, 0, W * 0.84, 2);
 
-  // Corner bracket accents (neon green, inset from corners)
+  // Corner bracket accents, inset from corners
   {
     const BM = 16;   // margin from card edge
     const BS = 14;   // arm length

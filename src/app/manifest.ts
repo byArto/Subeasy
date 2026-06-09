@@ -2,10 +2,15 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: '/',
     name: 'SubEasy',
     short_name: 'SubEasy',
     description: 'Трекер подписок — всё под контролем',
     start_url: '/',
+    scope: '/',
+    lang: 'ru',
+    dir: 'ltr',
+    categories: ['finance', 'productivity'],
     display: 'standalone',
     background_color: '#0A0A0F',
     theme_color: '#00FF41',

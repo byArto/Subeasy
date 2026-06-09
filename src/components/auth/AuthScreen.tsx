@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
+import { useStandaloneMode } from '@/hooks/useStandaloneMode';
 
 type Step = 'email' | 'code';
 
@@ -12,6 +13,10 @@ export function AuthScreen() {
   const { sendOtp, verifyOtp, setSkipAuth } = useAuth();
   const { t, lang, setLang } = useLanguage();
   const { isTelegram } = useTelegramContext();
+  // In standalone / TWA (e.g. the Google Play app) the Telegram bot CTA is a
+  // dead-end — it bounces users out to Telegram without signing them into this
+  // app. Show it only in a regular browser tab, where it's a valid funnel.
+  const isStandalone = useStandaloneMode();
 
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
@@ -276,8 +281,9 @@ export function AuthScreen() {
         )}
       </AnimatePresence>
 
-      {/* Telegram CTA — only in browser (not inside Telegram) */}
-      {!isTelegram && step === 'email' && (
+      {/* Telegram CTA — only in a real browser tab (not inside Telegram,
+          and not in the standalone/TWA app where the redirect is a dead-end) */}
+      {!isTelegram && !isStandalone && step === 'email' && (
         <div className="w-full mt-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-border-subtle" />

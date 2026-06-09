@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "org.subeasy.twa",
       "sha256_cert_fingerprints": [
-        "PLACEHOLDER_REPLACE_AFTER_PWABUILDER_BUILD"
+        "49:F7:5A:3D:CB:F6:99:68:76:EF:74:C1:41:99:23:AE:28:6F:E5:D9:07:33:97:76:FD:25:07:30:92:66:45:E9",
+        "AD:DA:63:47:F1:A0:01:88:C6:27:6A:A5:D8:E3:AA:38:D7:72:1E:47:0C:91:5A:49:62:2B:B5:C4:7F:16:D7:BB"
       ]
     }
   }

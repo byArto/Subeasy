@@ -10,6 +10,20 @@ Data is **offline-first**: localStorage is the primary store; when the user is s
 ## Version
 Current: 1.7.4
 
+## Platforms & Deployment
+SubEasy runs on THREE surfaces, all serving the SAME deployed site:
+- **Telegram Mini App** (loads the site inside Telegram)
+- **PWA** (installable on iOS/Android)
+- **Google Play app** — a TWA (Trusted Web Activity, package `org.subeasy.twa`) built with PWABuilder, wrapping `https://www.subeasy.org`. In closed testing since 2026-06.
+
+**Deploy = `git push` to `main` → Vercel auto-deploys → ALL three surfaces update automatically** (the TWA just loads the live site). Bug fixes / features need **NO new .aab**.
+
+**A new `.aab` is only needed** when changing the Android shell: app icon, name, splash, target API level, or TWA config. Then rebuild in PWABuilder with the **same signing key** (`signing.keystore`, kept by the owner) and **version code +1**, upload to Play. This does NOT reset the closed-test clock.
+
+**RU access (important):** Vercel custom-domain IPs are blocked by Roskomnadzor, so `subeasy.org`/`www` (DNS at **Porkbun**) point to a reverse-proxy on a **German VPS `150.241.106.250`** that forwards to `subeasyorg.vercel.app`. Vercel stays the source of truth; the VPS only proxies. nginx vhost: `/etc/nginx/sites-available/subeasy-org`. Rollback = point Porkbun A records back to Vercel. TLS via snap certbot (`/snap/bin/certbot`), auto-renew.
+
+**`assetlinks.json` is served STATICALLY from the VPS** (`/var/www/subeasy-wellknown/assetlinks.json` via an nginx exact-match location), NOT from Vercel — this bypasses Vercel's bot-challenge so Android can verify the TWA (no browser address bar). The repo copy at `public/.well-known/assetlinks.json` is no longer what users hit. If the app signing key/fingerprint ever changes, update the file **on the VPS**.
+
 ## Design
 - Dark cyberpunk: black (#0A0A0F) + neon green (#00FF41, #39FF14)
 - Fonts: Outfit (display), Manrope (body)

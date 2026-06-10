@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
 import { checkRateLimit } from '@/lib/ratelimit';
 
-export const runtime = 'edge';
+// NOTE: intentionally NOT edge runtime. The rate limiter reads UPSTASH_* env vars,
+// which are marked "Sensitive" in Vercel and therefore NOT exposed to the Edge
+// runtime — on edge the limiter silently fails open. nodejs (default) reads them
+// fine, so the rate limit actually applies here.
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1';

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createServiceClient } from '@/lib/supabase-server';
+import { isPushConfigured, sendPush } from '@/lib/webpush';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 import { env } from '@/lib/env';
@@ -142,6 +143,64 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// ─── Web Push helpers ──────────────────────────────────────────────────────────
+
+/** Short plain-text payload for an OS notification (not HTML — no escaping needed). */
+function buildPushPayload(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subs: any[],
+  lang: string,
+): { title: string; body: string; url: string; tag: string } {
+  const isRu = lang === 'ru';
+  const names = subs
+    .map((s) => `${s.icon ?? ''} ${s.name ?? ''}`.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(', ');
+  const more = subs.length > 3 ? (isRu ? ` и ещё ${subs.length - 3}` : ` +${subs.length - 3}`) : '';
+  return {
+    title: isRu ? '🔔 SubEasy — напоминание' : '🔔 SubEasy reminder',
+    body: isRu ? `Скоро списания: ${names}${more}` : `Upcoming charges: ${names}${more}`,
+    url: APP_URL,
+    tag: 'payment-reminder',
+  };
+}
+
+/** Loads a user's due-soon subscriptions (or null if notifications are off / none due). */
+async function loadDueSubsForUser(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  userId: string,
+  today: Date,
+  todayStr: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Promise<{ subs: any[]; lang: string } | null> {
+  const { data: settings } = await supabase
+    .from('user_settings')
+    .select('notify_days_before, notifications_enabled, lang')
+    .eq('user_id', userId)
+    .single();
+
+  if (!settings?.notifications_enabled) return null;
+
+  const daysUntil = settings.notify_days_before ?? 3;
+  const target = new Date(today);
+  target.setUTCDate(today.getUTCDate() + daysUntil);
+  const targetDateStr = target.toISOString().split('T')[0];
+
+  const { data: subs } = await supabase
+    .from('subscriptions')
+    .select('name, icon, next_payment_date')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .gte('next_payment_date', todayStr)
+    .lte('next_payment_date', targetDateStr)
+    .order('next_payment_date', { ascending: true });
+
+  if (!subs || subs.length === 0) return null;
+  return { subs, lang: settings.lang ?? 'ru' };
+}
+
 // ─── Route ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -164,6 +223,8 @@ export async function GET(req: NextRequest) {
   let sent = 0;
   let skipped = 0;
   let failed = 0;
+  let pushSent = 0;
+  let pushPruned = 0;
 
   try {
     let profilesQuery = supabase
@@ -180,14 +241,14 @@ export async function GET(req: NextRequest) {
     const { data: profiles, error: profilesError } = await profilesQuery;
 
     if (profilesError) throw profilesError;
-    if (!profiles || profiles.length === 0) {
-      return NextResponse.json({ sent: 0, message: 'No eligible users' });
-    }
 
+    // Telegram-linked users (may be empty — Play/PWA users have no chat id; the
+    // Web Push pass below still runs for them).
+    const eligible = profiles ?? [];
     const batchSize = getNotifyCronTelegramBatchSize();
 
-    for (let start = 0; start < profiles.length; start += batchSize) {
-      const batch = profiles.slice(start, start + batchSize);
+    for (let start = 0; start < eligible.length; start += batchSize) {
+      const batch = eligible.slice(start, start + batchSize);
 
       await Promise.allSettled(
         batch.map(async (profile) => {
@@ -236,8 +297,47 @@ export async function GET(req: NextRequest) {
         }),
       );
 
-      if (start + batchSize < profiles.length) {
+      if (start + batchSize < eligible.length) {
         await sleep(1000);
+      }
+    }
+
+    // ── Web Push pass: covers anyone with a push subscription (incl. Play /
+    //    Android users with no Telegram link). Fully isolated — any failure here
+    //    can never affect the Telegram result above. Skips silently if VAPID unset. ──
+    if (isPushConfigured()) {
+      try {
+        const { data: subRows } = await supabase
+          .from('push_subscriptions')
+          .select('user_id, endpoint, p256dh, auth')
+          .limit(2000);
+
+        const byUser = new Map<string, { endpoint: string; p256dh: string; auth: string }[]>();
+        for (const r of subRows ?? []) {
+          const list = byUser.get(r.user_id) ?? [];
+          list.push({ endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth });
+          byUser.set(r.user_id, list);
+        }
+
+        for (const [userId, deviceSubs] of byUser) {
+          try {
+            const due = await loadDueSubsForUser(supabase, userId, today, todayStr);
+            if (!due) continue;
+            const payload = buildPushPayload(due.subs, due.lang);
+            for (const d of deviceSubs) {
+              const result = await sendPush(d, payload);
+              if (result === 'sent') pushSent++;
+              else if (result === 'expired') {
+                await supabase.from('push_subscriptions').delete().eq('endpoint', d.endpoint);
+                pushPruned++;
+              }
+            }
+          } catch (err) {
+            console.error('[cron/notify] push user error:', userId, err);
+          }
+        }
+      } catch (err) {
+        console.error('[cron/notify] push pass error:', err);
       }
     }
 
@@ -245,9 +345,11 @@ export async function GET(req: NextRequest) {
       sent,
       skipped,
       failed,
-      total: profiles.length,
+      total: eligible.length,
       maxUsers: getNotifyCronMaxUsers(),
       batchSize,
+      pushSent,
+      pushPruned,
     });
   } catch (err) {
     console.error('[cron/notify] fatal:', err);

@@ -6,7 +6,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-mo
 import { Category, AppSettings, Subscription, DisplayCurrency } from '@/lib/types';
 import { cn, sanitizeUrl, convertCurrency } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
-import { requestNotificationPermission, getNotificationPermission } from '@/lib/notifications';
+import { requestNotificationPermission, getNotificationPermission, subscribeToPush } from '@/lib/notifications';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
@@ -153,6 +153,9 @@ export function SettingsPage({
       const granted = await requestNotificationPermission();
       if (granted) {
         updateSettings({ notificationsEnabled: true });
+        // Register for background Web Push (Android/Chrome/Play). No-ops where
+        // unsupported or VAPID isn't configured; failure never blocks the toggle.
+        subscribeToPush(getAuthToken).catch(() => {});
       } else {
         setNotifError(t('settings.notifications.denied'));
       }

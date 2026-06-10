@@ -1,6 +1,6 @@
 {
   "name": "subeasy",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -24,7 +24,8 @@
     "next": "16.2.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "web-push": "^3.6.7"
   },
   "overrides": {
     "valibot": "^1.2.0"
@@ -34,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "tailwindcss": "^4",

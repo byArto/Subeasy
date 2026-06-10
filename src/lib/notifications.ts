@@ -61,6 +61,63 @@ async function showNotificationViaSW(title: string, body: string, tag: string): 
   }
 }
 
+/* ── Web Push (background notifications, e.g. Google Play / Android Chrome) ── */
+
+/** True when the browser supports background Web Push (Service Worker + PushManager). */
+export function isPushSupported(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window
+  );
+}
+
+/** VAPID public key is base64url — the PushManager needs it as raw bytes. */
+function urlBase64ToBytes(base64String: string): BufferSource {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const buffer = new ArrayBuffer(raw.length);
+  const out = new Uint8Array(buffer);
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+/**
+ * Subscribe this device to Web Push and persist it server-side.
+ * Safe to call repeatedly (idempotent — reuses any existing subscription).
+ * No-ops when push is unsupported, permission isn't granted, or VAPID isn't configured.
+ * `getToken` returns the Supabase access token (auth required to save the subscription).
+ */
+export async function subscribeToPush(getToken: () => Promise<string | null>): Promise<boolean> {
+  try {
+    const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    if (!vapidKey || !isPushSupported()) return false;
+    if (Notification.permission !== 'granted') return false;
+
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToBytes(vapidKey),
+      });
+    }
+
+    const token = await getToken();
+    if (!token) return false;
+
+    const res = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ subscription: sub.toJSON() }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /* ── Schedule Local Notification ── */
 
 const scheduledTimers = new Map<string, ReturnType<typeof setTimeout>>();

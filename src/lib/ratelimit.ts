@@ -52,10 +52,12 @@ export async function checkRateLimit(
   try {
     const limiter = getLimiter(routeKey, requests, windowSeconds);
     if (!limiter) {
-      // No Redis configured — allow all (expected in local dev, unexpected in prod).
+      // Redis is ENTIRELY ABSENT. This is a deliberate deployment state (local dev,
+      // or prod without Upstash) — always fail OPEN so we never hard-disable a
+      // feature just because rate limiting isn't wired up. `failClosed` does NOT
+      // apply here; it guards the *outage* of a configured Redis (catch branch).
       if (process.env.NODE_ENV === 'production') {
-        console.error(`[ratelimit] Redis not configured in production — '${routeKey}' is ${failClosed ? 'BLOCKED (fail-closed)' : 'UNLIMITED'}`);
-        if (failClosed) return false;
+        console.error(`[ratelimit] Redis not configured in production — '${routeKey}' is UNLIMITED`);
       }
       return true;
     }
@@ -63,7 +65,9 @@ export async function checkRateLimit(
     const { success } = await limiter.limit(identifier);
     return success;
   } catch (err) {
-    // Make failures visible. Core routes fail open; cost-sensitive routes fail closed.
+    // Redis IS configured but errored (transient outage). Core routes fail open so
+    // a hiccup can't take them down; cost-sensitive routes (failClosed) block here
+    // to avoid e.g. unbounded paid OpenAI calls while Redis is unreachable.
     console.error(`[ratelimit] check failed for '${routeKey}', failing ${failClosed ? 'closed' : 'open'}:`, err);
     return !failClosed;
   }

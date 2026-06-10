@@ -6,6 +6,7 @@ import { TelegramProvider } from '@/components/providers/TelegramProvider';
 import { ProProvider } from '@/components/providers/ProProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { WorkspaceProvider } from '@/components/providers/WorkspaceProvider';
+import { VapidProbe } from '@/components/VapidProbe';
 import './globals.css';
 
 export const viewport: Viewport = {
@@ -88,6 +89,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">
+        <VapidProbe />
         {/* Inline splash — shows instantly before JS loads */}
         <div
           id="pre-splash"

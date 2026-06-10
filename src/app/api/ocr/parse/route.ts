@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
   const user = await verifyAuth(req).catch(() => null);
   const id = user?.id ?? `ip:${ip}`;
 
-  if (!(await checkRateLimit('ocr-global', 'global', GLOBAL_PER_DAY, 86400))) {
+  // Global daily circuit-breaker for OpenAI cost. Fail CLOSED: if Redis is
+  // unavailable in production we must not allow unlimited paid OCR calls.
+  if (!(await checkRateLimit('ocr-global', 'global', GLOBAL_PER_DAY, 86400, { failClosed: true }))) {
     return json({ error: 'busy' }, 429);
   }
   if (!(await checkRateLimit('ocr-burst', id, PER_USER_BURST, 60))) {

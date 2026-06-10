@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ ok: true });
 
-  // Log first 500 chars to debug the exact webhook format on first run
-  console.log('[ton/webhook] payload:', JSON.stringify(body).slice(0, 500));
+  // Do NOT log the raw payload — it contains wallet addresses, amounts and memos
+  // (PII / financial data) that would otherwise be retained in platform logs.
 
   // TonConsole/TonAPI send account transaction events.
   // Support both single-tx and batch formats.

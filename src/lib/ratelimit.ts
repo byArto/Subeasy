@@ -32,20 +32,30 @@ function getLimiter(key: string, requests: number, windowSeconds: number): Ratel
 
 /**
  * Check rate limit. Returns true if request is allowed, false if it should be blocked.
- * Fails OPEN (returns true) if Upstash is not configured — safe for local dev.
+ *
+ * Default behaviour is fail-OPEN (returns true when Upstash is missing or errors) so
+ * a Redis hiccup can never take down core flows (sync, account actions, the bot).
+ *
+ * Pass `{ failClosed: true }` for endpoints where an unbounded fallback is a real risk
+ * (e.g. the global OCR cost circuit-breaker — without Redis it would otherwise allow
+ * unlimited paid OpenAI calls). Fail-closed only blocks in production / on real errors;
+ * a missing Redis in local dev still fails open so development isn't disrupted.
  */
 export async function checkRateLimit(
   routeKey: string,
   identifier: string,
   requests: number,
   windowSeconds: number,
+  opts?: { failClosed?: boolean },
 ): Promise<boolean> {
+  const failClosed = opts?.failClosed === true;
   try {
     const limiter = getLimiter(routeKey, requests, windowSeconds);
     if (!limiter) {
       // No Redis configured — allow all (expected in local dev, unexpected in prod).
       if (process.env.NODE_ENV === 'production') {
-        console.error(`[ratelimit] Redis not configured in production — '${routeKey}' is UNLIMITED`);
+        console.error(`[ratelimit] Redis not configured in production — '${routeKey}' is ${failClosed ? 'BLOCKED (fail-closed)' : 'UNLIMITED'}`);
+        if (failClosed) return false;
       }
       return true;
     }
@@ -53,8 +63,8 @@ export async function checkRateLimit(
     const { success } = await limiter.limit(identifier);
     return success;
   } catch (err) {
-    // Fail open — never break the app due to rate limit errors — but make it visible.
-    console.error(`[ratelimit] check failed for '${routeKey}', failing open:`, err);
-    return true;
+    // Make failures visible. Core routes fail open; cost-sensitive routes fail closed.
+    console.error(`[ratelimit] check failed for '${routeKey}', failing ${failClosed ? 'closed' : 'open'}:`, err);
+    return !failClosed;
   }
 }

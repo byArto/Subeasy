@@ -663,8 +663,16 @@ export async function POST(req: NextRequest) {
 // ─── Setup: register bot commands (call GET /api/telegram/webhook?setup=1 once) ──
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get('token');
-  if (!token || token !== WEBHOOK_SECRET()) {
+  const token = req.nextUrl.searchParams.get('token') ?? '';
+  // Constant-time comparison (avoids the timing side-channel of `!==`).
+  const ok = (() => {
+    try {
+      const a = Buffer.from(token);
+      const b = Buffer.from(WEBHOOK_SECRET());
+      return a.length === b.length && timingSafeEqual(a, b);
+    } catch { return false; }
+  })();
+  if (!ok) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

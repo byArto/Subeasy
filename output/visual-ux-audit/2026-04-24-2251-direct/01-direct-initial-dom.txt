@@ -1,0 +1,22 @@
+- button "RU"
+- button "EN"
+- img "SubEasy"
+- heading "SubEasy" [level=1]
+- paragraph: Enter your email — we'll send a verification code
+- generic: Email
+- textbox "example@mail.com" [active]
+- button "Send code"
+- generic: or
+- link "Open in Telegram":
+  - /url: https://t.me/Subeasyapp_bot
+  - text: Open in Telegram
+- paragraph: В mini app удобнее
+- button "Continue without signing in"
+- paragraph: Without an account, data is stored only on this device
+- button "Open Next.js Dev Tools":
+- button "Open issues overlay":
+  - generic: "0"
+  - generic: "1"
+  - generic: Issue
+- button "Collapse issues badge":
+- alert

@@ -1,0 +1,125 @@
+{
+  "startedAt": "2026-04-24T19:23:00.000Z",
+  "finishedAt": "2026-04-24T19:30:00.562Z",
+  "target": "http://localhost:3000",
+  "scope": "Codex right-panel Browser plugin, mobile/iPhone-style visual pass. Guest mode was already active; the Continue without signing in screen did not appear in this browser state.",
+  "viewport": {
+    "width": 430,
+    "height": 882
+  },
+  "actions": [
+    {
+      "type": "open",
+      "label": "Opened UX audit wrapper"
+    },
+    {
+      "type": "observe",
+      "label": "Continue without signing in button not present because guest mode already active"
+    },
+    {
+      "type": "click",
+      "label": "Add subscription"
+    },
+    {
+      "type": "scroll",
+      "label": "Add subscription form"
+    },
+    {
+      "type": "click",
+      "label": "Analytics tab"
+    },
+    {
+      "type": "click",
+      "label": "Calendar tab"
+    },
+    {
+      "type": "click",
+      "label": "Settings tab"
+    },
+    {
+      "type": "scroll",
+      "label": "Settings page"
+    },
+    {
+      "type": "click",
+      "label": "Search icon"
+    },
+    {
+      "type": "fill",
+      "label": "Search query: net"
+    },
+    {
+      "type": "click",
+      "label": "Notifications icon"
+    },
+    {
+      "type": "click",
+      "label": "Go PRO"
+    },
+    {
+      "type": "skip-dangerous",
+      "label": "Pay via Telegram"
+    },
+    {
+      "type": "skip-dangerous",
+      "label": "Connect TON Wallet"
+    }
+  ],
+  "findings": [
+    {
+      "priority": "High",
+      "title": "PRO modal lacks an obvious close control",
+      "detail": "The paywall sheet has payment CTAs and a drag handle, but no visible close button; tapping the expected top-right close area did not dismiss it. Backdrop tap worked, but that affordance is hidden.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/15-pro-modal.png, /Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/16-home-after-pro-close-attempt.png",
+      "recommendation": "Add a visible, labeled close button in the PRO modal header and keep it above payment CTAs."
+    },
+    {
+      "priority": "High",
+      "title": "Header icon buttons and FAB are unlabeled",
+      "detail": "The accessibility snapshot exposes search, notifications, FAB, and some modal close controls as unnamed buttons. This hurts screen-reader use and makes automated QA brittle.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/01-home-subscriptions-empty.png, /Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/04-add-subscription-modal-top-after-wait.png",
+      "recommendation": "Add aria-labels such as Search, Notifications, Add subscription, and Close to icon-only buttons."
+    },
+    {
+      "priority": "Medium",
+      "title": "Next.js dev issue badge blocks mobile navigation during local QA",
+      "detail": "The red Next.js issue badge overlaps the lower-left tab area and initially prevented the Analytics tab from activating until the badge was minimized.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/01-home-subscriptions-empty.png, /Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/06-home-after-dev-badge-collapse.png",
+      "recommendation": "Fix the underlying dev warning and, for mobile QA, account for the dev overlay or run production preview."
+    },
+    {
+      "priority": "Medium",
+      "title": "Console shows hydration mismatch and Telegram launch-params errors outside Telegram",
+      "detail": "The app logs a React hydration mismatch on html style attributes and an unhandled Telegram analytics launch-params error when opened in a normal browser.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/console-logs.json",
+      "recommendation": "Move Telegram-only analytics behind an environment check and make server/client HTML attributes deterministic."
+    },
+    {
+      "priority": "Medium",
+      "title": "Empty Analytics and Calendar states do not provide an inline recovery action",
+      "detail": "Both screens explain that subscriptions are needed, but the empty-state area itself has no Add subscription CTA; users must infer the bottom FAB.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/07-analytics-screen.png, /Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/08-calendar-screen.png",
+      "recommendation": "Add a small inline Add subscription button or link in empty states."
+    },
+    {
+      "priority": "Low",
+      "title": "Add subscription form has a long scroll to the primary submit action",
+      "detail": "The required fields are clear after animation settles, but the submit button is far below the first viewport and not sticky.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/04-add-subscription-modal-top-after-wait.png, /Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/03-add-subscription-modal-scrolled.png",
+      "recommendation": "Consider a sticky footer submit action or a shorter first-pass form with advanced fields collapsed by default."
+    },
+    {
+      "priority": "Low",
+      "title": "Notification enabled state lacks permission/status clarity",
+      "detail": "Settings showed Enable notifications as active, but the browser context also logged Telegram/haptic environment warnings and no clear permission status was visible.",
+      "evidence": "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2223/screenshots/09-settings-top.png",
+      "recommendation": "Show browser/Telegram permission status near the toggle, especially outside Telegram."
+    }
+  ],
+  "summary": {
+    "totalActions": 14,
+    "clicked": 8,
+    "skippedDangerous": 2,
+    "issues": 7
+  }
+}

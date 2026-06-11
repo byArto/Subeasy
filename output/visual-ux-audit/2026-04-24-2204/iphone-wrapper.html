@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SubEasy Visual UX Audit</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #15151b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at 24% 18%, rgba(0, 255, 65, 0.12), transparent 28%),
+          linear-gradient(135deg, #101016 0%, #22222d 100%);
+        overflow: hidden;
+      }
+
+      .phone {
+        width: 430px;
+        height: 932px;
+        padding: 14px;
+        border-radius: 54px;
+        background: linear-gradient(145deg, #2a2a32, #050507 58%, #32323a);
+        box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+        position: relative;
+      }
+
+      .screen {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 42px;
+        background: #000;
+        position: relative;
+      }
+
+      .island {
+        width: 126px;
+        height: 36px;
+        border-radius: 999px;
+        background: #050507;
+        position: absolute;
+        top: 22px;
+        left: 50%;
+        z-index: 10;
+        transform: translateX(-50%);
+        box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: #000;
+      }
+
+      @media (max-height: 980px) {
+        .phone {
+          transform: scale(0.86);
+        }
+      }
+
+      @media (max-width: 480px) {
+        body {
+          background: #000;
+        }
+
+        .phone {
+          width: 100vw;
+          height: 100vh;
+          padding: 0;
+          border-radius: 0;
+          transform: none;
+        }
+
+        .screen {
+          border: 0;
+          border-radius: 0;
+        }
+
+        .island {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="phone" aria-label="iPhone frame for SubEasy UX audit">
+      <div class="screen">
+        <div class="island" aria-hidden="true"></div>
+        <iframe src="http://localhost:3000" title="SubEasy local app"></iframe>
+      </div>
+    </main>
+  </body>
+</html>

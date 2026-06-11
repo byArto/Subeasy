@@ -1,0 +1,49 @@
+{
+  "startedAt": "2026-04-24T19:47:00Z",
+  "finishedAt": "2026-04-24T19:49:32Z",
+  "target": "http://127.0.0.1:3000",
+  "sidePanelUrl": "http://127.0.0.1:3000/ux-auditor.html?target=/&endpoint=http%3A%2F%2F127.0.0.1%3A4174%2Freport&autorun=1",
+  "scope": "Codex right-panel Browser plugin, iPhone-style same-origin wrapper.",
+  "actions": [
+    {
+      "type": "open",
+      "label": "Opened UX audit wrapper in Codex right-panel browser"
+    },
+    {
+      "type": "observe",
+      "label": "iPhone frame stayed blank; app iframe document was not inspectable"
+    },
+    {
+      "type": "stop",
+      "label": "Stopped click-through because framed app boot failed"
+    }
+  ],
+  "findings": [
+    {
+      "priority": "Critical",
+      "title": "App does not boot inside the required iPhone audit frame",
+      "screen": "Initial framed app load",
+      "action": "Open same-origin wrapper with iframe target=/",
+      "expected": "The SubEasy app should render inside the iPhone frame so the safe visual autopilot can click through the mobile UI.",
+      "actual": "The iPhone screen stayed white. The wrapper DOM contained only the iframe, and the iframe body/html were not accessible to the browser runtime.",
+      "evidence": [
+        "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2247/screenshots/01-blank-iphone-wrapper.png",
+        "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2247/dom-snapshot.txt",
+        "/Users/byarto/Desktop/vibe/SubEasy/neonsub/output/visual-ux-audit/2026-04-24-2247/headers-ux-auditor.txt"
+      ],
+      "recommendation": "Allow the audit wrapper to embed same-origin pages by adding an explicit frame-src 'self' directive for local/dev audit pages, or exempt /ux-auditor.html from the global CSP. Keep production frame-ancestor protections separate from local audit tooling."
+    }
+  ],
+  "observations": [
+    "The wrapper page itself loaded in the Codex right panel.",
+    "No browser console logs were exposed through tab.dev.logs for this framed failure.",
+    "Response headers for /ux-auditor.html include default-src 'none' and no explicit frame-src directive, which is consistent with iframe loading being blocked by CSP fallback."
+  ],
+  "summary": {
+    "totalActions": 3,
+    "clicked": 0,
+    "skippedDangerous": 0,
+    "issues": 1
+  },
+  "codeChangesMade": false
+}

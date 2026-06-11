@@ -1,6 +1,6 @@
 {
   "name": "subeasy",
-  "version": "1.7.16",
+  "version": "1.7.17",
   "private": true,
   "scripts": {
     "dev": "next dev",

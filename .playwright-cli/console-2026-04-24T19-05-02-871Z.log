@@ -1,0 +1,3 @@
+[     836ms] [ERROR] Framing 'http://localhost:3000/' violates the following Content Security Policy directive: "frame-ancestors 'self' https://web.telegram.org https://t.me". The request has been blocked.
+ @ :0
+[     876ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:4173/favicon.ico:0

@@ -1,0 +1,6 @@
+- main "iPhone frame for SubEasy UX audit" [ref=e2]:
+  - iframe [ref=e4]:
+    - generic [ref=f1e3]:
+      - text: Сайт
+      - strong [ref=f1e4]: localhost
+      - text: не позволяет установить соединение.

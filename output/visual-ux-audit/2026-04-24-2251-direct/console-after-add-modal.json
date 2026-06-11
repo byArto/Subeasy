@@ -1,0 +1,20 @@
+[
+  {
+    "level": "error",
+    "message": "A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:\n\n- A server/client branch `if (typeof window !== 'undefined')`.\n- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.\n- Date formatting in a user's locale which doesn't match the server.\n- External changing data without sending a snapshot of it along with the HTML.\n- Invalid HTML tag nesting.\n\nIt can also happen if the client has a browser extension installed which messes with the HTML before React loaded.\n\n%s%s https://react.dev/link/hydration-mismatch \n\n  ...\n    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>\n      <AppDevOverlayErrorBoundary globalError={[...]}>\n        <ReplaySsrOnlyErrors>\n        <DevRootHTTPAccessFallbackBoundary>\n          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>\n            <HTTPAccessFallbackErrorBoundary pathname=\"/\" notFound={<NotAllowedRootHTTPFallbackError>} ...>\n              <RedirectBoundary>\n                <RedirectErrorBoundary router={{...}}>\n                  <Head>\n                  <__next_root_layout_boundary__>\n                    <SegmentViewNode type=\"layout\" pagePath=\"layout.tsx\">\n                      <SegmentTrieNode>\n                      <link>\n                      <script>\n                      <script>\n                      <script>\n                      <RootLayout>\n                        <html\n                          lang=\"en\"\n-                         style={{--tg-viewport-height:\"100vh\",--tg-viewport-stable-height:\"100vh\"}}\n                        >\n                  ...\n",
+    "timestamp": "2026-04-24T19:51:15.099Z",
+    "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js"
+  },
+  {
+    "level": "error",
+    "message": "Uncaught (in promise) LaunchParamsRetrieveError: Unable to retrieve launch parameters from any known source. Perhaps, you have opened your app outside Telegram?\n📖 Refer to docs for more information:\nhttps://docs.telegram-mini-apps.com/packages/telegram-apps-bridge/environment\n\nCollected errors:\nSource: window.location.href / Invalid key: Expected \"tgWebAppPlatform\" but received undefined\nSource: performance navigation entries / Invalid key: Expected \"tgWebAppPlatform\" but received undefined\nSource: local storage / Source is empty",
+    "timestamp": "2026-04-24T19:51:15.148Z",
+    "url": "https://tganalytics.xyz/index.js"
+  },
+  {
+    "level": "warn",
+    "message": "[Telegram.WebApp] HapticFeedback is not supported in version 6.0",
+    "timestamp": "2026-04-24T19:51:37.046Z",
+    "url": "http://127.0.0.1:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js"
+  }
+]

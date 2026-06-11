@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+X-Content-Type-Options: nosniff
+X-DNS-Prefetch-Control: on
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: camera=(), microphone=(), geolocation=()
+Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+Content-Security-Policy: script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://telegram.org https://tganalytics.xyz https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://va.vercel-scripts.com https://vitals.vercel-insights.com https://tganalytics.xyz https://api.prod.innerworks.me https://flow.prod.innerworks.me https://telegram.org https://fonts.googleapis.com https://fonts.gstatic.com https://www.google.com; frame-ancestors 'self' https://web.telegram.org https://t.me; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; default-src 'none'
+Accept-Ranges: bytes
+Cache-Control: public, max-age=0
+Last-Modified: Fri, 24 Apr 2026 19:23:05 GMT
+ETag: W/"32d4-19dc0f21d0d"
+Content-Type: text/html; charset=UTF-8
+Content-Length: 13012
+Vary: Accept-Encoding
+Date: Fri, 24 Apr 2026 19:49:25 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+

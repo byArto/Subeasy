@@ -1301,13 +1301,18 @@ function SubScoreSection({
             <p className="text-xl font-bold text-text-primary">{t(statusKey)}</p>
             <p className="text-xs text-text-muted mt-0.5">{total} / 100 {t('score.pts')}</p>
           </div>
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: `${gradeColor}12`, border: `2px solid ${gradeColor}50` }}
-          >
-            <span className="text-3xl font-black leading-none" style={{ color: gradeColor, textShadow: `0 0 20px ${gradeColor}60` }}>
-              {grade}
-            </span>
+          {/* Ring gauge — shows the actual score, grade letter centered */}
+          <div className="relative w-16 h-16 shrink-0">
+            <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-text-muted/20" />
+              <circle
+                cx="18" cy="18" r="15.5" fill="none" stroke={gradeColor} strokeWidth="3" strokeLinecap="round"
+                strokeDasharray={`${(total / 100) * 97.4} 97.4`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+              <span className="text-2xl font-black" style={{ color: gradeColor }}>{grade}</span>
+            </div>
           </div>
         </div>
 
@@ -1321,13 +1326,8 @@ function SubScoreSection({
               return (
                 <div
                   key={g}
-                  className="flex-1 h-7 rounded-lg flex items-center justify-center text-sm font-bold"
-                  style={{
-                    background: isActive ? `${col}18` : '#1A1A24',
-                    border: `1px solid ${isActive ? col + '50' : 'transparent'}`,
-                    color: isActive ? col : '#55556A',
-                    opacity: isActive ? 1 : 0.45,
-                  }}
+                  className={`flex-1 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${isActive ? '' : 'bg-surface-3 text-text-muted/50'}`}
+                  style={isActive ? { background: `${col}18`, border: `1px solid ${col}50`, color: col } : undefined}
                 >
                   {g}
                 </div>
@@ -1352,7 +1352,7 @@ function SubScoreSection({
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <span className="text-sm font-bold tabular-nums" style={{ color: fColor }}>{f.pts}</span>
-                  <div className="w-10 h-1 rounded-full overflow-hidden" style={{ background: '#252532' }}>
+                  <div className="w-10 h-1 rounded-full overflow-hidden bg-surface-4">
                     <div className="h-full rounded-full" style={{ width: `${(f.pts / f.maxPts) * 100}%`, background: fColor }} />
                   </div>
                 </div>

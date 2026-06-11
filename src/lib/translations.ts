@@ -443,6 +443,13 @@ const dict: Translations = {
   'cat.education': { ru: 'Обучение', en: 'Education' },
   'cat.ai': { ru: 'AI', en: 'AI' },
   'cat.vpn': { ru: 'VPN/Proxy', en: 'VPN/Proxy' },
+  'cat.telecom': { ru: 'Связь', en: 'Telecom' },
+  'cat.health': { ru: 'Здоровье и фитнес', en: 'Health & fitness' },
+  'cat.food': { ru: 'Еда и доставка', en: 'Food & delivery' },
+  'cat.finance': { ru: 'Финансы', en: 'Finance' },
+  'cat.shopping': { ru: 'Шопинг', en: 'Shopping' },
+  'cat.news': { ru: 'Новости и чтение', en: 'News & reading' },
+  'cat.hosting': { ru: 'Хостинг и домены', en: 'Hosting & domains' },
   'cat.other': { ru: 'Другое', en: 'Other' },
 
   // ── Weekdays ──

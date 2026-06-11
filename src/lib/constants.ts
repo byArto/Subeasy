@@ -9,6 +9,13 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: '6', name: 'Обучение', emoji: '📚', color: '#FF9500' },
   { id: '7', name: 'AI', emoji: '🤖', color: '#D4A574' },
   { id: '8', name: 'VPN/Proxy', emoji: '🔒', color: '#34C759' },
+  { id: '10', name: 'Связь', emoji: '📱', color: '#32ADE6' },
+  { id: '11', name: 'Здоровье и фитнес', emoji: '💪', color: '#FF375F' },
+  { id: '12', name: 'Еда и доставка', emoji: '🍔', color: '#FF9F0A' },
+  { id: '13', name: 'Финансы', emoji: '💰', color: '#FFD60A' },
+  { id: '14', name: 'Шопинг', emoji: '🛒', color: '#BF5AF2' },
+  { id: '15', name: 'Новости и чтение', emoji: '📰', color: '#64D2FF' },
+  { id: '16', name: 'Хостинг и домены', emoji: '🌐', color: '#5E5CE6' },
   { id: '9', name: 'Другое', emoji: '📦', color: '#8E8E93' },
 ];
 
@@ -22,6 +29,13 @@ export const DEFAULT_CATEGORY_NAME_KEYS: Record<string, string> = {
   '6': 'cat.education',
   '7': 'cat.ai',
   '8': 'cat.vpn',
+  '10': 'cat.telecom',
+  '11': 'cat.health',
+  '12': 'cat.food',
+  '13': 'cat.finance',
+  '14': 'cat.shopping',
+  '15': 'cat.news',
+  '16': 'cat.hosting',
   '9': 'cat.other',
 };
 

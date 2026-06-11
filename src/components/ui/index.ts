@@ -4,3 +4,4 @@ export { Select } from './Select';
 export type { SelectOption } from './Select';
 export { Modal } from './Modal';
 export { Badge } from './Badge';
+export { InfoDot } from './InfoDot';

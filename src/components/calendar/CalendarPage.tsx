@@ -630,7 +630,13 @@ function MonthSchedule({
                     <button
                       key={sub.id}
                       onClick={() => onSubTap?.(sub)}
-                      className="w-full flex items-center gap-2.5 bg-surface-2 rounded-xl border border-border-subtle px-3 py-2.5 text-left active:bg-surface-3 transition-colors"
+                      className={cn(
+                        'w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors',
+                        isPast
+                          // Paid (date already passed): translucent + dimmed to separate from upcoming.
+                          ? 'bg-surface-2/40 border border-border-subtle/40 opacity-65 active:bg-surface-3/50'
+                          : 'bg-surface-2 border border-border-subtle active:bg-surface-3',
+                      )}
                     >
                       <span className="text-base shrink-0"><ServiceLogo name={sub.name} emoji={sub.icon} size={20} /></span>
                       <span className="flex-1 text-sm text-text-primary font-medium truncate">{sub.name}</span>

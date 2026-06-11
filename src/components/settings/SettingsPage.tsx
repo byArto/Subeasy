@@ -61,7 +61,6 @@ export function SettingsPage({
   settings,
   updateSettings,
   setCurrency,
-  setExchangeRate,
   categories,
   addCategory,
   updateCategory,
@@ -649,81 +648,34 @@ export function SettingsPage({
                 )}
               </div>
               <p className="text-[11px] text-text-muted mt-0.5">
-                {settings.useManualRate
-                  ? t('settings.currency.manualRate')
-                  : rateLastUpdated
-                    ? `${t('settings.currency.cbrf')} · ${formatRateDate(rateLastUpdated, lang)}`
-                    : `${t('settings.currency.cbrf')} · ${t('settings.currency.loading')}`}
+                {rateLastUpdated
+                  ? `${t('settings.currency.cbrf')} · ${formatRateDate(rateLastUpdated, lang)}`
+                  : `${t('settings.currency.cbrf')} · ${t('settings.currency.loading')}`}
               </p>
             </div>
 
-            {/* Refresh button */}
-            {!settings.useManualRate && (
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.9, rotate: 180 }}
-                disabled={rateIsLoading}
-                onClick={() => onRefreshRate()}
-                className={cn(
-                  'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center',
-                  'bg-surface-3 border border-border-subtle',
-                  'text-text-secondary active:text-neon active:border-neon/30',
-                  'transition-colors disabled:opacity-40'
-                )}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                  <path d="M16 21h5v-5" />
-                </svg>
-              </motion.button>
-            )}
+            {/* Refresh button — rate is always auto (CBR) now */}
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.9, rotate: 180 }}
+              disabled={rateIsLoading}
+              onClick={() => onRefreshRate()}
+              className={cn(
+                'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center',
+                'bg-surface-3 border border-border-subtle',
+                'text-text-secondary active:text-neon active:border-neon/30',
+                'transition-colors disabled:opacity-40'
+              )}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                <path d="M16 21h5v-5" />
+              </svg>
+            </motion.button>
           </div>
 
-          {/* Manual rate toggle */}
-          <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
-            <div>
-              <span className="text-sm text-text-primary font-medium">{t('settings.currency.customRate')}</span>
-              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.currency.customRateHint')}</p>
-            </div>
-            <NeonToggle
-              value={settings.useManualRate}
-              onToggle={() => updateSettings({ useManualRate: !settings.useManualRate })}
-            />
-          </div>
-
-          {/* Manual rate input */}
-          <AnimatePresence>
-            {settings.useManualRate && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-text-secondary">{t('settings.currency.usdRub')}</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={settings.exchangeRate}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      if (!isNaN(v) && v > 0) setExchangeRate(v);
-                    }}
-                    className={cn(
-                      'w-24 min-h-[40px] px-3 rounded-xl bg-surface-3 border border-border-subtle',
-                      'text-sm text-text-primary text-right outline-none tabular-nums',
-                      'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]',
-                      'appearance-none [&::-webkit-inner-spin-button]:appearance-none'
-                    )}
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </motion.div>
 
@@ -2017,7 +1969,6 @@ function ThemeSwitch({
 const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
   { code: 'RUB', symbol: '₽' },
   { code: 'USD', symbol: '$' },
-  { code: 'EUR', symbol: '€' },
 ];
 
 function CurrencySwitch({

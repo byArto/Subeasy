@@ -51,10 +51,10 @@ export const THEME_META: Record<Theme, {
 };
 
 export const THEME_OPTIONS: ThemeOption[] = [
+  { value: 'claude', label: 'Claude',          key: 'settings.themes.claude', color: '#d97757', proOnly: false },
   { value: 'green',  label: 'SubEasy Green', key: 'settings.themes.green',  color: '#00FF41', proOnly: false },
   { value: 'purple', label: 'Midnight Purple', key: 'settings.themes.purple', color: '#A855F7', proOnly: true },
   { value: 'blue',   label: 'Arctic Blue',     key: 'settings.themes.blue',   color: '#06B6D4', proOnly: true },
-  { value: 'claude', label: 'Claude',          key: 'settings.themes.claude', color: '#d97757', proOnly: false },
 ];
 
 export function isValidTheme(value: unknown): value is Theme {

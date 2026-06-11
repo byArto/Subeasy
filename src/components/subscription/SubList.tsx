@@ -2,13 +2,13 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Subscription } from '@/lib/types';
+import { Subscription, Category } from '@/lib/types';
 import { SubCard } from './SubCard';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { getLogoUrl, searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
-import { SortOption } from '@/components/dashboard/CategoryFilter';
+import { SortOption, ListFilters } from '@/components/dashboard/CategoryFilter';
 
 function sortSubscriptions(subs: Subscription[], sort: SortOption): Subscription[] {
   const sorted = [...subs];
@@ -36,6 +36,13 @@ interface SubListProps {
   searchQuery?: string;
   sortBy?: SortOption;
   hidePaused?: boolean;
+  // Filter controls rendered in the section header (optional — hidden if absent).
+  categories?: Category[];
+  onSelectCategory?: (id: string | null) => void;
+  onSearchChange?: (q: string) => void;
+  onSortChange?: (s: SortOption) => void;
+  onHidePausedChange?: (v: boolean) => void;
+  pausedCount?: number;
   onSubTap?: (sub: Subscription) => void;
   onMarkPaid?: (sub: Subscription) => void;
   onDelete?: (sub: Subscription) => void;
@@ -54,6 +61,12 @@ export function SubList({
   searchQuery = '',
   sortBy = 'date',
   hidePaused = false,
+  categories,
+  onSelectCategory,
+  onSearchChange,
+  onSortChange,
+  onHidePausedChange,
+  pausedCount = 0,
   onSubTap,
   onMarkPaid,
   onDelete,
@@ -106,13 +119,28 @@ export function SubList({
 
   return (
     <div className={cn('space-y-2.5', className)}>
-      {/* Section header */}
-      <div className="flex items-center gap-3">
-        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+      {/* Section header + compact filter controls on the right */}
+      <div className="flex items-center gap-2.5">
+        <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider shrink-0">
           {t('list.title')}
         </h3>
+        <span className="text-xs text-text-muted shrink-0">{sorted.length}</span>
         <div className="flex-1 h-px bg-border-subtle" />
-        <span className="text-xs text-text-muted">{sorted.length}</span>
+        {categories && onSelectCategory && onSearchChange && onSortChange && onHidePausedChange && (
+          <ListFilters
+            categories={categories}
+            subscriptions={subscriptions}
+            activeCategory={activeCategory}
+            onSelect={onSelectCategory}
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+            sortBy={sortBy}
+            onSortChange={onSortChange}
+            hidePaused={hidePaused}
+            onHidePausedChange={onHidePausedChange}
+            pausedCount={pausedCount}
+          />
+        )}
       </div>
 
       {/* Cards */}

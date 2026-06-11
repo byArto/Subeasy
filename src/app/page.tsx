@@ -7,7 +7,7 @@ import { Header } from '@/components/layout/Header';
 import { TabBar, TabId } from '@/components/layout/TabBar';
 import { Modal } from '@/components/ui';
 import { SummaryCards } from '@/components/dashboard/SummaryCards';
-import { CategoryFilter, SortOption } from '@/components/dashboard/CategoryFilter';
+import { SortOption } from '@/components/dashboard/CategoryFilter';
 import { UpcomingPayments } from '@/components/dashboard/UpcomingPayments';
 import { SubList } from '@/components/subscription/SubList';
 import { useSubscriptions } from '@/hooks/useSubscriptions';
@@ -857,30 +857,19 @@ function HomeTab({
         )}
       </AnimatePresence>
 
-      {/* Search + Category + Sort filter */}
-      {hasSubscriptions && (
-        <CategoryFilter
-          categories={categories}
-          subscriptions={subscriptions}
-          activeCategory={activeCategory}
-          onSelect={setActiveCategory}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          hidePaused={hidePaused}
-          onHidePausedChange={setHidePaused}
-          pausedCount={subscriptions.filter((s) => !s.isActive).length}
-        />
-      )}
-
-      {/* Sub list */}
+      {/* Sub list — filter controls now live in the list header (ListFilters) */}
       <SubList
         subscriptions={subscriptions}
         activeCategory={activeCategory}
         searchQuery={searchQuery}
         sortBy={sortBy}
         hidePaused={hidePaused}
+        categories={categories}
+        onSelectCategory={setActiveCategory}
+        onSearchChange={setSearchQuery}
+        onSortChange={setSortBy}
+        onHidePausedChange={setHidePaused}
+        pausedCount={subscriptions.filter((s) => !s.isActive).length}
         onSubTap={onSubTap}
         onMarkPaid={onMarkPaid}
         onDelete={onDeleteSub}

@@ -14,7 +14,7 @@ import {
   getThemeAccentColor,
 } from '@/lib/utils';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
-import { Button } from '@/components/ui';
+import { Button, InfoDot } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -165,6 +165,7 @@ export function SubForm({
     return () => { alive = false; };
   }, [mode]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showNewCatEmoji, setShowNewCatEmoji] = useState(false);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [newCatEmoji, setNewCatEmoji] = useState('📦');
@@ -351,7 +352,7 @@ export function SubForm({
       currency,
       category,
       cycle,
-      cycleAnchor: (cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly') ? cycleAnchor : undefined,
+      cycleAnchor: cycle === 'monthly' ? cycleAnchor : undefined,
       nextPaymentDate,
       startDate,
       paymentMethod: encodePaymentMethod(paymentType, cardType, paymentDetail),
@@ -404,6 +405,10 @@ export function SubForm({
         >
           <ServiceLogo name={name} emoji={icon} size={48} />
         </motion.button>
+
+        {!showEmojiPicker && (
+          <p className="text-[11px] text-text-muted -mt-1">{t('form.iconHint')}</p>
+        )}
 
         <AnimatePresence>
           {showEmojiPicker && (
@@ -497,7 +502,7 @@ export function SubForm({
         animate="visible"
         className="relative"
       >
-        <FieldLabel text={t('form.name')} error={errors.name} />
+        <FieldLabel text={t('form.name')} error={errors.name} hint={t('form.name.hint')} />
         <input
           type="text"
           value={name}
@@ -668,7 +673,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={t('form.billingCycle')} />
+        <FieldLabel text={t('form.billingCycle')} hint={t('form.cycle.hint')} />
         <div className="flex flex-wrap gap-1.5">
           {CYCLES.map((c) => (
             <motion.button
@@ -699,16 +704,12 @@ export function SubForm({
           ))}
         </div>
 
-        {/* Cycle anchor: same date vs every N days. Only for recurring cycles. */}
-        {(cycle === 'monthly' || cycle === 'quarterly' || cycle === 'yearly') && (
-          <div className="mt-2.5 flex gap-1.5">
+        {/* Cycle anchor: same date vs every 30 days. Only for monthly. */}
+        {cycle === 'monthly' && (
+          <div className="mt-2.5 flex items-center gap-1.5">
             {([
               { value: 'date' as const, label: t('form.anchor.date') },
-              { value: 'days' as const, label: cycle === 'quarterly'
-                  ? t('form.anchor.days91')
-                  : cycle === 'yearly'
-                    ? t('form.anchor.days365')
-                    : t('form.anchor.days30') },
+              { value: 'days' as const, label: t('form.anchor.days30') },
             ]).map((a) => (
               <motion.button
                 key={a.value}
@@ -725,6 +726,7 @@ export function SubForm({
                 {a.label}
               </motion.button>
             ))}
+            <InfoDot text={t('form.anchor.hint')} size={16} align="right" />
           </div>
         )}
       </motion.div>
@@ -1049,12 +1051,11 @@ export function SubForm({
                           <motion.button
                             type="button"
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => {
-                              const emojis = ['📦', '🎯', '🏷️', '⭐', '🔥', '💡', '🎁', '🌟'];
-                              const idx = emojis.indexOf(newCatEmoji);
-                              setNewCatEmoji(emojis[(idx + 1) % emojis.length]);
-                            }}
-                            className="w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center text-xl"
+                            onClick={() => setShowNewCatEmoji((p) => !p)}
+                            className={cn(
+                              'w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border flex items-center justify-center text-xl transition-colors',
+                              showNewCatEmoji ? 'border-neon/50' : 'border-border-subtle',
+                            )}
                           >
                             {newCatEmoji}
                           </motion.button>
@@ -1064,7 +1065,7 @@ export function SubForm({
                             onChange={(e) => setNewCatName(e.target.value)}
                             placeholder={t('form.categoryNamePlaceholder')}
                             className={cn(
-                              'flex-1 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
+                              'flex-1 min-w-0 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
                               'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
                               'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
                             )}
@@ -1082,6 +1083,35 @@ export function SubForm({
                             ✓
                           </motion.button>
                         </div>
+
+                        {/* Full emoji picker for the new category */}
+                        <AnimatePresence>
+                          {showNewCatEmoji && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="grid grid-cols-6 gap-2 p-3 mt-2 bg-surface-2 rounded-xl border border-border-subtle">
+                                {EMOJI_GRID.map((emoji) => (
+                                  <motion.button
+                                    key={emoji}
+                                    type="button"
+                                    whileTap={{ scale: 0.85 }}
+                                    onClick={() => { setNewCatEmoji(emoji); setShowNewCatEmoji(false); }}
+                                    className={cn(
+                                      'w-full aspect-square rounded-lg flex items-center justify-center text-xl transition-colors',
+                                      newCatEmoji === emoji ? 'bg-neon/15 border border-neon/30' : 'active:bg-surface-4',
+                                    )}
+                                  >
+                                    {emoji}
+                                  </motion.button>
+                                ))}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -1104,6 +1134,23 @@ export function SubForm({
                         style={{ backgroundColor: c }}
                       />
                     ))}
+                    {/* Custom color — opens the native picker for the full palette */}
+                    <label
+                      className={cn(
+                        'relative w-8 h-8 rounded-full overflow-hidden flex items-center justify-center cursor-pointer',
+                        'bg-[conic-gradient(from_0deg,#ef4444,#eab308,#22c55e,#06b6d4,#3b82f6,#d946ef,#ef4444)]',
+                        !COLOR_PALETTE.includes(color) && 'ring-2 ring-offset-2 ring-offset-surface ring-neon scale-110',
+                      )}
+                    >
+                      <span className="text-white text-sm font-bold drop-shadow pointer-events-none">+</span>
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        aria-label={t('form.cardColor')}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </label>
                   </div>
                 </div>
 
@@ -1192,10 +1239,11 @@ export function SubForm({
 
 /* ── Field Label ── */
 
-function FieldLabel({ text, error }: { text: string; error?: string }) {
+function FieldLabel({ text, error, hint, hintAlign }: { text: string; error?: string; hint?: string; hintAlign?: 'left' | 'right' }) {
   return (
-    <div className="flex items-center gap-2 mb-1.5 pl-1">
+    <div className="flex items-center gap-1.5 mb-1.5 pl-1">
       <span className="text-xs text-text-secondary font-medium">{text}</span>
+      {hint && <InfoDot text={hint} size={15} align={hintAlign} />}
       {error && (
         <motion.span
           initial={{ opacity: 0, x: -4 }}

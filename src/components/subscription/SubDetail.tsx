@@ -11,6 +11,7 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
 import { getCancelLink } from '@/lib/cancelGuides';
+import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 
 /* ── Types ── */
 
@@ -206,7 +207,6 @@ export function SubDetail({
   settings,
   onClose: _onClose,
   onEdit,
-  onToggleActive,
   onMarkPaid,
   onDelete,
   onConvertTrial,
@@ -570,7 +570,7 @@ export function SubDetail({
             <>
               {showMarkPaid && (
                 <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
-                  <Button fullWidth variant="primary" size="lg" onClick={onMarkPaid}>
+                  <Button fullWidth variant="secondary" size="lg" onClick={onMarkPaid}>
                     <span className="flex items-center justify-center gap-2">
                       {days < 0 ? t('payment.markPaid') : t('payment.markPaidEarly')}
                     </span>
@@ -584,15 +584,28 @@ export function SubDetail({
                 </Button>
               </motion.div>
 
+              {/* Delete — hold to confirm. Translucent danger tint (adapts per theme). */}
               <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
-                <Button
-                  fullWidth
-                  variant={sub.isActive ? 'secondary' : 'primary'}
-                  size="md"
-                  onClick={onToggleActive}
-                >
-                  {sub.isActive ? t('detail.pause') : t('detail.resume')}
-                </Button>
+                <div className="relative overflow-hidden rounded-xl">
+                  {/* Hold progress fill */}
+                  <div
+                    className="absolute inset-0 bg-danger rounded-xl pointer-events-none"
+                    style={{ transform: `scaleX(${holdProgress / 100})`, transformOrigin: 'left', transition: 'none' }}
+                  />
+                  <button
+                    className={cn(
+                      'relative z-10 w-full min-h-[44px] flex items-center justify-center rounded-xl',
+                      'bg-danger/10 border border-danger/20 text-sm font-semibold select-none transition-colors',
+                      holdProgress > 0 ? 'text-white' : 'text-danger'
+                    )}
+                    onPointerDown={handleHoldStart}
+                    onPointerUp={handleHoldEnd}
+                    onPointerLeave={handleHoldEnd}
+                    onPointerCancel={handleHoldEnd}
+                  >
+                    {holdProgress > 0 ? t('detail.holdToDelete') : t('detail.delete')}
+                  </button>
+                </div>
               </motion.div>
 
               {/* How to cancel — verified official page if known, else the user's
@@ -610,32 +623,12 @@ export function SubDetail({
                     else window.open(link.url, '_blank', 'noopener,noreferrer');
                   }}
                 >
-                  {t('detail.howToCancel')}
+                  <span className="flex items-center justify-center gap-1.5">
+                    <QuestionMarkCircleIcon className="w-4 h-4" />
+                    {t('detail.howToCancel')}
+                  </span>
                 </Button>
               </motion.div>
-
-              <motion.div custom={idx++} variants={btnVariants} initial="hidden" animate="visible">
-          <div className="relative overflow-hidden rounded-xl">
-            {/* Hold progress fill */}
-            <div
-              className="absolute inset-0 bg-danger rounded-xl pointer-events-none"
-              style={{ transform: `scaleX(${holdProgress / 100})`, transformOrigin: 'left', transition: 'none' }}
-            />
-            <button
-              className={cn(
-                'relative z-10 w-full min-h-[44px] flex items-center justify-center rounded-xl',
-                'border border-danger/30 text-sm font-semibold select-none transition-colors',
-                holdProgress > 0 ? 'text-white' : 'text-danger'
-              )}
-              onPointerDown={handleHoldStart}
-              onPointerUp={handleHoldEnd}
-              onPointerLeave={handleHoldEnd}
-              onPointerCancel={handleHoldEnd}
-            >
-              {holdProgress > 0 ? t('detail.holdToDelete') : t('detail.delete')}
-            </button>
-          </div>
-        </motion.div>
             </>
           );
         })()}

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { translate, Lang } from '@/lib/translations';
 
 interface LanguageContextValue {
@@ -42,6 +42,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLangState(l);
     window.localStorage.setItem('neonsub-language', l);
   }, []);
+
+  // Keep <html lang> in sync with the rendered language. A mismatch (e.g. lang="en"
+  // while showing Russian) makes Chrome auto-translate the page and mangle it
+  // ("Telegram" → "Телеграмма", etc.). The app has its own i18n — this is the source of truth.
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.documentElement.lang = lang;
+  }, [lang]);
 
   const t = useCallback(
     (key: string, vars?: Record<string, string | number>) => translate(key, lang, vars),

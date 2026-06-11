@@ -85,14 +85,32 @@ export async function pushSubscriptions(userId: string, subs: Subscription[]): P
   const personalSubs = subs.filter((s) => !s.workspaceId && !isDemoId(s.id));
   const keepIds = new Set(personalSubs.map((s) => s.id));
 
-  // Step 1: upsert all current subs — never deletes, safe if interrupted
+  // Step 1: upsert all current subs — never deletes, safe if interrupted.
+  let pushFailed = false;
   if (personalSubs.length > 0) {
     const rows = personalSubs.map((s) => subscriptionToDb(s, userId));
     const { error } = await client.from('subscriptions').upsert(rows, { onConflict: 'id' });
-    if (error) console.warn('[sync] pushSubscriptions upsert error:', error.message);
+    if (error) {
+      // A single bad record fails the WHOLE batch (and would silently lose ALL of the
+      // user's subscriptions). Retry per-row so every valid sub still persists.
+      console.error('[sync] batch upsert failed, retrying per-row:', error.message);
+      for (const row of rows) {
+        const { error: rowErr } = await client.from('subscriptions').upsert(row, { onConflict: 'id' });
+        if (rowErr) {
+          pushFailed = true;
+          console.error('[sync] subscription failed to save:', row.id, row.name, rowErr.message);
+        }
+      }
+    }
   }
 
-  // Step 2: delete only stale records (exist in DB but removed locally)
+  // Step 2: delete only stale records (exist in DB but removed locally).
+  // SKIP entirely if a push failed — never risk deleting good remote rows when the
+  // local set could not be fully persisted.
+  if (pushFailed) {
+    rememberKnownSubscriptionIds(userId, [...keepIds]);
+    return;
+  }
   const { data: existing } = await client
     .from('subscriptions')
     .select('id')
@@ -273,25 +291,43 @@ export async function syncSettings(
    DB ↔ App type converters
    ═══════════════════════════════════════ */
 
+/** Coerce to a valid 'YYYY-MM-DD' string; fall back to today on anything invalid. */
+function safeDateStr(value: unknown): string {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value))) {
+    return value;
+  }
+  return new Date().toISOString().split('T')[0];
+}
+
+/** Coerce to a valid ISO timestamp; fall back to now on anything invalid. */
+function safeTimestamp(value: unknown): string {
+  if (typeof value === 'string' && value && !Number.isNaN(Date.parse(value))) return value;
+  return new Date().toISOString();
+}
+
 function subscriptionToDb(s: Subscription, userId: string) {
+  // Sanitize NOT NULL / typed columns so one malformed local record (e.g. a bad date
+  // or NaN price) can't make the whole sync upsert fail — which would otherwise lose
+  // ALL of the user's subscriptions silently.
+  const price = Number(s.price);
   return {
     id: s.id,
     user_id: userId,
-    name: s.name,
-    price: s.price,
-    currency: s.currency,
-    category: s.category,
-    cycle: s.cycle,
-    next_payment_date: s.nextPaymentDate,
-    start_date: s.startDate,
-    payment_method: s.paymentMethod,
-    notes: s.notes,
-    color: s.color,
-    icon: s.icon,
-    management_url: s.managementUrl,
-    is_active: s.isActive,
-    created_at: s.createdAt,
-    updated_at: s.updatedAt,
+    name: (s.name ?? '').toString().trim() || 'Subscription',
+    price: Number.isFinite(price) ? price : 0,
+    currency: s.currency || 'RUB',
+    category: s.category || '9',
+    cycle: s.cycle || 'monthly',
+    next_payment_date: safeDateStr(s.nextPaymentDate),
+    start_date: safeDateStr(s.startDate),
+    payment_method: s.paymentMethod ?? '',
+    notes: s.notes ?? '',
+    color: s.color ?? '#00FF41',
+    icon: s.icon ?? '📦',
+    management_url: s.managementUrl ?? '',
+    is_active: s.isActive ?? true,
+    created_at: safeTimestamp(s.createdAt),
+    updated_at: safeTimestamp(s.updatedAt),
   };
 }
 

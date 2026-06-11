@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" translate="no">
       <head>
         {/* Telegram Mini App SDK — must load before any other scripts */}
         <script src="https://telegram.org/js/telegram-web-app.js" />
@@ -86,6 +86,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SubEasy" />
         <meta name="theme-color" content="#faf9f5" />
         <meta name="format-detection" content="telephone=no" />
+        {/* App provides its own i18n (8 languages). Disable browser auto-translate,
+            which mangles the page ("Telegram" → "Телеграмма", garbled labels). */}
+        <meta name="google" content="notranslate" />
       </head>
       <body className="bg-surface text-text-primary font-body antialiased">
         {/* Inline splash — shows instantly before JS loads */}

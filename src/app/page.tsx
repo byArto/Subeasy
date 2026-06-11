@@ -23,7 +23,6 @@ import { useSync } from '@/hooks/useSync';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { Subscription, Currency, DisplayCurrency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, getNextPaymentDate, getDaysUntilPayment } from '@/lib/utils';
-import { SearchPanel } from '@/components/search/SearchPanel';
 import { NotificationPanel, generateNotifications } from '@/components/notifications/NotificationPanel';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { useNotificationRead } from '@/hooks/useNotificationRead';
@@ -385,7 +384,6 @@ export default function Home() {
         title={t(TAB_TITLE_KEYS[activeTab])}
         titleBadge={monetizationEnabled && activeTab === 'home' ? <ProBadge onOpen={() => setShowProModal(true)} /> : undefined}
         collapsed={headerCollapsed}
-        onSearchTap={activeTab === 'home' ? () => setShowSearch(true) : undefined}
         onNotificationTap={activeTab === 'home' ? () => setShowNotifications(true) : undefined}
         notificationCount={activeTab === 'home' ? unreadCount : 0}
         hasDanger={activeTab === 'home' ? hasUnreadDanger : false}
@@ -600,14 +598,6 @@ export default function Home() {
       />
 
       {/* Search Panel */}
-      <SearchPanel
-        open={showSearch}
-        subscriptions={activeSubscriptions}
-        categories={categories}
-        onClose={() => setShowSearch(false)}
-        onSelectSubscription={openDetail}
-      />
-
       {/* Notification Panel */}
       <NotificationPanel
         open={showNotifications}

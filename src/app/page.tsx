@@ -29,6 +29,7 @@ import { useNotificationRead } from '@/hooks/useNotificationRead';
 import { ProBadge, ProModal } from '@/components/pro';
 import { ShareModal } from '@/components/share/ShareModal';
 import { DuplicateBanner } from '@/components/dashboard/DuplicateBanner';
+import { FamilyPlanPromo } from '@/components/dashboard/FamilyPlanPromo';
 import { findDuplicates, getIgnoredPairs, ignorePair, isGroupIgnored } from '@/lib/duplicates';
 import { ServiceTemplate } from '@/lib/services';
 import { useSaveTelegramChatId } from '@/hooks/useSaveTelegramChatId';
@@ -537,6 +538,7 @@ export default function Home() {
                 onDeactivateSub={(id) => wsUpdateSubscription(id, { isActive: false })}
                 onShare={() => setShowShareModal(true)}
                 onTryDemo={isWorkspaceActive ? undefined : loadDemoData}
+                onOpenSettings={() => setActiveTab('settings')}
               />
             )}
             {activeTab === 'analytics' && (
@@ -732,6 +734,7 @@ function HomeTab({
   onDeactivateSub,
   onShare,
   onTryDemo,
+  onOpenSettings,
 }: {
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
@@ -748,6 +751,7 @@ function HomeTab({
   onDeactivateSub: (id: string) => void;
   onShare: () => void;
   onTryDemo?: () => void;
+  onOpenSettings: () => void;
 }) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -846,6 +850,10 @@ function HomeTab({
           />
         )}
       </AnimatePresence>
+
+      {/* Family Plan promo — surfaces the workspace feature from Settings; self-hides
+          when the user has a workspace or dismisses it. */}
+      {hasSubscriptions && <FamilyPlanPromo onOpen={onOpenSettings} />}
 
       {/* Sub list — filter controls now live in the list header (ListFilters) */}
       <SubList

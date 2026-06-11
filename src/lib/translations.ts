@@ -452,6 +452,10 @@ const dict: Translations = {
   'cat.hosting': { ru: 'Хостинг и домены', en: 'Hosting & domains' },
   'cat.other': { ru: 'Другое', en: 'Other' },
 
+  'family.promo.title': { ru: 'Семейный план', en: 'Family Plan' },
+  'family.promo.desc': { ru: 'Делите подписки с близкими — общий список и расходы в одном месте. Бесплатно.', en: 'Share subscriptions with family — one shared list and total. Free.' },
+  'family.promo.cta': { ru: 'Создать', en: 'Create' },
+
   // ── Weekdays ──
   'day.mon': { ru: 'Пн', en: 'Mo' },
   'day.tue': { ru: 'Вт', en: 'Tu' },

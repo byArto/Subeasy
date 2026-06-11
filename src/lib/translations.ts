@@ -226,6 +226,8 @@ const dict: Translations = {
   'form.iconHint': { ru: 'Нажмите, чтобы выбрать иконку', en: 'Tap to choose an icon' },
   'form.cycle.hint': { ru: 'Ежемесячно / ежегодно / ежеквартально — регулярные списания. Разовый — один платёж. Пробный — бесплатный период до первого списания.', en: 'Monthly / yearly / quarterly — recurring charges. One-time — a single payment. Trial — a free period before the first charge.' },
   'form.anchor.hint': { ru: '«Та же дата» — списание в одно и то же число каждый месяц. «Каждые 30 дней» — ровно через 30 дней после прошлого платежа.', en: '“Same date” — charged on the same day each month. “Every 30 days” — exactly 30 days after the previous charge.' },
+  'form.startDate.hint': { ru: 'С какого числа идёт подписка. По этой дате считается следующий платёж.', en: 'When the subscription started. The next payment is computed from this date.' },
+  'form.extra.hint': { ru: 'Необязательные поля: способ оплаты, ссылка для отмены, цвет и заметки.', en: 'Optional fields: payment method, cancellation link, colour and notes.' },
   'form.price': { ru: 'Стоимость', en: 'Price' },
   'form.priceAfterTrial': { ru: 'Цена после триала', en: 'Price after trial' },
   'form.billingCycle': { ru: 'Период оплаты', en: 'Billing cycle' },

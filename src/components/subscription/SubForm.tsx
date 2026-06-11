@@ -738,7 +738,7 @@ export function SubForm({
         initial="hidden"
         animate="visible"
       >
-        <FieldLabel text={t('form.startDate')} />
+        <FieldLabel text={t('form.startDate')} hint={t('form.startDate.hint')} />
         <input
           type="date"
           value={startDate}
@@ -777,6 +777,163 @@ export function SubForm({
           )}
         />
       </motion.div>
+
+      {/* ── Category (main) ── */}
+      <motion.div
+        custom={fieldIndex++}
+        variants={fieldVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <FieldLabel text={t('form.category')} error={errors.category} />
+        <div className="flex flex-wrap gap-1.5">
+          {categories.map((cat) => (
+            <motion.button
+              key={cat.id}
+              type="button"
+              whileTap={{ scale: 0.93 }}
+              onClick={() => {
+                setCategory(cat.id);
+                clearError('category');
+              }}
+              className={cn(
+                'flex items-center gap-1.5 min-h-[36px] px-3 rounded-full text-xs font-semibold transition-colors',
+                category === cat.id
+                  ? 'bg-neon text-surface'
+                  : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
+              )}
+            >
+              <span className="text-sm">{cat.emoji}</span>
+              {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
+            </motion.button>
+          ))}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.93 }}
+            onClick={() => setShowNewCategory((p) => !p)}
+            className={cn(
+              'flex items-center gap-1 min-h-[36px] px-3 rounded-full text-xs font-semibold',
+              'border border-dashed transition-colors',
+              showNewCategory
+                ? 'border-neon/40 text-neon bg-neon/5'
+                : 'border-border-subtle text-text-muted active:bg-surface-4'
+            )}
+          >
+            <span className="text-sm">+</span>
+            {t('form.newCategory')}
+          </motion.button>
+        </div>
+        <AnimatePresence>
+          {showNewCategory && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="flex gap-2 mt-2.5">
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setShowNewCatEmoji((p) => !p)}
+                  className={cn(
+                    'w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border flex items-center justify-center text-xl transition-colors',
+                    showNewCatEmoji ? 'border-neon/50' : 'border-border-subtle',
+                  )}
+                >
+                  {newCatEmoji}
+                </motion.button>
+                <input
+                  type="text"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  placeholder={t('form.categoryNamePlaceholder')}
+                  className={cn(
+                    'flex-1 min-w-0 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
+                    'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
+                    'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
+                  )}
+                />
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleAddCategory}
+                  disabled={!newCatName.trim()}
+                  className={cn(
+                    'w-[48px] h-[48px] shrink-0 rounded-xl flex items-center justify-center text-lg transition-colors',
+                    newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
+                  )}
+                >
+                  ✓
+                </motion.button>
+              </div>
+
+              {/* Full emoji picker for the new category */}
+              <AnimatePresence>
+                {showNewCatEmoji && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-6 gap-2 p-3 mt-2 bg-surface-2 rounded-xl border border-border-subtle">
+                      {EMOJI_GRID.map((emoji) => (
+                        <motion.button
+                          key={emoji}
+                          type="button"
+                          whileTap={{ scale: 0.85 }}
+                          onClick={() => { setNewCatEmoji(emoji); setShowNewCatEmoji(false); }}
+                          className={cn(
+                            'w-full aspect-square rounded-lg flex items-center justify-center text-xl transition-colors',
+                            newCatEmoji === emoji ? 'bg-neon/15 border border-neon/30' : 'active:bg-surface-4',
+                          )}
+                        >
+                          {emoji}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ── Дополнительные настройки (Payment + cancel link + Color + Notes) ── */}
+      <motion.div
+        custom={fieldIndex++}
+        variants={fieldVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <button
+          type="button"
+          onClick={() => setShowExtra((p) => !p)}
+          className={cn(
+            'w-full flex items-center justify-between min-h-[48px] px-3.5 rounded-xl',
+            'bg-surface-2 border border-border-subtle text-sm font-semibold text-text-secondary',
+            'active:bg-surface-3 transition-colors'
+          )}
+        >
+          <span>{t('form.extra')}</span>
+          <ChevronDownIcon
+            className={cn('w-4 h-4 transition-transform duration-200', showExtra && 'rotate-180')}
+          />
+        </button>
+
+        <AnimatePresence>
+          {showExtra && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-5 pt-4">
 
       {/* ── Management URL ── */}
       <motion.div
@@ -961,161 +1118,6 @@ export function SubForm({
           )}
         </AnimatePresence>
       </motion.div>
-
-      {/* ── Дополнительно (Category + Color + Notes) ── */}
-      <motion.div
-        custom={fieldIndex++}
-        variants={fieldVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <button
-          type="button"
-          onClick={() => setShowExtra((p) => !p)}
-          className={cn(
-            'w-full flex items-center justify-between min-h-[48px] px-3.5 rounded-xl',
-            'bg-surface-2 border border-border-subtle text-sm font-semibold text-text-secondary',
-            'active:bg-surface-3 transition-colors',
-            errors.category && 'border-danger/40'
-          )}
-        >
-          <span className={errors.category ? 'text-danger' : ''}>
-            {t('form.extra')}
-            {errors.category && <span className="ml-2 text-xs font-normal">{errors.category}</span>}
-          </span>
-          <ChevronDownIcon
-            className={cn('w-4 h-4 transition-transform duration-200', showExtra && 'rotate-180')}
-          />
-        </button>
-
-        <AnimatePresence>
-          {showExtra && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-              className="overflow-hidden"
-            >
-              <div className="space-y-5 pt-4">
-                {/* Category */}
-                <div>
-                  <FieldLabel text={t('form.category')} error={errors.category} />
-                  <div className="flex flex-wrap gap-1.5">
-                    {categories.map((cat) => (
-                      <motion.button
-                        key={cat.id}
-                        type="button"
-                        whileTap={{ scale: 0.93 }}
-                        onClick={() => {
-                          setCategory(cat.id);
-                          clearError('category');
-                        }}
-                        className={cn(
-                          'flex items-center gap-1.5 min-h-[36px] px-3 rounded-full text-xs font-semibold transition-colors',
-                          category === cat.id
-                            ? 'bg-neon text-surface'
-                            : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
-                        )}
-                      >
-                        <span className="text-sm">{cat.emoji}</span>
-                        {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
-                      </motion.button>
-                    ))}
-                    <motion.button
-                      type="button"
-                      whileTap={{ scale: 0.93 }}
-                      onClick={() => setShowNewCategory((p) => !p)}
-                      className={cn(
-                        'flex items-center gap-1 min-h-[36px] px-3 rounded-full text-xs font-semibold',
-                        'border border-dashed transition-colors',
-                        showNewCategory
-                          ? 'border-neon/40 text-neon bg-neon/5'
-                          : 'border-border-subtle text-text-muted active:bg-surface-4'
-                      )}
-                    >
-                      <span className="text-sm">+</span>
-                      {t('form.newCategory')}
-                    </motion.button>
-                  </div>
-                  <AnimatePresence>
-                    {showNewCategory && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex gap-2 mt-2.5">
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => setShowNewCatEmoji((p) => !p)}
-                            className={cn(
-                              'w-[48px] h-[48px] shrink-0 rounded-xl bg-surface-2 border flex items-center justify-center text-xl transition-colors',
-                              showNewCatEmoji ? 'border-neon/50' : 'border-border-subtle',
-                            )}
-                          >
-                            {newCatEmoji}
-                          </motion.button>
-                          <input
-                            type="text"
-                            value={newCatName}
-                            onChange={(e) => setNewCatName(e.target.value)}
-                            placeholder={t('form.categoryNamePlaceholder')}
-                            className={cn(
-                              'flex-1 min-w-0 min-h-[48px] px-3.5 rounded-xl bg-surface-2 border border-border-subtle',
-                              'text-sm text-text-primary outline-none placeholder:text-text-muted/50',
-                              'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
-                            )}
-                          />
-                          <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.9 }}
-                            onClick={handleAddCategory}
-                            disabled={!newCatName.trim()}
-                            className={cn(
-                              'w-[48px] h-[48px] shrink-0 rounded-xl flex items-center justify-center text-lg transition-colors',
-                              newCatName.trim() ? 'bg-neon text-surface' : 'bg-surface-3 text-text-muted'
-                            )}
-                          >
-                            ✓
-                          </motion.button>
-                        </div>
-
-                        {/* Full emoji picker for the new category */}
-                        <AnimatePresence>
-                          {showNewCatEmoji && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="grid grid-cols-6 gap-2 p-3 mt-2 bg-surface-2 rounded-xl border border-border-subtle">
-                                {EMOJI_GRID.map((emoji) => (
-                                  <motion.button
-                                    key={emoji}
-                                    type="button"
-                                    whileTap={{ scale: 0.85 }}
-                                    onClick={() => { setNewCatEmoji(emoji); setShowNewCatEmoji(false); }}
-                                    className={cn(
-                                      'w-full aspect-square rounded-lg flex items-center justify-center text-xl transition-colors',
-                                      newCatEmoji === emoji ? 'bg-neon/15 border border-neon/30' : 'active:bg-surface-4',
-                                    )}
-                                  >
-                                    {emoji}
-                                  </motion.button>
-                                ))}
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
 
                 {/* Color */}
                 <div>

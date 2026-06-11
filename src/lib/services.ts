@@ -158,23 +158,23 @@ export const SERVICE_CATALOG: ServiceTemplate[] = [
   // ── Другое / Подписки ──
   { name: 'Яндекс Плюс', emoji: '⭐', categoryId: '9', defaultPrice: 399, defaultCurrency: 'RUB', color: '#FC3F1D', cycle: 'monthly', domain: 'plus.yandex.ru' },
   { name: 'СберПрайм', emoji: '💚', categoryId: '9', defaultPrice: 399, defaultCurrency: 'RUB', color: '#21A038', cycle: 'monthly', domain: 'sberbank.ru' },
-  { name: 'Ozon Premium', emoji: '📦', categoryId: '9', defaultPrice: 299, defaultCurrency: 'RUB', color: '#005BFF', cycle: 'monthly', domain: 'ozon.ru' },
-  { name: 'Wildberries', emoji: '🛒', categoryId: '9', defaultPrice: 199, defaultCurrency: 'RUB', color: '#CB11AB', cycle: 'monthly', domain: 'wildberries.ru' },
+  { name: 'Ozon Premium', emoji: '📦', categoryId: '14', defaultPrice: 299, defaultCurrency: 'RUB', color: '#005BFF', cycle: 'monthly', domain: 'ozon.ru' },
+  { name: 'Wildberries', emoji: '🛒', categoryId: '14', defaultPrice: 199, defaultCurrency: 'RUB', color: '#CB11AB', cycle: 'monthly', domain: 'wildberries.ru' },
   { name: 'Telegram Premium', emoji: '✈️', categoryId: '9', defaultPrice: 299, defaultCurrency: 'RUB', color: '#2AABEE', cycle: 'monthly', domain: 'telegram.org' },
-  { name: 'Amazon Prime', emoji: '📦', categoryId: '9', defaultPrice: 15, defaultCurrency: 'USD', color: '#FF9900', cycle: 'monthly', domain: 'amazon.com' },
+  { name: 'Amazon Prime', emoji: '📦', categoryId: '14', defaultPrice: 15, defaultCurrency: 'USD', color: '#FF9900', cycle: 'monthly', domain: 'amazon.com' },
   { name: 'Patreon', emoji: '❤️', categoryId: '9', defaultPrice: 5, defaultCurrency: 'USD', color: '#FF424D', cycle: 'monthly', domain: 'patreon.com' },
   { name: 'Boosty', emoji: '🚀', categoryId: '9', defaultPrice: 249, defaultCurrency: 'RUB', color: '#F15F2C', cycle: 'monthly', domain: 'boosty.to' },
-  { name: 'ЛитРес', emoji: '📚', categoryId: '9', defaultPrice: 249, defaultCurrency: 'RUB', color: '#D7262A', cycle: 'monthly', domain: 'litres.ru' },
-  { name: 'Storytel', emoji: '📖', categoryId: '9', defaultPrice: 299, defaultCurrency: 'RUB', color: '#FF5E3A', cycle: 'monthly', domain: 'storytel.com' },
-  { name: 'Strava', emoji: '🏃', categoryId: '9', defaultPrice: 6, defaultCurrency: 'USD', color: '#FC4C02', cycle: 'monthly', domain: 'strava.com' },
-  { name: 'Headspace', emoji: '🧘', categoryId: '9', defaultPrice: 13, defaultCurrency: 'USD', color: '#F47D31', cycle: 'monthly', domain: 'headspace.com' },
-  { name: 'Calm', emoji: '🌙', categoryId: '9', defaultPrice: 15, defaultCurrency: 'USD', color: '#5275A4', cycle: 'monthly', domain: 'calm.com' },
-  { name: 'MyFitnessPal', emoji: '💪', categoryId: '9', defaultPrice: 10, defaultCurrency: 'USD', color: '#0077C0', cycle: 'monthly', domain: 'myfitnesspal.com' },
+  { name: 'ЛитРес', emoji: '📚', categoryId: '15', defaultPrice: 249, defaultCurrency: 'RUB', color: '#D7262A', cycle: 'monthly', domain: 'litres.ru' },
+  { name: 'Storytel', emoji: '📖', categoryId: '15', defaultPrice: 299, defaultCurrency: 'RUB', color: '#FF5E3A', cycle: 'monthly', domain: 'storytel.com' },
+  { name: 'Strava', emoji: '🏃', categoryId: '11', defaultPrice: 6, defaultCurrency: 'USD', color: '#FC4C02', cycle: 'monthly', domain: 'strava.com' },
+  { name: 'Headspace', emoji: '🧘', categoryId: '11', defaultPrice: 13, defaultCurrency: 'USD', color: '#F47D31', cycle: 'monthly', domain: 'headspace.com' },
+  { name: 'Calm', emoji: '🌙', categoryId: '11', defaultPrice: 15, defaultCurrency: 'USD', color: '#5275A4', cycle: 'monthly', domain: 'calm.com' },
+  { name: 'MyFitnessPal', emoji: '💪', categoryId: '11', defaultPrice: 10, defaultCurrency: 'USD', color: '#0077C0', cycle: 'monthly', domain: 'myfitnesspal.com' },
   { name: 'VK Premium', emoji: '🔵', categoryId: '9', defaultPrice: 199, defaultCurrency: 'RUB', color: '#0077FF', cycle: 'monthly', domain: 'vk.com' },
   { name: 'МТС Premium', emoji: '📱', categoryId: '9', defaultPrice: 299, defaultCurrency: 'RUB', color: '#E30611', cycle: 'monthly', domain: 'mts.ru' },
-  { name: 'Фитнес клуб', emoji: '💪', categoryId: '9', defaultPrice: 3000, defaultCurrency: 'RUB', color: '#FF2D55', cycle: 'monthly' },
-  { name: 'Домашний интернет', emoji: '🌐', categoryId: '9', defaultPrice: 800, defaultCurrency: 'RUB', color: '#007AFF', cycle: 'monthly' },
-  { name: 'Мобильная связь', emoji: '📱', categoryId: '9', defaultPrice: 500, defaultCurrency: 'RUB', color: '#34C759', cycle: 'monthly' },
+  { name: 'Фитнес клуб', emoji: '💪', categoryId: '11', defaultPrice: 3000, defaultCurrency: 'RUB', color: '#FF2D55', cycle: 'monthly' },
+  { name: 'Домашний интернет', emoji: '🌐', categoryId: '10', defaultPrice: 800, defaultCurrency: 'RUB', color: '#007AFF', cycle: 'monthly' },
+  { name: 'Мобильная связь', emoji: '📱', categoryId: '10', defaultPrice: 500, defaultCurrency: 'RUB', color: '#34C759', cycle: 'monthly' },
 
   // ════════════════════════════════════════════════════════════════════
   // 2026 refresh — currently popular services (RU + global). Prices are
@@ -231,11 +231,24 @@ export const SERVICE_CATALOG: ServiceTemplate[] = [
   { name: 'hidemy.name', emoji: '🌐', categoryId: '8', defaultPrice: 390, defaultCurrency: 'RUB', color: '#2E7D32', cycle: 'monthly', domain: 'hidemyna.me' },
 
   // ── Другое / Подписки ──
-  { name: 'Audible', emoji: '🎧', categoryId: '9', defaultPrice: 15, defaultCurrency: 'USD', color: '#F8991C', cycle: 'monthly', domain: 'audible.com' },
-  { name: 'MyBook', emoji: '📚', categoryId: '9', defaultPrice: 379, defaultCurrency: 'RUB', color: '#4B9CD3', cycle: 'monthly', domain: 'mybook.ru' },
-  { name: 'Т-Банк Pro', emoji: '💛', categoryId: '9', defaultPrice: 199, defaultCurrency: 'RUB', color: '#FFDD2D', cycle: 'monthly', domain: 'tbank.ru' },
-  { name: 'The New York Times', emoji: '📰', categoryId: '9', defaultPrice: 17, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'nytimes.com' },
-  { name: 'Whoop', emoji: '⌚', categoryId: '9', defaultPrice: 30, defaultCurrency: 'USD', color: '#FF0000', cycle: 'monthly', domain: 'whoop.com' },
+  { name: 'Audible', emoji: '🎧', categoryId: '15', defaultPrice: 15, defaultCurrency: 'USD', color: '#F8991C', cycle: 'monthly', domain: 'audible.com' },
+  { name: 'MyBook', emoji: '📚', categoryId: '15', defaultPrice: 379, defaultCurrency: 'RUB', color: '#4B9CD3', cycle: 'monthly', domain: 'mybook.ru' },
+  { name: 'Т-Банк Pro', emoji: '💛', categoryId: '13', defaultPrice: 199, defaultCurrency: 'RUB', color: '#FFDD2D', cycle: 'monthly', domain: 'tbank.ru' },
+  { name: 'The New York Times', emoji: '📰', categoryId: '15', defaultPrice: 17, defaultCurrency: 'USD', color: '#111111', cycle: 'monthly', domain: 'nytimes.com' },
+  { name: 'Whoop', emoji: '⌚', categoryId: '11', defaultPrice: 30, defaultCurrency: 'USD', color: '#FF0000', cycle: 'monthly', domain: 'whoop.com' },
+
+  // ── Еда и доставка (id 12) ──
+  { name: 'Uber One', emoji: '🍔', categoryId: '12', defaultPrice: 10, defaultCurrency: 'USD', color: '#000000', cycle: 'monthly', domain: 'uber.com' },
+  { name: 'DoorDash DashPass', emoji: '🛵', categoryId: '12', defaultPrice: 10, defaultCurrency: 'USD', color: '#FF3008', cycle: 'monthly', domain: 'doordash.com' },
+  { name: 'Instacart+', emoji: '🛒', categoryId: '12', defaultPrice: 10, defaultCurrency: 'USD', color: '#43B02A', cycle: 'monthly', domain: 'instacart.com' },
+  { name: 'HelloFresh', emoji: '🥗', categoryId: '12', defaultPrice: 12, defaultCurrency: 'USD', color: '#91C11E', cycle: 'monthly', domain: 'hellofresh.com' },
+
+  // ── Хостинг и домены (id 16) ──
+  { name: 'Cloudflare Pro', emoji: '🌐', categoryId: '16', defaultPrice: 20, defaultCurrency: 'USD', color: '#F38020', cycle: 'monthly', domain: 'cloudflare.com' },
+  { name: 'Hostinger', emoji: '🌐', categoryId: '16', defaultPrice: 3, defaultCurrency: 'USD', color: '#673DE6', cycle: 'monthly', domain: 'hostinger.com' },
+  { name: 'Timeweb', emoji: '🌐', categoryId: '16', defaultPrice: 299, defaultCurrency: 'RUB', color: '#1452F4', cycle: 'monthly', domain: 'timeweb.com' },
+  { name: 'reg.ru', emoji: '🌐', categoryId: '16', defaultPrice: 199, defaultCurrency: 'RUB', color: '#0072BC', cycle: 'monthly', domain: 'reg.ru' },
+  { name: 'Beget', emoji: '🌐', categoryId: '16', defaultPrice: 250, defaultCurrency: 'RUB', color: '#00AEEF', cycle: 'monthly', domain: 'beget.com' },
 ];
 
 /** Search services by name (case-insensitive, partial match) */

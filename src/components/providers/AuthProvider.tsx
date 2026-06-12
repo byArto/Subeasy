@@ -81,8 +81,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    // scope:'local' clears the session locally without waiting on a server
+    // round-trip — on Android/TWA a flaky network could make the default
+    // (global) signOut hang or throw, leaving the user "stuck" signed in.
+    // try/catch guarantees we always drop the local user state.
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      /* ignore — clear local state regardless */
+    }
     setUser(null);
   }, []);
 

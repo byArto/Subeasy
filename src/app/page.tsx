@@ -83,6 +83,9 @@ export default function Home() {
 
   const [splashDone, setSplashDone] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('home');
+  // One-shot deep-link target for the Settings tab (e.g. from the Family promo).
+  const [settingsScrollTo, setSettingsScrollTo] = useState<string | null>(null);
+  const clearSettingsScroll = useCallback(() => setSettingsScrollTo(null), []);
   const [showAddModal, setShowAddModal] = useState(false);
   const [prefillService, setPrefillService] = useState<ServiceTemplate | null>(null);
   const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
@@ -538,7 +541,7 @@ export default function Home() {
                 onDeactivateSub={(id) => wsUpdateSubscription(id, { isActive: false })}
                 onShare={() => setShowShareModal(true)}
                 onTryDemo={isWorkspaceActive ? undefined : loadDemoData}
-                onOpenSettings={() => setActiveTab('settings')}
+                onOpenSettings={() => { setSettingsScrollTo('family-plan-section'); setActiveTab('settings'); }}
               />
             )}
             {activeTab === 'analytics' && (
@@ -573,6 +576,8 @@ export default function Home() {
                 rateIsLoading={rateIsLoading}
                 onRefreshRate={refreshRate}
                 onOpenPro={() => setShowProModal(true)}
+                scrollTo={settingsScrollTo}
+                onScrolled={clearSettingsScroll}
               />
             )}
           </motion.div>

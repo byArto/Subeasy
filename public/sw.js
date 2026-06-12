@@ -1,5 +1,5 @@
-// SubEasy Service Worker v5 — cache-first + push notifications
-const CACHE_NAME = 'subeasy-v5';
+// SubEasy Service Worker v6 — cache-first + push notifications
+const CACHE_NAME = 'subeasy-v6';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -74,7 +74,9 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'У вас скоро платёж!',
     icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
+    // Badge must be a monochrome transparent silhouette — Android masks it to a
+    // single colour, so a full-colour icon renders as a flat grey/white square.
+    badge: '/icons/badge-mono.png',
     tag: data.tag || 'payment-reminder',
     renotify: true,
     data: { url: data.url || '/' },

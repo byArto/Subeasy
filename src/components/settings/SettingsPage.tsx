@@ -38,6 +38,10 @@ interface SettingsPageProps {
   rateIsLoading: boolean;
   onRefreshRate: () => Promise<number>;
   onOpenPro: () => void;
+  /** Element id to auto-scroll to on open (e.g. 'family-plan-section'). */
+  scrollTo?: string | null;
+  /** Called once the scroll target has been consumed, so it fires only once. */
+  onScrolled?: () => void;
 }
 
 /* ── Stagger ── */
@@ -70,6 +74,8 @@ export function SettingsPage({
   rateIsLoading,
   onRefreshRate,
   onOpenPro,
+  scrollTo,
+  onScrolled,
 }: SettingsPageProps) {
   const { user, signOut, setSkipAuth } = useAuth();
   const { isTelegram } = useTelegramContext();
@@ -113,6 +119,20 @@ export function SettingsPage({
   const [isMounted, setIsMounted] = useState(false);
   useEffect(() => setIsMounted(true), []);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Deep-link scroll: when opened from the home-screen Family Plan promo, scroll
+  // the relevant section into view once (after the entrance animations settle).
+  const didScrollRef = useRef(false);
+  useEffect(() => {
+    if (didScrollRef.current || !scrollTo) return;
+    didScrollRef.current = true;
+    const id = scrollTo;
+    const timer = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      onScrolled?.();
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [scrollTo, onScrolled]);
 
   // ── Family Plan states ──
   const [wsName, setWsName] = useState('Family');
@@ -764,7 +784,7 @@ export function SettingsPage({
 
       {/* ── Семейный план ── */}
       {user && (
-        <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <motion.div id="family-plan-section" className="scroll-mt-3" custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
           <SectionHeader title={lang === 'ru' ? 'Семейный план' : 'Family Plan'} />
           <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
 

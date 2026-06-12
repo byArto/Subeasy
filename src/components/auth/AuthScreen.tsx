@@ -103,10 +103,10 @@ export function AuthScreen() {
   }
 
   return (
-    <div className="app-gradient-bg fixed inset-0 flex flex-col items-center justify-center max-w-[430px] mx-auto px-6">
+    <div className="app-gradient-bg fixed inset-0 max-w-[430px] mx-auto overflow-y-auto flex flex-col">
 
       {/* Language switcher */}
-      <div className="absolute top-12 right-5 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
+      <div className="absolute top-12 right-5 z-10 flex items-center gap-0.5 bg-surface-2 border border-border-subtle rounded-lg p-0.5">
         {(['ru', 'en'] as const).map((l) => (
           <button
             key={l}
@@ -119,6 +119,11 @@ export function AuthScreen() {
           </button>
         ))}
       </div>
+
+      {/* Centered, scrollable column — `my-auto` keeps it visually centred when
+          there's room but lets it scroll (instead of overlapping the skip
+          button) when the Telegram keyboard shrinks the viewport. */}
+      <div className="w-full flex flex-col items-center px-6 py-16 my-auto">
 
       {/* Logo */}
       <motion.div
@@ -309,8 +314,9 @@ export function AuthScreen() {
         </div>
       )}
 
-      {/* Skip auth */}
-      <div className="absolute bottom-10 flex flex-col items-center gap-1.5">
+      {/* Skip auth — in normal flow (not absolute) so it never overlaps the
+          form when the keyboard is open */}
+      <div className="mt-10 flex flex-col items-center gap-1.5">
         <button
           onClick={() => setSkipAuth(true)}
           className="text-text-muted text-xs font-medium active:text-text-secondary transition-colors"
@@ -320,6 +326,8 @@ export function AuthScreen() {
         <p className="text-[10px] text-text-muted/60 text-center max-w-[260px]">
           {t('auth.skipNote')}
         </p>
+      </div>
+
       </div>
     </div>
   );

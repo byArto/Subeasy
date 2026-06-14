@@ -16,7 +16,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
-import { resolveRates } from '@/lib/currency';
+import { resolveRates, computeEffectiveRates } from '@/lib/currency';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
@@ -262,24 +262,21 @@ export default function Home() {
     Math.round(getTotalMonthlyActive(currency, rates) * 12 * 100) / 100,
   [getTotalMonthlyActive]);
 
-  // Auto exchange rate from CBR
+  // Auto exchange rates from CBR (full RUB-per-unit map)
   const {
-    rate: autoRate,
-    eurRate: autoEurRate,
+    rates: autoRates,
     lastUpdated: rateLastUpdated,
     isLoading: rateIsLoading,
     refresh: refreshRate,
-  } = useExchangeRate(settings.exchangeRate, settings.eurExchangeRate ?? 105);
+  } = useExchangeRate(settings.rates ?? {});
 
-  // Sync auto rate to settings (only if not using manual rate)
+  // Recompute effective rate map into settings: manual overrides over auto rates.
   useEffect(() => {
-    if (!settings.useManualRate) {
-      const updates: Record<string, number> = {};
-      if (autoRate !== settings.exchangeRate) updates.exchangeRate = autoRate;
-      if (autoEurRate !== settings.eurExchangeRate) updates.eurExchangeRate = autoEurRate;
-      if (Object.keys(updates).length > 0) updateSettings(updates);
-    }
-  }, [autoRate, autoEurRate, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
+    const eff = computeEffectiveRates(autoRates, settings.manualRates, settings.useManualRate);
+    const cur = settings.rates ?? {};
+    const changed = (Object.keys(eff) as Currency[]).some((k) => eff[k] !== cur[k]);
+    if (changed) updateSettings({ rates: eff });
+  }, [autoRates, settings.manualRates, settings.useManualRate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notifications — auto-registers SW + schedules reminders
   useNotifications(activeSubscriptions, settings);

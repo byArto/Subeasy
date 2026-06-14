@@ -37,7 +37,7 @@ interface SettingsPageProps {
   subscriptions: Subscription[];
   rateLastUpdated: string | null;
   rateIsLoading: boolean;
-  onRefreshRate: () => Promise<number>;
+  onRefreshRate: () => Promise<unknown>;
   onOpenPro: () => void;
   /** Element id to auto-scroll to on open (e.g. 'family-plan-section'). */
   scrollTo?: string | null;

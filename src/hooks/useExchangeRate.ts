@@ -1,16 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import type { Currency } from '@/lib/types';
 import { getExchangeRate, refreshExchangeRate, getRateInfo } from '@/lib/exchange-rate';
 
-export function useExchangeRate(currentRate: number, currentEurRate: number) {
-  const [rate, setRate] = useState(() => {
+type RateMap = Partial<Record<Currency, number>>;
+
+export function useExchangeRate(initialRates: RateMap) {
+  const [rates, setRates] = useState<RateMap>(() => {
     const info = getRateInfo();
-    return info ? info.rate : currentRate;
-  });
-  const [eurRate, setEurRate] = useState(() => {
-    const info = getRateInfo();
-    return info ? info.eurRate : currentEurRate;
+    return info ? info.rates : initialRates;
   });
   const [lastUpdated, setLastUpdated] = useState<string | null>(() => {
     const info = getRateInfo();
@@ -20,32 +19,22 @@ export function useExchangeRate(currentRate: number, currentEurRate: number) {
 
   const syncInfo = useCallback(() => {
     const info = getRateInfo();
-    if (info) {
-      setLastUpdated(info.updatedAt);
-    }
+    if (info) setLastUpdated(info.updatedAt);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
+    const load = () => {
+      getExchangeRate().then((fresh) => {
+        if (!cancelled) {
+          setRates(fresh);
+          syncInfo();
+        }
+      });
+    };
     const id = typeof requestIdleCallback !== 'undefined'
-      ? requestIdleCallback(() => {
-          getExchangeRate(currentRate).then((fresh) => {
-            if (!cancelled) {
-              setRate(fresh.rate);
-              setEurRate(fresh.eurRate);
-              syncInfo();
-            }
-          });
-        })
-      : setTimeout(() => {
-          getExchangeRate(currentRate).then((fresh) => {
-            if (!cancelled) {
-              setRate(fresh.rate);
-              setEurRate(fresh.eurRate);
-              syncInfo();
-            }
-          });
-        }, 2000) as unknown as number;
+      ? requestIdleCallback(load)
+      : setTimeout(load, 2000) as unknown as number;
 
     return () => {
       cancelled = true;
@@ -59,13 +48,12 @@ export function useExchangeRate(currentRate: number, currentEurRate: number) {
 
   const refresh = useCallback(async () => {
     setIsLoading(true);
-    const fresh = await refreshExchangeRate(rate);
-    setRate(fresh.rate);
-    setEurRate(fresh.eurRate);
+    const fresh = await refreshExchangeRate();
+    setRates(fresh);
     syncInfo();
     setIsLoading(false);
-    return fresh.rate;
-  }, [rate, syncInfo]);
+    return fresh;
+  }, [syncInfo]);
 
-  return { rate, eurRate, lastUpdated, isLoading, refresh };
+  return { rates, lastUpdated, isLoading, refresh };
 }

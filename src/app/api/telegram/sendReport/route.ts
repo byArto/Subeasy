@@ -64,6 +64,10 @@ export async function POST(req: NextRequest) {
     displayCurrency: s?.display_currency ?? 'RUB',
     exchangeRate: Number(s?.exchange_rate ?? 90),
     eurExchangeRate: s?.eur_exchange_rate ? Number(s.eur_exchange_rate) : 105,
+    // Effective RUB-per-unit map; fall back to legacy USD/EUR scalars for old users.
+    rates: (s?.rates && Object.keys(s.rates).length > 0)
+      ? s.rates
+      : { USD: Number(s?.exchange_rate ?? 90), EUR: s?.eur_exchange_rate ? Number(s.eur_exchange_rate) : 105 },
     useManualRate: s?.use_manual_rate ?? false,
     notificationsEnabled: s?.notifications_enabled ?? false,
     notifyDaysBefore: s?.notify_days_before ?? 3,

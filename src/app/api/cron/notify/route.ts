@@ -23,14 +23,11 @@ function convertPrice(
   price: number,
   from: string,
   to: string,
-  usdRate: number,
-  eurRate: number,
+  rates: Record<string, number>, // RUB за 1 единицу (RUB = 1)
 ): number {
   if (from === to) return price;
-  const toRub: Record<string, number> = { RUB: 1, USD: usdRate, EUR: eurRate };
-  const rub = price * (toRub[from] ?? 1);
-  const fromRub: Record<string, number> = { RUB: 1, USD: usdRate, EUR: eurRate };
-  return rub / (fromRub[to] ?? 1);
+  const rub = price * (rates[from] ?? 1);
+  return rub / (rates[to] ?? 1);
 }
 
 function cycleStr(cycle: string, isRu: boolean): string {
@@ -63,8 +60,7 @@ function buildMessage(
   subs: any[],
   todayStr: string,
   displayCurrency: string,
-  usdRate: number,
-  eurRate: number,
+  rates: Record<string, number>,
   lang: string,
 ): string {
   const isRu = lang === 'ru';
@@ -95,7 +91,7 @@ function buildMessage(
         const trialLabel = isRu ? 'FREE (пробный заканчивается)' : 'FREE (trial ending)';
         return `⏰ ${safeIcon} ${safeName}  <b>${trialLabel}</b>`;
       }
-      const converted = convertPrice(sub.price, sub.currency, displayCurrency, usdRate, eurRate);
+      const converted = convertPrice(sub.price, sub.currency, displayCurrency, rates);
       total += converted;
       const approx = sub.currency !== displayCurrency ? '~' : '';
       const amount = converted >= 10 ? Math.round(converted) : converted.toFixed(2);
@@ -256,7 +252,7 @@ export async function GET(req: NextRequest) {
             // Load user settings
             const { data: settings } = await supabase
               .from('user_settings')
-              .select('notify_days_before, notifications_enabled, display_currency, exchange_rate, eur_exchange_rate, lang')
+              .select('notify_days_before, notifications_enabled, display_currency, exchange_rate, eur_exchange_rate, rates, lang')
               .eq('user_id', profile.id)
               .single();
 
@@ -264,9 +260,11 @@ export async function GET(req: NextRequest) {
 
             const daysUntil  = settings.notify_days_before ?? 3;
             const displayCur = settings.display_currency ?? 'RUB';
-            const usdRate    = Number(settings.exchange_rate ?? 96);
-            const eurRate    = Number(settings.eur_exchange_rate ?? 105);
             const lang       = settings.lang ?? 'ru';
+            // Effective RUB-per-unit map; fall back to legacy USD/EUR scalars.
+            const rates: Record<string, number> = (settings.rates && Object.keys(settings.rates).length > 0)
+              ? { ...settings.rates, RUB: 1 }
+              : { RUB: 1, USD: Number(settings.exchange_rate ?? 96), EUR: Number(settings.eur_exchange_rate ?? 105) };
 
             // Window end date
             const target = new Date(today);
@@ -285,7 +283,7 @@ export async function GET(req: NextRequest) {
 
             if (!subs || subs.length === 0) { skipped++; return; }
 
-            const text = buildMessage(subs, todayStr, displayCur, usdRate, eurRate, lang);
+            const text = buildMessage(subs, todayStr, displayCur, rates, lang);
             const res = await sendTelegramMessage(Number(profile.telegram_chat_id), text, lang);
 
             if (res.ok) sent++;

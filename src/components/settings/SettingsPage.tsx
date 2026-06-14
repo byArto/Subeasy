@@ -3,9 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { Category, AppSettings, Subscription, DisplayCurrency } from '@/lib/types';
+import { Category, AppSettings, Subscription, DisplayCurrency, Currency } from '@/lib/types';
 import { cn, sanitizeUrl, convertCurrency } from '@/lib/utils';
-import { resolveRates, SUPPORTED_CURRENCIES } from '@/lib/currency';
+import { resolveRates, SUPPORTED_CURRENCIES, ALL_CURRENCIES } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { requestNotificationPermission, getNotificationPermission, subscribeToPush } from '@/lib/notifications';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -110,6 +110,7 @@ export function SettingsPage({
   const [newCatEmoji, setNewCatEmoji] = useState('📦');
 
   const [confirmClear, setConfirmClear] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
@@ -486,6 +487,17 @@ export function SettingsPage({
 
   const activeSubs = subscriptions.filter((s) => s.isActive);
 
+  // ── Currency rate display + manual-rate inputs ──
+  const effectiveRates = resolveRates(settings);
+  const displayCur = settings.displayCurrency;
+  const rateDisplayLine = displayCur === 'RUB'
+    ? `1 $ = ${formatRateValue(effectiveRates.USD)} ₽`
+    : `1 ${CURRENCY_SYMBOLS[displayCur] ?? displayCur} = ${formatRateValue(effectiveRates[displayCur])} ₽`;
+  // Currencies the user actually uses (display + any subscription currency), minus RUB.
+  const usedCurrencies = (Array.from(new Set<Currency>([displayCur, ...subscriptions.map((s) => s.currency)]))
+    .filter((c) => c !== 'RUB') as Currency[])
+    .sort((a, b) => ALL_CURRENCIES.indexOf(a) - ALL_CURRENCIES.indexOf(b));
+
   return (
     <>
     <div className="space-y-6 px-5 pt-2 pb-4">
@@ -647,20 +659,57 @@ export function SettingsPage({
       {/* ── 2. Валюта ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.currency.title')} />
-        <div className="bg-surface-2 rounded-2xl border border-border-subtle p-4 space-y-4">
-          {/* Currency toggle */}
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-text-primary font-medium">{t('settings.currency.main')}</span>
-            <CurrencySwitch value={settings.displayCurrency} onSelect={setCurrency} isPro={isPro} onOpenPro={onOpenPro} />
-          </div>
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
 
-          {/* Current rate display */}
-          <div className="flex items-center justify-between">
+          {/* Main currency — expandable list */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setCurrencyOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3.5"
+          >
+            <div className="text-left">
+              <span className="text-sm text-text-primary font-medium">{t('settings.currency.main')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                {(CURRENCY_SYMBOLS[settings.displayCurrency] ?? settings.displayCurrency)} · {t(`currency.name.${settings.displayCurrency}`)}
+              </p>
+            </div>
+            <motion.svg
+              animate={{ rotate: currencyOpen ? 180 : 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              className="text-text-muted shrink-0"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </motion.svg>
+          </motion.button>
+
+          <AnimatePresence initial={false}>
+            {currencyOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 pt-1 border-t border-border-subtle">
+                  <CurrencyGrid
+                    value={settings.displayCurrency}
+                    onSelect={(c) => { setCurrency(c); setCurrencyOpen(false); }}
+                    t={t}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Rate display + refresh */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-t border-border-subtle">
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm text-text-primary font-medium">
-                  1$ = {settings.exchangeRate}₽ · 1€ = {settings.eurExchangeRate ?? 105}₽
-                </span>
+                <span className="text-sm text-text-primary font-medium">{rateDisplayLine}</span>
                 {rateIsLoading && (
                   <svg className="animate-spin h-3.5 w-3.5 text-neon" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
@@ -669,33 +718,97 @@ export function SettingsPage({
                 )}
               </div>
               <p className="text-[11px] text-text-muted mt-0.5">
-                {rateLastUpdated
-                  ? `${t('settings.currency.cbrf')} · ${formatRateDate(rateLastUpdated, lang)}`
-                  : `${t('settings.currency.cbrf')} · ${t('settings.currency.loading')}`}
+                {settings.useManualRate
+                  ? t('settings.currency.manualRate')
+                  : rateLastUpdated
+                    ? `${t('settings.currency.cbrf')} · ${formatRateDate(rateLastUpdated, lang)}`
+                    : `${t('settings.currency.cbrf')} · ${t('settings.currency.loading')}`}
               </p>
             </div>
 
-            {/* Refresh button — rate is always auto (CBR) now */}
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.9, rotate: 180 }}
-              disabled={rateIsLoading}
-              onClick={() => onRefreshRate()}
-              className={cn(
-                'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center',
-                'bg-surface-3 border border-border-subtle',
-                'text-text-secondary active:text-neon active:border-neon/30',
-                'transition-colors disabled:opacity-40'
-              )}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 21h5v-5" />
-              </svg>
-            </motion.button>
+            {/* Refresh — only in auto mode */}
+            {!settings.useManualRate && (
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.9, rotate: 180 }}
+                disabled={rateIsLoading}
+                onClick={() => onRefreshRate()}
+                className={cn(
+                  'w-9 h-9 shrink-0 rounded-xl flex items-center justify-center',
+                  'bg-surface-3 border border-border-subtle',
+                  'text-text-secondary active:text-neon active:border-neon/30',
+                  'transition-colors disabled:opacity-40'
+                )}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 21h5v-5" />
+                </svg>
+              </motion.button>
+            )}
           </div>
+
+          {/* Свой курс toggle */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-t border-border-subtle">
+            <div className="pr-4">
+              <span className="text-sm text-text-primary font-medium">{t('settings.currency.customRate')}</span>
+              <p className="text-[11px] text-text-muted mt-0.5">{t('settings.currency.customRateHint')}</p>
+            </div>
+            <NeonToggle
+              value={settings.useManualRate}
+              onToggle={() => updateSettings({ useManualRate: !settings.useManualRate })}
+            />
+          </div>
+
+          {/* Per-currency manual rate inputs */}
+          <AnimatePresence initial={false}>
+            {settings.useManualRate && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                className="overflow-hidden"
+              >
+                <div className="px-4 pb-4 pt-3 border-t border-border-subtle space-y-2.5">
+                  {usedCurrencies.length === 0 ? (
+                    <p className="text-[11px] text-text-muted">{t('settings.currency.noForeign')}</p>
+                  ) : (
+                    usedCurrencies.map((code) => (
+                      <div key={code} className="flex items-center justify-between gap-3">
+                        <span className="text-sm text-text-secondary">
+                          1 {CURRENCY_SYMBOLS[code] ?? code} =
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            value={effectiveRates[code] ?? ''}
+                            onChange={(e) => {
+                              const v = parseFloat(e.target.value);
+                              if (!isNaN(v) && v > 0) {
+                                updateSettings({ manualRates: { ...settings.manualRates, [code]: v } });
+                              }
+                            }}
+                            className={cn(
+                              'w-28 min-h-[40px] px-3 rounded-xl bg-surface-3 border border-border-subtle',
+                              'text-sm text-text-primary text-right outline-none tabular-nums',
+                              'focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]',
+                              'appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+                            )}
+                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
+                          />
+                          <span className="text-sm text-text-muted">₽</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
         </div>
       </motion.div>
@@ -1841,6 +1954,15 @@ function NeonToggle({ value, onToggle }: { value: boolean; onToggle: () => void 
   );
 }
 
+/* ── Format rate value (RUB per unit) ── */
+
+function formatRateValue(n: number | undefined): string {
+  if (typeof n !== 'number' || !isFinite(n)) return '—';
+  // Small rates (e.g. UZS ≈ 0.006) need more precision than large ones.
+  if (n >= 1) return n.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+  return n.toLocaleString('ru-RU', { maximumFractionDigits: 4 });
+}
+
 /* ── Format rate date ── */
 
 function formatRateDate(iso: string, lang: string): string {
@@ -1982,45 +2104,37 @@ function ThemeSwitch({
   );
 }
 
-/* ── Currency Switch ── */
+/* ── Currency Grid ── */
 
-const CURRENCY_OPTIONS: { code: DisplayCurrency; symbol: string }[] = [
-  { code: 'RUB', symbol: '₽' },
-  { code: 'USD', symbol: '$' },
-];
-
-function CurrencySwitch({
+function CurrencyGrid({
   value,
   onSelect,
-  isPro,
-  onOpenPro,
+  t,
 }: {
   value: DisplayCurrency;
   onSelect: (c: DisplayCurrency) => void;
-  isPro: boolean;
-  onOpenPro: () => void;
+  t: (key: string) => string;
 }) {
   return (
-    <div className="relative flex items-center h-[40px] rounded-xl bg-surface-3 border border-border-subtle p-1 gap-0.5">
-      {CURRENCY_OPTIONS.map((opt) => {
-        const locked = !isPro && opt.code === 'EUR';
+    <div className="grid grid-cols-4 gap-2">
+      {SUPPORTED_CURRENCIES.map((opt) => {
+        const active = value === opt.code;
         return (
           <motion.button
             key={opt.code}
             type="button"
             whileTap={{ scale: 0.93 }}
-            onClick={() => locked ? onOpenPro() : onSelect(opt.code)}
+            onClick={() => onSelect(opt.code)}
             className={cn(
-              'relative z-10 w-[44px] h-[32px] rounded-lg text-sm font-bold transition-colors',
-              value === opt.code
-                ? 'bg-neon text-surface'
-                : locked
-                  ? 'text-text-muted opacity-50'
-                  : 'text-text-secondary'
+              'relative flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-xl border transition-colors',
+              active
+                ? 'bg-neon/15 border-neon/40 text-neon'
+                : 'bg-surface-3 border-border-subtle text-text-secondary active:bg-surface-4'
             )}
-            style={value === opt.code ? { boxShadow: 'var(--shadow-neon)' } : undefined}
+            style={active ? { boxShadow: 'var(--shadow-neon)' } : undefined}
           >
-            {locked ? '🔒' : opt.symbol}
+            <span className="text-[13px] font-bold tracking-wide">{opt.symbol}</span>
+            <span className="text-[9px] opacity-70 leading-none">{opt.code}</span>
           </motion.button>
         );
       })}

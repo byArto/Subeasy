@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { checkRateLimit } from '@/lib/ratelimit';
+import { CBR_CODES } from '@/lib/currency';
 
 // NOTE: intentionally NOT edge runtime. The rate limiter reads UPSTASH_* env vars,
 // which are marked "Sensitive" in Vercel and therefore NOT exposed to the Edge
@@ -21,16 +22,29 @@ export async function GET(req: NextRequest) {
       cache: 'no-store',
     });
     const data = await res.json();
-    const usd = Math.round(data.Valute.USD.Value * 100) / 100;
-    const eur = Math.round(data.Valute.EUR.Value * 100) / 100;
-    return new Response(JSON.stringify({ rate: usd, eurRate: eur }), {
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+    const valute = data?.Valute ?? {};
+
+    // RUB за 1 единицу каждой валюты = Value / Nominal (Nominal у KZT/UAH/… ≠ 1).
+    const rates: Record<string, number> = {};
+    for (const code of CBR_CODES) {
+      const v = valute[code];
+      if (v && typeof v.Value === 'number' && typeof v.Nominal === 'number' && v.Nominal > 0) {
+        rates[code] = Math.round((v.Value / v.Nominal) * 1e6) / 1e6;
+      }
+    }
+
+    return new Response(
+      // rate/eurRate — для совместимости со старыми закешированными клиентами
+      JSON.stringify({ rates, rate: rates.USD ?? null, eurRate: rates.EUR ?? null }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        },
       },
-    });
+    );
   } catch {
-    return new Response(JSON.stringify({ rate: null, eurRate: null }), {
+    return new Response(JSON.stringify({ rates: null, rate: null, eurRate: null }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

@@ -484,6 +484,19 @@ const dict: Translations = {
   'settings.currency.customRate': { ru: 'Свой курс', en: 'Custom rate' },
   'settings.currency.customRateHint': { ru: 'Не обновлять автоматически', en: 'No auto-update' },
   'settings.currency.usdRub': { ru: 'Курс USD/RUB', en: 'USD/RUB rate' },
+  'settings.currency.noForeign': { ru: 'В подписках нет иностранных валют', en: 'No foreign currencies in your subscriptions' },
+
+  // ── Currency names ──
+  'currency.name.RUB': { ru: 'Рубль', en: 'Ruble' },
+  'currency.name.USD': { ru: 'Доллар США', en: 'US Dollar' },
+  'currency.name.EUR': { ru: 'Евро', en: 'Euro' },
+  'currency.name.BYN': { ru: 'Бел. рубль', en: 'Belarusian ruble' },
+  'currency.name.KZT': { ru: 'Тенге', en: 'Kazakhstani tenge' },
+  'currency.name.UAH': { ru: 'Гривна', en: 'Ukrainian hryvnia' },
+  'currency.name.AMD': { ru: 'Драм', en: 'Armenian dram' },
+  'currency.name.KGS': { ru: 'Киргизский сом', en: 'Kyrgyz som' },
+  'currency.name.UZS': { ru: 'Узб. сум', en: 'Uzbek som' },
+  'currency.name.GEL': { ru: 'Лари', en: 'Georgian lari' },
 
   'settings.notifications.title': { ru: 'Уведомления', en: 'Notifications' },
   'settings.notifications.enable': { ru: 'Включить уведомления', en: 'Enable notifications' },

@@ -50,9 +50,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {
-  RUB: '₽',
-  USD: '$',
-  EUR: '€',
+  RUB: '₽', USD: '$', EUR: '€', BYN: 'Br', KZT: '₸',
+  UAH: '₴', AMD: '֏', KGS: 'сом', UZS: 'сўм', GEL: '₾',
 };
 
 export const CYCLE_LABELS: Record<string, string> = {

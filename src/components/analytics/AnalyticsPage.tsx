@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { getMonthlyPrice, convertCurrency, cn, getThemeAccentColor } from '@/lib/utils';
+import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -45,9 +46,9 @@ const PERIOD_MULTIPLIER: Record<Period, number> = { month: 1, quarter: 3, year: 
 
 type TFunc = (key: string, vars?: Record<string, string | number>) => string;
 
-function getMonthlyInCurrency(sub: Subscription, currency: string, rate: number): number {
+function getMonthlyInCurrency(sub: Subscription, currency: string, rates: Record<Currency, number>): number {
   const monthly = getMonthlyPrice(sub);
-  return convertCurrency(monthly, sub.currency as Currency, currency as Currency, rate);
+  return convertCurrency(monthly, sub.currency as Currency, currency as Currency, rates);
 }
 
 function formatAmount(n: number): string {
@@ -60,7 +61,7 @@ function getMonthlyTotal(
   subscriptions: Subscription[],
   year: number,
   month: number,
-  rate: number,
+  rates: Record<Currency, number>,
   displayCurrency: string,
 ): number {
   const monthEnd = new Date(year, month + 1, 0); // last day of month
@@ -71,7 +72,7 @@ function getMonthlyTotal(
     })
     .reduce((total, sub) => {
       const monthly = getMonthlyPrice(sub);
-      return total + convertCurrency(monthly, sub.currency as Currency, displayCurrency as Currency, rate);
+      return total + convertCurrency(monthly, sub.currency as Currency, displayCurrency as Currency, rates);
     }, 0);
 }
 
@@ -97,7 +98,8 @@ function formatDuration(days: number, t: TFunc): string {
 
 export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, onOpenPro, onUpdateSettings }: AnalyticsPageProps) {
   const { t } = useLanguage();
-  const { displayCurrency, exchangeRate } = settings;
+  const { displayCurrency } = settings;
+  const rates = resolveRates(settings);
   const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
   const altCurrency = displayCurrency === 'RUB' ? 'USD' : 'RUB';
   const altSymbol = CURRENCY_SYMBOLS[altCurrency];
@@ -105,13 +107,13 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
   const active = useMemo(() => subscriptions.filter((s) => s.isActive), [subscriptions]);
 
   const monthlyTotal = useMemo(
-    () => active.reduce((sum, s) => sum + getMonthlyInCurrency(s, displayCurrency, exchangeRate), 0),
-    [active, displayCurrency, exchangeRate],
+    () => active.reduce((sum, s) => sum + getMonthlyInCurrency(s, displayCurrency, rates), 0),
+    [active, displayCurrency, rates],
   );
 
   const monthlyTotalAlt = useMemo(
-    () => active.reduce((sum, s) => sum + getMonthlyInCurrency(s, altCurrency, exchangeRate), 0),
-    [active, altCurrency, exchangeRate],
+    () => active.reduce((sum, s) => sum + getMonthlyInCurrency(s, altCurrency, rates), 0),
+    [active, altCurrency, rates],
   );
 
   if (subscriptions.length === 0) {
@@ -136,7 +138,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           altSymbol={altSymbol}
           subscriptions={subscriptions}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
         />
       </motion.div>
 
@@ -150,7 +152,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           categories={categories}
           active={active}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
         />
       </motion.div>
 
@@ -159,7 +161,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           active={active}
           categories={categories}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
           symbol={symbol}
           monthlyTotal={monthlyTotal}
           onSubTap={onSubTap}
@@ -170,7 +172,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         <TopExpensive
           active={active}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
           symbol={symbol}
           monthlyTotal={monthlyTotal}
           onSubTap={onSubTap}
@@ -182,7 +184,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           active={active}
           subscriptions={subscriptions}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
           monthlyTotal={monthlyTotal}
           onSubTap={onSubTap}
         />
@@ -195,7 +197,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
           settings={settings}
           monthlyTotal={monthlyTotal}
           displayCurrency={displayCurrency}
-          exchangeRate={exchangeRate}
+          rates={rates}
           onOpenPro={onOpenPro}
         />
       </motion.div>
@@ -224,7 +226,7 @@ function BudgetSection({
   categories,
   active,
   displayCurrency,
-  exchangeRate,
+  rates,
 }: {
   monthlyTotal: number;
   settings: AppSettings;
@@ -234,7 +236,7 @@ function BudgetSection({
   categories: Category[];
   active: Subscription[];
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
 }) {
   const { t } = useLanguage();
   const { isPro, loading } = usePro();
@@ -246,7 +248,7 @@ function BudgetSection({
   const budgetCur = settings.budgetCurrency ?? displayCurrency;
   // Convert stored budget to current display currency
   const budget = rawBudget > 0 && budgetCur !== displayCurrency
-    ? Math.round(convertCurrency(rawBudget, budgetCur as Currency, displayCurrency as Currency, exchangeRate))
+    ? Math.round(convertCurrency(rawBudget, budgetCur as Currency, displayCurrency as Currency, rates))
     : rawBudget;
   const pct = budget > 0 ? Math.min((monthlyTotal / budget) * 100, 999) : 0;
   const remaining = budget - monthlyTotal;
@@ -262,7 +264,7 @@ function BudgetSection({
     if (active.length === 0) return [];
     const map = new Map<string, number>();
     for (const s of active) {
-      const monthly = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      const monthly = getMonthlyInCurrency(s, displayCurrency, rates);
       map.set(s.category, (map.get(s.category) || 0) + monthly);
     }
     const result: CategorySpend[] = [];
@@ -277,7 +279,7 @@ function BudgetSection({
       });
     }
     return result.sort((a, b) => b.value - a.value).slice(0, 3);
-  }, [active, categories, displayCurrency, exchangeRate, monthlyTotal, t]);
+  }, [active, categories, displayCurrency, rates, monthlyTotal, t]);
 
   useEffect(() => {
     if (editing) {
@@ -516,7 +518,7 @@ function PeriodTotal({
   altSymbol,
   subscriptions,
   displayCurrency,
-  exchangeRate,
+  rates,
 }: {
   monthlyTotal: number;
   monthlyTotalAlt: number;
@@ -524,7 +526,7 @@ function PeriodTotal({
   altSymbol: string;
   subscriptions: Subscription[];
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
 }) {
   const { t } = useLanguage();
   const [period, setPeriod] = useState<Period>('month');
@@ -545,15 +547,15 @@ function PeriodTotal({
     const curM = now.getMonth();
     const prevM = curM === 0 ? 11 : curM - 1;
     const prevY = curM === 0 ? curY - 1 : curY;
-    const thisTotal = getMonthlyTotal(subscriptions, curY, curM, exchangeRate, displayCurrency);
-    const lastTotal = getMonthlyTotal(subscriptions, prevY, prevM, exchangeRate, displayCurrency);
+    const thisTotal = getMonthlyTotal(subscriptions, curY, curM, rates, displayCurrency);
+    const lastTotal = getMonthlyTotal(subscriptions, prevY, prevM, rates, displayCurrency);
     const diff = thisTotal - lastTotal;
     return {
       pct: lastTotal > 0 ? Math.round((diff / lastTotal) * 100) : null,
       isUp: diff > 0,
       isNewPeriod: lastTotal === 0 && thisTotal > 0,
     };
-  }, [subscriptions, exchangeRate, displayCurrency]);
+  }, [subscriptions, rates, displayCurrency]);
 
   return (
     <div className="bg-surface-2 rounded-2xl border border-border-subtle p-5">
@@ -630,14 +632,14 @@ function InsightsBadges({
   active,
   subscriptions,
   displayCurrency,
-  exchangeRate,
+  rates,
   monthlyTotal,
   onSubTap,
 }: {
   active: Subscription[];
   subscriptions: Subscription[];
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   monthlyTotal: number;
   onSubTap?: (sub: Subscription) => void;
 }) {
@@ -649,13 +651,13 @@ function InsightsBadges({
     let best: Subscription | null = null;
     let bestMonthly = 0;
     for (const s of active) {
-      const m = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      const m = getMonthlyInCurrency(s, displayCurrency, rates);
       if (m > bestMonthly) { bestMonthly = m; best = s; }
     }
     if (!best) return null;
     const pct = Math.round((bestMonthly / monthlyTotal) * 100);
     return { sub: best, monthly: bestMonthly, pct };
-  }, [active, displayCurrency, exchangeRate, monthlyTotal]);
+  }, [active, displayCurrency, rates, monthlyTotal]);
 
   const longest = useMemo(() => {
     const allActive = subscriptions.filter((s) => s.isActive && s.cycle !== 'one-time' && s.cycle !== 'trial');
@@ -778,7 +780,7 @@ function CategoryBreakdown({
   active,
   categories,
   displayCurrency,
-  exchangeRate,
+  rates,
   symbol,
   monthlyTotal,
   onSubTap,
@@ -786,7 +788,7 @@ function CategoryBreakdown({
   active: Subscription[];
   categories: Category[];
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   symbol: string;
   monthlyTotal: number;
   onSubTap?: (sub: Subscription) => void;
@@ -797,7 +799,7 @@ function CategoryBreakdown({
   const data = useMemo(() => {
     const map = new Map<string, number>();
     for (const s of active) {
-      const monthly = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      const monthly = getMonthlyInCurrency(s, displayCurrency, rates);
       map.set(s.category, (map.get(s.category) || 0) + monthly);
     }
 
@@ -817,7 +819,7 @@ function CategoryBreakdown({
     }
 
     return result.sort((a, b) => b.value - a.value);
-  }, [active, categories, displayCurrency, exchangeRate, monthlyTotal, t]);
+  }, [active, categories, displayCurrency, rates, monthlyTotal, t]);
 
   const selectedData = selectedId ? data.find((d) => d.id === selectedId) ?? null : null;
   const selectedSubs = useMemo(
@@ -951,7 +953,7 @@ function CategoryBreakdown({
                   {selectedData.emoji} {selectedData.name}
                 </p>
                 {selectedSubs.map((sub) => {
-                  const monthly = Math.round(getMonthlyInCurrency(sub, displayCurrency, exchangeRate));
+                  const monthly = Math.round(getMonthlyInCurrency(sub, displayCurrency, rates));
                   return (
                     <motion.button
                       key={sub.id}
@@ -985,14 +987,14 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 function TopExpensive({
   active,
   displayCurrency,
-  exchangeRate,
+  rates,
   symbol,
   monthlyTotal,
   onSubTap,
 }: {
   active: Subscription[];
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   symbol: string;
   monthlyTotal: number;
   onSubTap?: (sub: Subscription) => void;
@@ -1004,11 +1006,11 @@ function TopExpensive({
     return active
       .map((s) => ({
         sub: s,
-        monthly: getMonthlyInCurrency(s, displayCurrency, exchangeRate),
+        monthly: getMonthlyInCurrency(s, displayCurrency, rates),
       }))
       .sort((a, b) => b.monthly - a.monthly)
       .slice(0, 3);
-  }, [active, displayCurrency, exchangeRate]);
+  }, [active, displayCurrency, rates]);
 
   if (top3.length === 0) return null;
 
@@ -1095,7 +1097,7 @@ function calcSubScore(
   settings: AppSettings,
   monthlyTotal: number,
   displayCurrency: string,
-  exchangeRate: number,
+  rates: Record<Currency, number>,
 ): { total: number; grade: string; statusKey: string; factors: ScoreFactor[]; worstFactor: ScoreFactor | null } {
   const factors: ScoreFactor[] = [];
 
@@ -1152,7 +1154,7 @@ function calcSubScore(
   } else {
     const catSpend = new Map<string, number>();
     for (const s of active) {
-      const m = getMonthlyInCurrency(s, displayCurrency, exchangeRate);
+      const m = getMonthlyInCurrency(s, displayCurrency, rates);
       catSpend.set(s.category, (catSpend.get(s.category) || 0) + m);
     }
     const topPct = monthlyTotal > 0
@@ -1215,7 +1217,7 @@ function SubScoreSection({
   settings,
   monthlyTotal,
   displayCurrency,
-  exchangeRate,
+  rates,
   onOpenPro,
 }: {
   subscriptions: Subscription[];
@@ -1223,7 +1225,7 @@ function SubScoreSection({
   settings: AppSettings;
   monthlyTotal: number;
   displayCurrency: string;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   onOpenPro?: () => void;
 }) {
   const { isPro, loading } = usePro();
@@ -1279,7 +1281,7 @@ function SubScoreSection({
   }
 
   const { total, grade, statusKey, factors, worstFactor } = calcSubScore(
-    subscriptions, active, settings, monthlyTotal, displayCurrency, exchangeRate,
+    subscriptions, active, settings, monthlyTotal, displayCurrency, rates,
   );
   const gradeColor = GRADE_COLORS[grade] || '#8888A0';
   const GRADES = ['F', 'D', 'C', 'B', 'A'];

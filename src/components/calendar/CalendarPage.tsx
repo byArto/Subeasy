@@ -20,6 +20,7 @@ import {
 import { ru, enUS } from 'date-fns/locale';
 import { Subscription, AppSettings, Currency } from '@/lib/types';
 import { convertCurrency, cn } from '@/lib/utils';
+import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -131,7 +132,7 @@ function getUrgencyColor(date: Date): string {
 }
 
 function priceInCurrency(sub: Subscription, settings: AppSettings): number {
-  return convertCurrency(sub.price, sub.currency as Currency, settings.displayCurrency as Currency, settings.exchangeRate);
+  return convertCurrency(sub.price, sub.currency as Currency, settings.displayCurrency as Currency, resolveRates(settings));
 }
 
 /* ── Component ── */

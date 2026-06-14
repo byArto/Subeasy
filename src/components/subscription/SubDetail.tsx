@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Subscription, Category, AppSettings, Currency } from '@/lib/types';
 import { cn, getDaysUntilPayment, convertCurrency, getThemeAccentColor, sanitizeUrl } from '@/lib/utils';
+import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -225,7 +226,7 @@ export function SubDetail({
   const altCurrency: Currency = sub.currency === 'RUB' ? 'USD' : 'RUB';
   const altSymbol = CURRENCY_SYMBOLS[altCurrency];
   const altPrice = Math.round(
-    convertCurrency(sub.price, sub.currency, altCurrency, settings.exchangeRate)
+    convertCurrency(sub.price, sub.currency, altCurrency, resolveRates(settings))
   );
 
   const [holdProgress, setHoldProgress] = useState(0);

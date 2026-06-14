@@ -4,6 +4,7 @@
  */
 import type { Subscription, Category, AppSettings } from './types';
 import { convertCurrency, getMonthlyPrice, escapeHtml as esc } from './utils';
+import { resolveRates } from './currency';
 import { CURRENCY_SYMBOLS } from './constants';
 import { getCategoryName, formatCycleLabel, formatReportDate as formatDate } from './reportFormat';
 
@@ -14,18 +15,18 @@ export function generateReportHtml(
   lang: string,
 ): string {
   const isRu = lang === 'ru';
-  const eurRate = settings.eurExchangeRate ?? 105;
+  const rates = resolveRates(settings);
   const sym = CURRENCY_SYMBOLS[settings.displayCurrency] ?? '';
 
   const active = subscriptions.filter((s) => s.isActive);
   const totalMonthly = active.reduce((sum, sub) => {
     const monthly = getMonthlyPrice(sub);
-    return sum + convertCurrency(monthly, sub.currency, settings.displayCurrency, settings.exchangeRate, eurRate);
+    return sum + convertCurrency(monthly, sub.currency, settings.displayCurrency, rates);
   }, 0);
   const totalMonthlyStr = totalMonthly.toLocaleString(isRu ? 'ru-RU' : 'en-US', { maximumFractionDigits: 0 });
 
   const tableRows = subscriptions.map((sub) => {
-    const converted = convertCurrency(sub.price, sub.currency, settings.displayCurrency, settings.exchangeRate, eurRate);
+    const converted = convertCurrency(sub.price, sub.currency, settings.displayCurrency, rates);
     const amountStr = `${converted.toLocaleString(isRu ? 'ru-RU' : 'en-US', { maximumFractionDigits: 2 })} ${sym}`;
     const statusLabel = sub.isActive ? (isRu ? '● Активна' : '● Active') : (isRu ? '○ Неактивна' : '○ Inactive');
     const statusColor = sub.isActive ? '#00C43C' : '#888';

@@ -16,6 +16,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useNotifications } from '@/hooks/useNotifications';
 import { SplashScreen } from '@/components/SplashScreen';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { resolveRates } from '@/lib/currency';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
@@ -251,14 +252,14 @@ export default function Home() {
       .filter((s) => { if (!s.isActive) return false; const d = getDaysUntilPayment(s.nextPaymentDate); return d >= 0 && d <= days; })
       .sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime()),
   [activeSubscriptions]);
-  const getTotalMonthlyActive = useCallback((currency: DisplayCurrency, rate: number) => {
+  const getTotalMonthlyActive = useCallback((currency: DisplayCurrency, rates: Record<Currency, number>) => {
     const total = activeSubscriptions.filter((s) => s.isActive).reduce((sum, sub) => {
-      return sum + convertCurrency(getMonthlyPrice(sub), sub.currency as Currency, currency, rate);
+      return sum + convertCurrency(getMonthlyPrice(sub), sub.currency as Currency, currency, rates);
     }, 0);
     return Math.round(total * 100) / 100;
   }, [activeSubscriptions]);
-  const getTotalYearlyActive = useCallback((currency: DisplayCurrency, rate: number) =>
-    Math.round(getTotalMonthlyActive(currency, rate) * 12 * 100) / 100,
+  const getTotalYearlyActive = useCallback((currency: DisplayCurrency, rates: Record<Currency, number>) =>
+    Math.round(getTotalMonthlyActive(currency, rates) * 12 * 100) / 100,
   [getTotalMonthlyActive]);
 
   // Auto exchange rate from CBR
@@ -595,13 +596,13 @@ export default function Home() {
       <ShareModal
         open={showShareModal}
         onClose={() => setShowShareModal(false)}
-        totalMonthly={getTotalMonthlyActive(settings.displayCurrency, settings.exchangeRate)}
-        totalYearly={getTotalYearlyActive(settings.displayCurrency, settings.exchangeRate)}
+        totalMonthly={getTotalMonthlyActive(settings.displayCurrency, resolveRates(settings))}
+        totalYearly={getTotalYearlyActive(settings.displayCurrency, resolveRates(settings))}
         activeCount={getActiveSubs().length}
         currency={settings.displayCurrency}
         subscriptions={getActiveSubs()}
         lang={lang}
-        exchangeRate={settings.exchangeRate}
+        rates={resolveRates(settings)}
       />
 
       {/* Search Panel */}
@@ -640,7 +641,7 @@ export default function Home() {
           onAddCategory={addCategory}
           onClose={closeAdd}
           settings={settings}
-          currentMonthlyTotal={getTotalMonthlyActive(settings.displayCurrency, settings.exchangeRate)}
+          currentMonthlyTotal={getTotalMonthlyActive(settings.displayCurrency, resolveRates(settings))}
         />
       </Modal>
 
@@ -744,8 +745,8 @@ function HomeTab({
   subscriptions: Subscription[];
   categories: import('@/lib/types').Category[];
   settings: import('@/lib/types').AppSettings;
-  getTotalMonthly: (c: import('@/lib/types').DisplayCurrency, r: number) => number;
-  getTotalYearly: (c: import('@/lib/types').DisplayCurrency, r: number) => number;
+  getTotalMonthly: (c: import('@/lib/types').DisplayCurrency, rates: Record<Currency, number>) => number;
+  getTotalYearly: (c: import('@/lib/types').DisplayCurrency, rates: Record<Currency, number>) => number;
   getActiveSubscriptions: () => Subscription[];
   getUpcomingPayments: (days: number) => Subscription[];
   onAddTap: () => void;
@@ -764,14 +765,15 @@ function HomeTab({
   const [hidePaused, setHidePaused] = useState(false);
   const [ignoredDups, setIgnoredDups] = useState<Set<string>>(() => getIgnoredPairs());
 
-  const { displayCurrency, exchangeRate } = settings;
+  const { displayCurrency } = settings;
+  const rates = resolveRates(settings);
   const totalMonthly = useMemo(
-    () => getTotalMonthly(displayCurrency, exchangeRate),
-    [getTotalMonthly, displayCurrency, exchangeRate]
+    () => getTotalMonthly(displayCurrency, rates),
+    [getTotalMonthly, displayCurrency, rates]
   );
   const totalYearly = useMemo(
-    () => getTotalYearly(displayCurrency, exchangeRate),
-    [getTotalYearly, displayCurrency, exchangeRate]
+    () => getTotalYearly(displayCurrency, rates),
+    [getTotalYearly, displayCurrency, rates]
   );
   const active = useMemo(() => getActiveSubscriptions(), [getActiveSubscriptions]);
   const upcoming = useMemo(() => getUpcomingPayments(3), [getUpcomingPayments]);
@@ -786,7 +788,7 @@ function HomeTab({
         getMonthlyPrice(s),
         s.currency as Currency,
         displayCurrency as Currency,
-        exchangeRate,
+        rates,
       );
       if (monthly > bestMonthly) {
         bestMonthly = monthly;
@@ -794,7 +796,7 @@ function HomeTab({
       }
     }
     return bestId;
-  }, [active, displayCurrency, exchangeRate]);
+  }, [active, displayCurrency, rates]);
 
   const longestId = useMemo(() => {
     const recurring = active.filter((s) => s.cycle !== 'one-time' && s.cycle !== 'trial');

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Category, AppSettings, Subscription, DisplayCurrency } from '@/lib/types';
 import { cn, sanitizeUrl, convertCurrency } from '@/lib/utils';
+import { resolveRates, SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { requestNotificationPermission, getNotificationPermission, subscribeToPush } from '@/lib/notifications';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -778,7 +779,6 @@ export function SettingsPage({
           onOpenPro={onOpenPro}
           t={t}
           displayCurrency={settings.displayCurrency}
-          exchangeRate={settings.exchangeRate}
         />
       </motion.div>
 
@@ -1657,7 +1657,6 @@ function BudgetLimitSetting({
   onOpenPro,
   t,
   displayCurrency,
-  exchangeRate,
 }: {
   settings: AppSettings;
   updateSettings: (u: Partial<AppSettings>) => void;
@@ -1665,7 +1664,6 @@ function BudgetLimitSetting({
   onOpenPro: () => void;
   t: (key: string, vars?: Record<string, string | number>) => string;
   displayCurrency: DisplayCurrency;
-  exchangeRate: number;
 }) {
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState('');
@@ -1674,7 +1672,7 @@ function BudgetLimitSetting({
   const rawBudget = settings.monthlyBudget ?? 0;
   const budgetCur = (settings.budgetCurrency ?? displayCurrency) as DisplayCurrency;
   const budget = rawBudget > 0 && budgetCur !== displayCurrency
-    ? Math.round(convertCurrency(rawBudget, budgetCur, displayCurrency, exchangeRate))
+    ? Math.round(convertCurrency(rawBudget, budgetCur, displayCurrency, resolveRates(settings)))
     : rawBudget;
   const currencySymbol = CURRENCY_SYMBOLS[displayCurrency] ?? displayCurrency;
 

@@ -1,4 +1,4 @@
-import { DisplayCurrency, Subscription } from '@/lib/types';
+import { DisplayCurrency, Subscription, Currency } from '@/lib/types';
 import { Lang, translate } from '@/lib/translations';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { getSpendBadge } from '@/lib/badge';
@@ -12,7 +12,7 @@ interface ShareCanvasInput {
   currency: DisplayCurrency;
   subscriptions: Subscription[];
   lang: Lang;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   theme?: Theme;
 }
 
@@ -146,7 +146,7 @@ function resolveCategoryName(catId: string, t: (k: string) => string): string {
 function buildCategories(
   subscriptions: Subscription[],
   currency: DisplayCurrency,
-  exchangeRate: number,
+  rates: Record<Currency, number>,
   totalMonthly: number,
   t: (k: string) => string,
 ): Array<{ name: string; amount: number; pct: number }> {
@@ -154,7 +154,7 @@ function buildCategories(
   for (const sub of subscriptions) {
     if (!sub.isActive || sub.cycle === 'trial' || sub.cycle === 'one-time') continue;
     const monthly = getMonthlyPrice(sub);
-    const converted = convertCurrency(monthly, sub.currency, currency, exchangeRate);
+    const converted = convertCurrency(monthly, sub.currency, currency, rates);
     const cat = sub.category || 'other';
     totals[cat] = (totals[cat] || 0) + converted;
   }
@@ -204,13 +204,13 @@ function cornerBracket(
 }
 
 export function buildShareCanvas(input: ShareCanvasInput): HTMLCanvasElement {
-  const { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate, theme } = input;
+  const { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, rates, theme } = input;
   const palette = getShareThemePalette(theme);
   const t = (key: string) => translate(key, lang);
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
   const badge = getSpendBadge(totalMonthly, currency);
   const monthLabel = getMonthLabel(lang);
-  const categories = buildCategories(subscriptions, currency, exchangeRate, totalMonthly, t);
+  const categories = buildCategories(subscriptions, currency, rates, totalMonthly, t);
   const formattedMonthly = Math.round(totalMonthly).toLocaleString('ru-RU');
   const formattedYearly = Math.round(totalYearly).toLocaleString('ru-RU');
 

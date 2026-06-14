@@ -13,6 +13,7 @@ import {
   getDaysUntilPayment,
   getThemeAccentColor,
 } from '@/lib/utils';
+import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button, InfoDot } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -337,7 +338,7 @@ export function SubForm({
     // Budget check on add mode only
     if (mode === 'add' && !force && settings && (settings.monthlyBudget ?? 0) > 0 && budgetOverBy === null) {
       const newMonthly = getMonthlyPrice({ price: parseFloat(price) || 0, currency, cycle } as Subscription);
-      const newInDisplay = convertCurrency(newMonthly, currency, settings.displayCurrency, settings.exchangeRate);
+      const newInDisplay = convertCurrency(newMonthly, currency, settings.displayCurrency, resolveRates(settings));
       const total = (currentMonthlyTotal ?? 0) + newInDisplay;
       const overBy = total - settings.monthlyBudget!;
       if (overBy > 0) {

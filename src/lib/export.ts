@@ -1,5 +1,6 @@
 import type { Subscription, Category, AppSettings } from './types';
 import { convertCurrency } from './utils';
+import { resolveRates } from './currency';
 import { CURRENCY_SYMBOLS } from './constants';
 import { generateReportHtml } from './reportHtml';
 import { getCategoryName, formatCycleLabel, formatReportDate } from './reportFormat';
@@ -26,7 +27,7 @@ export function exportCSV(
   lang: string,
 ): void {
   const isRu = lang === 'ru';
-  const eurRate = settings.eurExchangeRate ?? 105;
+  const rates = resolveRates(settings);
   const sym = CURRENCY_SYMBOLS[settings.displayCurrency] ?? '';
 
   const headers = isRu
@@ -35,8 +36,7 @@ export function exportCSV(
 
   const rows = subscriptions.map((sub) => {
     const converted = convertCurrency(
-      sub.price, sub.currency, settings.displayCurrency,
-      settings.exchangeRate, eurRate,
+      sub.price, sub.currency, settings.displayCurrency, rates,
     );
     return [
       sub.name,

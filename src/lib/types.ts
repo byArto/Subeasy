@@ -1,5 +1,5 @@
-export type Currency = 'RUB' | 'USD' | 'EUR';
-export type DisplayCurrency = 'RUB' | 'USD' | 'EUR';
+export type Currency = 'RUB' | 'USD' | 'EUR' | 'BYN' | 'KZT' | 'UAH' | 'AMD' | 'KGS' | 'UZS' | 'GEL';
+export type DisplayCurrency = Currency;
 export type BillingCycle = 'monthly' | 'yearly' | 'quarterly' | 'one-time' | 'trial';
 
 // 'date' = same calendar day each period (default, current behavior).
@@ -54,8 +54,10 @@ export interface Category {
 
 export interface AppSettings {
   displayCurrency: DisplayCurrency;
-  exchangeRate: number;     // курс USD/RUB
-  eurExchangeRate?: number; // курс EUR/RUB (optional — falls back to 105)
+  exchangeRate: number;     // курс USD/RUB (legacy — для миграции/совместимости)
+  eurExchangeRate?: number; // курс EUR/RUB (legacy — falls back to 105)
+  rates?: Partial<Record<Currency, number>>;       // эффективная карта RUB-за-единицу (источник конвертации)
+  manualRates?: Partial<Record<Currency, number>>; // ручные оверрайды пользователя
   useManualRate: boolean;  // true = ручной курс, false = авто от ЦБ
   notificationsEnabled: boolean;
   notifyDaysBefore: number; // за сколько дней до платежа

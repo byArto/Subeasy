@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { ShareCard } from './ShareCard';
-import { Subscription, DisplayCurrency } from '@/lib/types';
+import { Subscription, DisplayCurrency, Currency } from '@/lib/types';
 import { Lang } from '@/lib/translations';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -19,7 +19,7 @@ interface ShareModalProps {
   currency: DisplayCurrency;
   subscriptions: Subscription[];
   lang: Lang;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
 }
 
 export function ShareModal({
@@ -31,14 +31,14 @@ export function ShareModal({
   currency,
   subscriptions,
   lang,
-  exchangeRate,
+  rates,
 }: ShareModalProps) {
   const { t } = useLanguage();
   const { theme } = useTheme();
   const [generating, setGenerating] = useState(false);
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
 
-  const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate, theme };
+  const cardProps = { totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, rates, theme };
 
   async function handleShare() {
     setGenerating(true);

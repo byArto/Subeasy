@@ -1,6 +1,7 @@
 import type { Theme } from './themes';
 import { Subscription, Currency, BillingCycle, CycleAnchor } from './types';
 import { CURRENCY_SYMBOLS } from './constants';
+import { DEFAULT_RATES } from './currency';
 
 export function generateId(): string {
   return crypto.randomUUID();
@@ -27,26 +28,13 @@ export function convertCurrency(
   amount: number,
   from: Currency,
   to: Currency,
-  exchangeRate: number,  // USD/RUB
-  eurRate: number = 105  // EUR/RUB
+  rates: Record<Currency, number>, // RUB за 1 единицу каждой валюты (RUB = 1)
 ): number {
   if (from === to) return amount;
-
-  // Convert to RUB first, then to target
-  const toRub: Record<Currency, (n: number) => number> = {
-    RUB: (n) => n,
-    USD: (n) => n * exchangeRate,
-    EUR: (n) => n * eurRate,
-  };
-
-  const fromRub: Record<Currency, (n: number) => number> = {
-    RUB: (n) => n,
-    USD: (n) => n / exchangeRate,
-    EUR: (n) => n / eurRate,
-  };
-
-  const rubAmount = toRub[from](amount);
-  return Math.round(fromRub[to](rubAmount) * 100) / 100;
+  const fromRate = rates[from] ?? DEFAULT_RATES[from];
+  const toRate = rates[to] ?? DEFAULT_RATES[to];
+  const rubAmount = amount * fromRate;
+  return Math.round((rubAmount / toRate) * 100) / 100;
 }
 
 export function getMonthlyPrice(sub: Subscription): number {

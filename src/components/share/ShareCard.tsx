@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { Subscription, DisplayCurrency } from '@/lib/types';
+import { Subscription, DisplayCurrency, Currency } from '@/lib/types';
 import { Lang, translate } from '@/lib/translations';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { getSpendBadge } from '@/lib/badge';
@@ -16,7 +16,7 @@ interface ShareCardProps {
   currency: DisplayCurrency;
   subscriptions: Subscription[];
   lang: Lang;
-  exchangeRate: number;
+  rates: Record<Currency, number>;
   theme?: Theme;
 }
 
@@ -31,7 +31,7 @@ function getMonthLabel(lang: Lang): string {
 function buildCategoryBars(
   subscriptions: Subscription[],
   currency: DisplayCurrency,
-  exchangeRate: number,
+  rates: Record<Currency, number>,
   totalMonthly: number,
   t: (key: string) => string,
 ): Array<{ name: string; amount: number; pct: number }> {
@@ -39,7 +39,7 @@ function buildCategoryBars(
   for (const sub of subscriptions) {
     if (!sub.isActive || sub.cycle === 'trial' || sub.cycle === 'one-time') continue;
     const monthly = getMonthlyPrice(sub);
-    const converted = convertCurrency(monthly, sub.currency, currency, exchangeRate);
+    const converted = convertCurrency(monthly, sub.currency, currency, rates);
     const cat = sub.category || 'other';
     totals[cat] = (totals[cat] || 0) + converted;
   }
@@ -54,13 +54,13 @@ function buildCategoryBars(
 }
 
 export const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, exchangeRate, theme }, ref) {
+  function ShareCard({ totalMonthly, totalYearly, activeCount, currency, subscriptions, lang, rates, theme }, ref) {
     const palette = getShareThemePalette(theme);
     const t = (key: string) => translate(key, lang);
     const symbol = CURRENCY_SYMBOLS[currency] || currency;
     const badge = getSpendBadge(totalMonthly, currency);
     const monthLabel = getMonthLabel(lang);
-    const categories = buildCategoryBars(subscriptions, currency, exchangeRate, totalMonthly, t);
+    const categories = buildCategoryBars(subscriptions, currency, rates, totalMonthly, t);
 
     const formattedMonthly = Math.round(totalMonthly).toLocaleString('ru-RU');
     const formattedYearly = Math.round(totalYearly).toLocaleString('ru-RU');

@@ -78,12 +78,12 @@ export function useSubscriptions() {
   );
 
   const getTotalMonthly = useCallback(
-    (currency: DisplayCurrency, rate: number): number => {
+    (currency: DisplayCurrency, rates: Record<Currency, number>): number => {
       const active = subscriptions.filter((s) => s.isActive);
 
       const total = active.reduce((sum, sub) => {
         const monthly = getMonthlyPrice(sub);
-        const converted = convertCurrency(monthly, sub.currency as Currency, currency, rate);
+        const converted = convertCurrency(monthly, sub.currency as Currency, currency, rates);
         return sum + converted;
       }, 0);
 
@@ -93,8 +93,8 @@ export function useSubscriptions() {
   );
 
   const getTotalYearly = useCallback(
-    (currency: DisplayCurrency, rate: number): number => {
-      return Math.round(getTotalMonthly(currency, rate) * 12 * 100) / 100;
+    (currency: DisplayCurrency, rates: Record<Currency, number>): number => {
+      return Math.round(getTotalMonthly(currency, rates) * 12 * 100) / 100;
     },
     [getTotalMonthly]
   );

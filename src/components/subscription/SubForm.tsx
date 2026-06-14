@@ -13,7 +13,7 @@ import {
   getDaysUntilPayment,
   getThemeAccentColor,
 } from '@/lib/utils';
-import { resolveRates } from '@/lib/currency';
+import { resolveRates, SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button, InfoDot } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
@@ -38,7 +38,6 @@ const COLOR_PALETTE = [
   '#AF52DE', '#FF2D55', '#D4A574', '#8E8E93',
 ];
 
-const CURRENCIES: Currency[] = ['RUB', 'USD'];
 const CYCLES: BillingCycle[] = ['monthly', 'yearly', 'quarterly', 'one-time', 'trial'];
 
 const CYCLE_KEY_MAP: Record<BillingCycle, string> = {
@@ -115,6 +114,7 @@ export function SubForm({
   const [name, setName] = useState(initialData?.name || serviceTemplate?.name || '');
   const [price, setPrice] = useState(initialData?.price?.toString() || serviceTemplate?.defaultPrice?.toString() || '');
   const [currency, setCurrency] = useState<Currency>(initialData?.currency || serviceTemplate?.defaultCurrency || 'RUB');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [cycle, setCycle] = useState<BillingCycle>(initialData?.cycle || serviceTemplate?.cycle || 'monthly');
   const [cycleAnchor, setCycleAnchor] = useState<CycleAnchor>(initialData?.cycleAnchor || 'date');
   const [category, setCategory] = useState(initialData?.category || serviceTemplate?.categoryId || '');
@@ -645,24 +645,57 @@ export function SubForm({
             style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' } as React.CSSProperties}
           />
 
-          {/* Currency pills */}
-          <div className="flex gap-1 bg-surface-2 border border-border-subtle rounded-xl p-1">
-            {CURRENCIES.map((c) => (
-              <motion.button
-                key={c}
-                type="button"
-                whileTap={{ scale: 0.92 }}
-                onClick={() => setCurrency(c)}
-                className={cn(
-                  'min-w-[40px] min-h-[40px] rounded-lg text-sm font-semibold transition-colors',
-                  currency === c
-                    ? 'bg-neon text-surface'
-                    : 'text-text-secondary active:bg-surface-4'
-                )}
+          {/* Currency dropdown */}
+          <div className="relative">
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setCurrencyOpen((v) => !v)}
+              className="h-[48px] min-w-[64px] px-3 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center gap-1.5 text-sm font-semibold text-text-primary active:bg-surface-3 transition-colors"
+            >
+              <span>{CURRENCY_SYMBOLS[currency] ?? currency}</span>
+              <motion.svg
+                animate={{ rotate: currencyOpen ? 180 : 0 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                className="text-text-muted shrink-0"
               >
-                {CURRENCY_SYMBOLS[c]}
-              </motion.button>
-            ))}
+                <path d="m6 9 6 6 6-6" />
+              </motion.svg>
+            </motion.button>
+
+            <AnimatePresence>
+              {currencyOpen && (
+                <>
+                  {/* Tap-outside backdrop */}
+                  <div className="fixed inset-0 z-40" onClick={() => setCurrencyOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="absolute right-0 top-[calc(100%+6px)] z-50 w-[220px] max-h-[280px] overflow-y-auto rounded-xl bg-surface-3 border border-border-subtle shadow-xl p-1"
+                  >
+                    {SUPPORTED_CURRENCIES.map((opt) => (
+                      <button
+                        key={opt.code}
+                        type="button"
+                        onClick={() => { setCurrency(opt.code); setCurrencyOpen(false); }}
+                        className={cn(
+                          'w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-colors',
+                          currency === opt.code ? 'bg-neon/15 text-neon' : 'text-text-secondary active:bg-surface-4'
+                        )}
+                      >
+                        <span className="w-6 text-center text-sm font-bold">{opt.symbol}</span>
+                        <span className="text-[11px] font-semibold w-9">{opt.code}</span>
+                        <span className="text-[11px] text-text-muted truncate">{t(opt.nameKey)}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </motion.div>

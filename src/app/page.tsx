@@ -41,6 +41,7 @@ import { isMonetizationEnabled } from '@/lib/monetization';
 import { getDemoSubscriptions, hasDemoData, isDemoId } from '@/lib/demoData';
 import { ModeSwitch } from '@/components/layout/ModeSwitch';
 import { matchesMode, visibleModes, type AppMode } from '@/lib/obligations';
+import { LoanList } from '@/components/loan/LoanList';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -538,7 +539,12 @@ export default function Home() {
               <ModeSwitch modes={modes} active={appMode} onChange={setAppMode} />
             )}
             {activeTab === 'home' && appMode !== 'subscriptions' && (
-              <div className="px-5 pt-6 text-center text-text-muted text-sm">{t('mode.comingSoon')}</div>
+              <LoanList
+                obligations={modeSubscriptions}
+                mode={appMode}
+                onTap={openDetail}
+                onAddTap={openAdd}
+              />
             )}
             {activeTab === 'home' && appMode === 'subscriptions' && (
               <HomeTab

@@ -169,6 +169,8 @@ const dict: Translations = {
   // ── Modals ──
   'modal.newSubscription': { ru: 'Новая подписка', en: 'New subscription' },
   'modal.editSubscription': { ru: 'Редактирование', en: 'Edit' },
+  'modal.newCredit': { ru: 'Новый кредит', en: 'New credit' },
+  'modal.newMortgage': { ru: 'Новая ипотека', en: 'New mortgage' },
 
   // ── Dashboard ──
   'dashboard.perMonth': { ru: 'В месяц', en: 'Per month' },

@@ -42,6 +42,7 @@ import { getDemoSubscriptions, hasDemoData, isDemoId } from '@/lib/demoData';
 import { ModeSwitch } from '@/components/layout/ModeSwitch';
 import { matchesMode, visibleModes, type AppMode } from '@/lib/obligations';
 import { LoanList } from '@/components/loan/LoanList';
+import { isLoan } from '@/lib/obligations';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -51,6 +52,10 @@ const SubForm = dynamic(() =>
 );
 const SubDetail = dynamic(() =>
   import('@/components/subscription/SubDetail').then((m) => ({ default: m.SubDetail })),
+  { ssr: false }
+);
+const LoanForm = dynamic(() =>
+  import('@/components/loan/LoanForm').then((m) => ({ default: m.LoanForm })),
   { ssr: false }
 );
 const SettingsPage = dynamic(() =>
@@ -646,24 +651,43 @@ export default function Home() {
       <Modal
         open={showAddModal}
         onClose={closeAdd}
-        title={t('modal.newSubscription')}
+        title={
+          appMode === 'credits'
+            ? (t('modal.newCredit'))
+            : appMode === 'mortgages'
+              ? (t('modal.newMortgage'))
+              : t('modal.newSubscription')
+        }
       >
-        <SubForm
-          mode="add"
-          serviceTemplate={prefillService ?? undefined}
-          categories={categories}
-          existingSubscriptions={activeSubscriptions}
-          onSubmit={async (data) => {
-            // Adding a real subscription clears the sample data so the two never mix.
-            if (hasDemoActive) clearDemoData();
-            await wsAddSubscription(data);
-            closeAdd();
-          }}
-          onAddCategory={addCategory}
-          onClose={closeAdd}
-          settings={settings}
-          currentMonthlyTotal={getTotalMonthlyActive(settings.displayCurrency, resolveRates(settings))}
-        />
+        {appMode !== 'subscriptions' ? (
+          <LoanForm
+            mode="add"
+            obligationKind={appMode === 'mortgages' ? 'mortgage' : 'credit'}
+            onSubmit={async (data) => {
+              if (hasDemoActive) clearDemoData();
+              await wsAddSubscription(data);
+              closeAdd();
+            }}
+            onClose={closeAdd}
+          />
+        ) : (
+          <SubForm
+            mode="add"
+            serviceTemplate={prefillService ?? undefined}
+            categories={categories}
+            existingSubscriptions={activeSubscriptions}
+            onSubmit={async (data) => {
+              // Adding a real subscription clears the sample data so the two never mix.
+              if (hasDemoActive) clearDemoData();
+              await wsAddSubscription(data);
+              closeAdd();
+            }}
+            onAddCategory={addCategory}
+            onClose={closeAdd}
+            settings={settings}
+            currentMonthlyTotal={getTotalMonthlyActive(settings.displayCurrency, resolveRates(settings))}
+          />
+        )}
       </Modal>
 
       {/* Detail Modal */}
@@ -673,7 +697,23 @@ export default function Home() {
         title={detailSub?.name}
         size="full"
       >
-        {detailSub && (
+        {detailSub && (isLoan(detailSub) ? (
+          <LoanForm
+            mode="edit"
+            obligationKind={detailSub.kind === 'mortgage' ? 'mortgage' : 'credit'}
+            initialData={detailSub}
+            onSubmit={async (data) => {
+              await wsUpdateSubscription(detailSub.id, data);
+              closeDetail();
+            }}
+            onDelete={() => {
+              const idToDelete = detailSub.id;
+              closeDetail();
+              setTimeout(() => wsDeleteSubscription(idToDelete), 400);
+            }}
+            onClose={closeDetail}
+          />
+        ) : (
           <SubDetail
             subscription={detailSub}
             category={categories.find((c) => c.id === detailSub.category)}
@@ -705,7 +745,7 @@ export default function Home() {
               setTimeout(() => wsDeleteSubscription(idToDelete), 400);
             }}
           />
-        )}
+        ))}
       </Modal>
 
       {/* Edit Modal */}

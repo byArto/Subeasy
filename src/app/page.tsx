@@ -577,7 +577,7 @@ export default function Home() {
             )}
             {activeTab === 'analytics' && (
               <AnalyticsPage
-                subscriptions={activeSubscriptions}
+                subscriptions={modeSubscriptions}
                 categories={categories}
                 settings={settings}
                 onSubTap={openDetail}
@@ -587,7 +587,7 @@ export default function Home() {
             )}
             {activeTab === 'calendar' && (
               <CalendarPage
-                subscriptions={activeSubscriptions}
+                subscriptions={modeSubscriptions}
                 settings={settings}
                 onSubTap={openDetail}
               />

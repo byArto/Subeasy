@@ -1,13 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { Subscription, AppSettings } from '@/lib/types';
 import { Badge, Button } from '@/components/ui';
 import { AmortizationTable } from './AmortizationTable';
 import { cn, getDaysUntilPayment, getThemeAccentColor } from '@/lib/utils';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { buildSchedule, summarizeLoan, loanProgressPct, type LoanInput } from '@/lib/loanUtils';
+import { buildSchedule, summarizeLoan, loanProgressPct, applyExtraPayment, type ExtraStrategy } from '@/lib/loanUtils';
+import { obligationToLoanInput } from '@/lib/obligations';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
@@ -32,10 +34,29 @@ function formatShort(iso: string, lang: string): string {
   return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
+/** "15000000" → "15 000 000" for display; parse back ignoring spaces/commas. */
+function fmtNum(raw: string): string {
+  if (!raw) return '';
+  const [int, dec] = raw.split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return dec !== undefined ? `${grouped}.${dec}` : grouped;
+}
+function parseNum(s: string): number {
+  return parseFloat(s.replace(/\s/g, '').replace(',', '.')) || 0;
+}
+
+type ExtraKind = 'lump' | 'monthly';
+
 export function LoanDetail({ obligation: o, settings, onClose, onEdit, onDelete }: LoanDetailProps) {
   const { lang, t } = useLanguage();
   const { theme } = useTheme();
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  // Досрочное погашение
+  const [extraOpen, setExtraOpen] = useState(false);
+  const [extraAmount, setExtraAmount] = useState('');
+  const [extraKind, setExtraKind] = useState<ExtraKind>('lump');
+  const [extraStrategy, setExtraStrategy] = useState<ExtraStrategy>('reduceTerm');
   const accentColor = getThemeAccentColor(o.color, theme);
   const symbol = CURRENCY_SYMBOLS[o.currency] || o.currency;
   const monogram = (o.lender ?? o.name).charAt(0).toUpperCase();
@@ -54,26 +75,21 @@ export function LoanDetail({ obligation: o, settings, onClose, onEdit, onDelete 
     : null;
 
   // Build amortization if we have enough data
-  const loanInput = useMemo((): LoanInput | null => {
-    const bal = o.outstandingBalance;
-    if (!bal || bal <= 0) return null;
-    // Infer term if not provided: balance / payment, capped at 360
-    const term = o.termMonths && o.termMonths > 0
-      ? o.termMonths
-      : o.price > 0 ? Math.min(Math.ceil(bal / o.price), 360) : 0;
-    if (term <= 0) return null;
-    return {
-      balance: bal,
-      annualRatePct: o.interestRate ?? 0,
-      termMonths: term,
-      scheme: o.paymentScheme ?? 'annuity',
-      startDate: o.nextPaymentDate,
-      monthlyPayment: o.price > 0 ? o.price : undefined,
-    };
-  }, [o]);
+  const loanInput = useMemo(() => obligationToLoanInput(o), [o]);
 
   const schedule = useMemo(() => loanInput ? buildSchedule(loanInput) : [], [loanInput]);
   const summary = useMemo(() => loanInput ? summarizeLoan(loanInput) : null, [loanInput]);
+
+  // Расчёт досрочного погашения по введённой сумме
+  const extraResult = useMemo(() => {
+    if (!loanInput) return null;
+    const amt = parseNum(extraAmount);
+    if (amt <= 0) return null;
+    const opts = extraKind === 'monthly'
+      ? { strategy: 'reduceTerm' as ExtraStrategy, extraMonthly: amt }
+      : { strategy: extraStrategy, lumpSum: amt };
+    return applyExtraPayment(loanInput, opts);
+  }, [loanInput, extraAmount, extraKind, extraStrategy]);
 
   return (
     <div className="flex flex-col gap-5 pb-6">
@@ -184,6 +200,146 @@ export function LoanDetail({ obligation: o, settings, onClose, onEdit, onDelete 
               <p className="text-[15px] font-bold text-text">{o.interestRate}%</p>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {/* Досрочное погашение (early repayment what-if) */}
+      {loanInput && (
+        <div className="bg-surface-2 rounded-2xl p-4">
+          <button
+            type="button"
+            onClick={() => { haptic.tap(); setExtraOpen((v) => !v); }}
+            className="flex items-center justify-between w-full"
+          >
+            <span className="text-[14px] font-bold text-text">
+              {lang === 'en' ? '💰 Early repayment' : '💰 Досрочное погашение'}
+            </span>
+            <motion.span animate={{ rotate: extraOpen ? 180 : 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}>
+              <ChevronDownIcon className="w-4 h-4 text-text-muted" />
+            </motion.span>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {extraOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="overflow-hidden"
+              >
+                <div className="flex flex-col gap-3 pt-4">
+                  {/* Amount */}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={fmtNum(extraAmount)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\s/g, '').replace(',', '.');
+                      if (raw === '' || /^\d*\.?\d*$/.test(raw)) setExtraAmount(raw);
+                    }}
+                    placeholder={lang === 'en' ? 'Extra amount' : 'Сумма доплаты'}
+                    className="w-full min-h-[44px] px-3.5 rounded-xl bg-surface-3 border border-border-subtle text-sm text-text tabular-nums outline-none focus:border-neon/40"
+                  />
+
+                  {/* Kind: one-time vs recurring */}
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { v: 'lump' as ExtraKind, ru: 'Разовый', en: 'One-time' },
+                      { v: 'monthly' as ExtraKind, ru: 'Ежемесячно', en: 'Monthly' },
+                    ]).map(({ v, ru, en }) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setExtraKind(v)}
+                        className={cn(
+                          'py-2 rounded-xl text-[13px] font-semibold transition-colors',
+                          extraKind === v ? 'bg-neon text-surface' : 'bg-surface-3 border border-border-subtle text-text-secondary'
+                        )}
+                      >
+                        {lang === 'en' ? en : ru}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Strategy: only meaningful for a one-time lump sum */}
+                  {extraKind === 'lump' ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {([
+                        { v: 'reduceTerm' as ExtraStrategy, ru: 'Сократить срок', en: 'Cut term' },
+                        { v: 'reducePayment' as ExtraStrategy, ru: 'Снизить платёж', en: 'Lower payment' },
+                      ]).map(({ v, ru, en }) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setExtraStrategy(v)}
+                          className={cn(
+                            'py-2 rounded-xl text-[13px] font-semibold transition-colors',
+                            extraStrategy === v ? 'bg-neon text-surface' : 'bg-surface-3 border border-border-subtle text-text-secondary'
+                          )}
+                        >
+                          {lang === 'en' ? en : ru}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-text-muted px-0.5">
+                      {lang === 'en'
+                        ? 'Recurring extra payments shorten the term.'
+                        : 'Ежемесячные доплаты сокращают срок кредита.'}
+                    </p>
+                  )}
+
+                  {/* Result */}
+                  {extraResult && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="grid grid-cols-2 gap-2 pt-1"
+                    >
+                      {extraStrategy === 'reducePayment' && extraKind === 'lump' ? (
+                        <div className="bg-surface-3 rounded-xl p-3">
+                          <p className="text-[11px] text-text-secondary mb-0.5">
+                            {lang === 'en' ? 'New payment' : 'Новый платёж'}
+                          </p>
+                          <p className="text-[15px] font-bold text-neon">
+                            {Math.round(extraResult.newMonthlyPayment).toLocaleString('ru-RU')} {symbol}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-surface-3 rounded-xl p-3">
+                          <p className="text-[11px] text-text-secondary mb-0.5">
+                            {lang === 'en' ? 'Closes earlier' : 'Закрытие раньше'}
+                          </p>
+                          <p className="text-[15px] font-bold text-neon">
+                            {extraResult.monthsSaved} {lang === 'en' ? 'mo' : 'мес'}
+                          </p>
+                        </div>
+                      )}
+                      <div className="bg-surface-3 rounded-xl p-3">
+                        <p className="text-[11px] text-text-secondary mb-0.5">
+                          {lang === 'en' ? 'Interest saved' : 'Экономия'}
+                        </p>
+                        <p className="text-[15px] font-bold text-success">
+                          {Math.round(extraResult.interestSaved).toLocaleString('ru-RU')} {symbol}
+                        </p>
+                      </div>
+                      {extraResult.next.payoffDate && (
+                        <div className="bg-surface-3 rounded-xl p-3 col-span-2">
+                          <p className="text-[11px] text-text-secondary mb-0.5">
+                            {lang === 'en' ? 'New payoff date' : 'Новая дата закрытия'}
+                          </p>
+                          <p className="text-[14px] font-semibold text-text">
+                            {formatDate(extraResult.next.payoffDate, lang)}
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 

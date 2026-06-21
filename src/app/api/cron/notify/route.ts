@@ -55,18 +55,18 @@ function dateLabel(daysUntil: number, isoDate: string, isRu: boolean): string {
     : `In ${daysUntil} days, <b>${formatted}</b>`;
 }
 
-function buildMessage(
+const isLoanKind = (kind: unknown): boolean => kind === 'credit' || kind === 'mortgage';
+
+/** Renders one block: due-date sections + accumulated total (in display currency). */
+function renderGroups(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   subs: any[],
   todayStr: string,
   displayCurrency: string,
   rates: Record<string, number>,
-  lang: string,
-): string {
-  const isRu = lang === 'ru';
-  const sym = CURRENCY_SYMBOLS[displayCurrency] ?? displayCurrency;
-  const header = isRu ? '🔔 <b>SubEasy · Напоминание</b>' : '🔔 <b>SubEasy · Reminder</b>';
-
+  isRu: boolean,
+  sym: string,
+): { sections: string[]; total: number } {
   // Group by next_payment_date (already sorted ascending from DB)
   const groups = new Map<string, typeof subs>();
   for (const sub of subs) {
@@ -102,16 +102,43 @@ function buildMessage(
     sections.push(`${label}:\n${rows.join('\n')}`);
   }
 
-  const totalStr = total >= 10 ? Math.round(total) : total.toFixed(2);
-  const totalLine = isRu
-    ? `💸 Итого: <b>${totalStr} ${sym}</b>`
-    : `💸 Total: <b>${totalStr} ${sym}</b>`;
+  return { sections, total };
+}
 
+function buildMessage(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  subs: any[],
+  todayStr: string,
+  displayCurrency: string,
+  rates: Record<string, number>,
+  lang: string,
+): string {
+  const isRu = lang === 'ru';
+  const sym = CURRENCY_SYMBOLS[displayCurrency] ?? displayCurrency;
+  const header = isRu ? '🔔 <b>SubEasy · Напоминание</b>' : '🔔 <b>SubEasy · Reminder</b>';
+
+  // Subscriptions and loans are reported in separate blocks so the subscription
+  // "Итого" is not silently inflated by credit / mortgage payments.
+  const subsOnly = subs.filter((s) => !isLoanKind(s.kind));
+  const loansOnly = subs.filter((s) => isLoanKind(s.kind));
+
+  const fmtTotal = (n: number) => (n >= 10 ? Math.round(n) : n.toFixed(2));
   const lines = [header, ''];
-  for (const section of sections) {
-    lines.push(section, '');
+
+  if (subsOnly.length > 0) {
+    const { sections, total } = renderGroups(subsOnly, todayStr, displayCurrency, rates, isRu, sym);
+    for (const section of sections) lines.push(section, '');
+    lines.push(isRu ? `💸 Итого: <b>${fmtTotal(total)} ${sym}</b>` : `💸 Total: <b>${fmtTotal(total)} ${sym}</b>`);
   }
-  lines.push(totalLine);
+
+  if (loansOnly.length > 0) {
+    if (subsOnly.length > 0) lines.push('');
+    lines.push(isRu ? '🏦 <b>Кредиты и ипотека</b>' : '🏦 <b>Loans &amp; mortgage</b>', '');
+    const { sections, total } = renderGroups(loansOnly, todayStr, displayCurrency, rates, isRu, sym);
+    for (const section of sections) lines.push(section, '');
+    lines.push(isRu ? `💸 По кредитам: <b>${fmtTotal(total)} ${sym}</b>` : `💸 Loans total: <b>${fmtTotal(total)} ${sym}</b>`);
+  }
+
   return lines.join('\n');
 }
 
@@ -274,7 +301,7 @@ export async function GET(req: NextRequest) {
             // All subscriptions due within [today, today + daysUntil]
             const { data: subs } = await supabase
               .from('subscriptions')
-              .select('name, icon, price, currency, cycle, next_payment_date')
+              .select('name, icon, price, currency, cycle, next_payment_date, kind')
               .eq('user_id', profile.id)
               .eq('is_active', true)
               .gte('next_payment_date', todayStr)

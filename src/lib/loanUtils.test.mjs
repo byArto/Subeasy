@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
 const jiti = require('jiti')(fileURLToPath(import.meta.url));
-const { annuityPayment, buildSchedule, summarizeLoan, loanProgressPct } = jiti('./loanUtils.ts');
+const { annuityPayment, buildSchedule, summarizeLoan, loanProgressPct, applyExtraPayment } = jiti('./loanUtils.ts');
+
+const baseLoan = { balance: 100000, annualRatePct: 12, termMonths: 12, scheme: 'annuity', startDate: '2026-07-01' };
 
 test('annuity payment matches the standard formula', () => {
   // 100000 @ 12%/year, 12 months → ≈ 8884.88
@@ -41,4 +43,40 @@ test('summarizeLoan returns payoff date and total interest', () => {
 test('progress percent from principal and outstanding', () => {
   assert.equal(loanProgressPct(500000, 340000), 32);
   assert.equal(loanProgressPct(0, 0), 0);
+});
+
+test('extra payment: no extra equals baseline', () => {
+  const r = applyExtraPayment(baseLoan, { strategy: 'reduceTerm' });
+  assert.equal(r.monthsSaved, 0);
+  assert.equal(r.interestSaved, 0);
+  assert.equal(r.next.remainingPayments, 12);
+});
+
+test('extra payment: recurring extra (reduce term) shortens loan and saves interest', () => {
+  const r = applyExtraPayment(baseLoan, { strategy: 'reduceTerm', extraMonthly: 3000 });
+  assert.ok(r.next.remainingPayments < 12, 'fewer payments');
+  assert.ok(r.monthsSaved > 0, 'months saved');
+  assert.ok(r.interestSaved > 0, 'interest saved');
+});
+
+test('extra payment: lump sum (reduce term) shortens loan', () => {
+  const r = applyExtraPayment(baseLoan, { strategy: 'reduceTerm', lumpSum: 30000 });
+  assert.ok(r.next.remainingPayments < 12);
+  assert.ok(r.monthsSaved > 0);
+  assert.ok(r.interestSaved > 0);
+});
+
+test('extra payment: lump sum (reduce payment) lowers monthly, keeps term', () => {
+  const base = summarizeLoan(baseLoan);
+  const r = applyExtraPayment(baseLoan, { strategy: 'reducePayment', lumpSum: 30000 });
+  assert.equal(r.next.remainingPayments, 12, 'same term');
+  assert.equal(r.monthsSaved, 0);
+  assert.ok(r.newMonthlyPayment < base.monthlyPayment, 'lower payment');
+  assert.ok(r.interestSaved > 0, 'interest saved');
+});
+
+test('extra payment: huge extra pays off almost immediately', () => {
+  const r = applyExtraPayment(baseLoan, { strategy: 'reduceTerm', lumpSum: 95000 });
+  assert.ok(r.next.remainingPayments <= 2);
+  assert.ok(r.schedule[r.schedule.length - 1].balance < 1);
 });

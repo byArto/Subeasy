@@ -39,6 +39,8 @@ import { getAuthToken } from '@/lib/supabase';
 import { deletePersonalSubscription } from '@/lib/sync';
 import { isMonetizationEnabled } from '@/lib/monetization';
 import { getDemoSubscriptions, hasDemoData, isDemoId } from '@/lib/demoData';
+import { ModeSwitch } from '@/components/layout/ModeSwitch';
+import { matchesMode, visibleModes, type AppMode } from '@/lib/obligations';
 
 
 /* ── Lazy-loaded heavy components ── */
@@ -84,6 +86,7 @@ export default function Home() {
 
   const [splashDone, setSplashDone] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('home');
+  const [appMode, setAppMode] = useState<AppMode>('subscriptions');
   // One-shot deep-link target for the Settings tab (e.g. from the Family promo).
   const [settingsScrollTo, setSettingsScrollTo] = useState<string | null>(null);
   const clearSettingsScroll = useCallback(() => setSettingsScrollTo(null), []);
@@ -182,6 +185,15 @@ export default function Home() {
 
   // When workspace mode is active, show workspace pool instead of personal subs
   const activeSubscriptions = isWorkspaceActive ? workspaceSubscriptions : subscriptions;
+
+  // Obligation modes (Subscriptions / Credits / Mortgages) — opt-in via settings.
+  const modes = useMemo(() => visibleModes(settings.enabledSections), [settings.enabledSections]);
+  const modeSubscriptions = useMemo(
+    () => activeSubscriptions.filter((s) => matchesMode(s, appMode)),
+    [activeSubscriptions, appMode],
+  );
+  // Collapse to subscriptions if the active mode's section got disabled.
+  useEffect(() => { if (!modes.includes(appMode)) setAppMode('subscriptions'); }, [modes, appMode]);
 
   // Demo / sample data (personal mode only) — local-only, never synced.
   const hasDemoActive = useMemo(() => hasDemoData(subscriptions), [subscriptions]);
@@ -522,9 +534,15 @@ export default function Home() {
             transition={{ duration: 0.08 }}
             className="pb-24"
           >
-            {activeTab === 'home' && (
+            {activeTab !== 'settings' && (
+              <ModeSwitch modes={modes} active={appMode} onChange={setAppMode} />
+            )}
+            {activeTab === 'home' && appMode !== 'subscriptions' && (
+              <div className="px-5 pt-6 text-center text-text-muted text-sm">{t('mode.comingSoon')}</div>
+            )}
+            {activeTab === 'home' && appMode === 'subscriptions' && (
               <HomeTab
-                subscriptions={activeSubscriptions}
+                subscriptions={modeSubscriptions}
                 categories={categories}
                 settings={settings}
                 getTotalMonthly={getTotalMonthlyActive}

@@ -379,6 +379,15 @@ button, a, [role="button"] {
   color: var(--app-selection-text);
 }
 
+/* ── Text caret ── */
+/* Tie the caret to the per-theme primary text colour so it never blends into
+   the background (e.g. the light "claude" theme). */
+input,
+textarea,
+[contenteditable] {
+  caret-color: var(--color-text-primary);
+}
+
 /* ── Focus visible ── */
 @layer base {
   :focus-visible {

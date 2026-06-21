@@ -656,6 +656,35 @@ export function SettingsPage({
         </div>
       </motion.div>
 
+      {/* ── 1. Разделы / Sections ── */}
+      <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
+        <SectionHeader title={t('settings.sections.title')} />
+        <div className="bg-surface-2 rounded-2xl border border-border-subtle overflow-hidden">
+          <p className="px-4 pt-3 pb-1 text-[11px] text-text-secondary leading-snug">{t('settings.sections.desc')}</p>
+          {([
+            { k: 'credits' as const, icon: '💳', title: t('mode.credits'), desc: t('settings.sections.creditsDesc') },
+            { k: 'mortgages' as const, icon: '🏦', title: t('mode.mortgages'), desc: t('settings.sections.mortgagesDesc') },
+          ]).map((row) => {
+            const en = settings.enabledSections ?? { credits: false, mortgages: false };
+            return (
+              <div key={row.k} className="flex items-center justify-between gap-3 px-4 py-3.5 border-t border-border-subtle">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-surface-3 flex items-center justify-center text-lg shrink-0">{row.icon}</div>
+                  <div className="min-w-0">
+                    <span className="text-sm text-text-primary font-medium">{row.title}</span>
+                    <p className="text-[11px] text-text-muted mt-0.5 leading-snug">{row.desc}</p>
+                  </div>
+                </div>
+                <NeonToggle
+                  value={en[row.k]}
+                  onToggle={() => updateSettings({ enabledSections: { ...en, [row.k]: !en[row.k] } })}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </motion.div>
+
       {/* ── 2. Валюта ── */}
       <motion.div custom={sectionIdx++} variants={sectionVariants} initial="hidden" animate="visible">
         <SectionHeader title={t('settings.currency.title')} />

@@ -10,6 +10,16 @@ const dict: Translations = {
   'nav.calendar': { ru: 'Календарь', en: 'Calendar', es: 'Calendario', tr: 'Takvim', de: 'Kalender', kk: 'Күнтізбе', hy: 'Օրաց.', pl: 'Kalendarz' },
   'nav.settings': { ru: 'Настройки', en: 'Settings', es: 'Ajustes', tr: 'Ayarlar', de: 'Einstellungen', kk: 'Параметр', hy: 'Կարգ.', pl: 'Ustawienia' },
 
+  // ── Modes / Sections (credits & mortgages) ──
+  'mode.subscriptions': { ru: 'Подписки', en: 'Subscriptions' },
+  'mode.credits': { ru: 'Кредиты', en: 'Credits' },
+  'mode.mortgages': { ru: 'Ипотека', en: 'Mortgage' },
+  'mode.comingSoon': { ru: 'Скоро здесь появится этот раздел', en: 'This section is coming soon' },
+  'settings.sections.title': { ru: 'Разделы', en: 'Sections' },
+  'settings.sections.desc': { ru: 'Включи то, что отслеживаешь. Подписки доступны всегда; кредиты и ипотека добавляются по желанию.', en: 'Enable what you track. Subscriptions are always on; credits and mortgage are optional.' },
+  'settings.sections.creditsDesc': { ru: 'Потреб, авто, рассрочки, долги', en: 'Consumer, auto, installments, debts' },
+  'settings.sections.mortgagesDesc': { ru: 'Жильё, график платежей, досрочка', en: 'Home loan, schedule, extra payments' },
+
   // ── Cycle suffixes ──
   'cycle.monthly': { ru: '/мес', en: '/mo' },
   'cycle.yearly': { ru: '/год', en: '/yr' },

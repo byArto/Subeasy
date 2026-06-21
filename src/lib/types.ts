@@ -8,6 +8,11 @@ export type BillingCycle = 'monthly' | 'yearly' | 'quarterly' | 'one-time' | 'tr
 // shifting the charge ~1 day earlier each calendar month.
 export type CycleAnchor = 'date' | 'days';
 
+// — Obligations (credits & mortgages) share the Subscription shape via `kind`. —
+export type ObligationKind = 'subscription' | 'credit' | 'mortgage';
+export type PaymentScheme = 'annuity' | 'differentiated';
+export type LoanType = 'consumer' | 'auto' | 'installment' | 'debt' | 'mortgage';
+
 export interface Subscription {
   id: string;
   name: string;
@@ -26,6 +31,17 @@ export interface Subscription {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  // — Obligation discriminator (absent ⇒ 'subscription') —
+  kind?: ObligationKind;
+  // — Кредит / ипотека: price = ежемесячный платёж (cycle='monthly') —
+  lender?: string;              // банк / кредитор
+  loanType?: LoanType;
+  principalAmount?: number;     // исходная сумма кредита
+  outstandingBalance?: number;  // остаток долга (заголовочное число)
+  interestRate?: number;        // ставка % годовых (0 = рассрочка)
+  termMonths?: number;          // оставшийся срок в месяцах
+  paymentScheme?: PaymentScheme;
+  propertyName?: string;        // только для ипотеки: объект недвижимости
   workspaceId?: string; // если подписка принадлежит workspace
 }
 
@@ -63,4 +79,5 @@ export interface AppSettings {
   notifyDaysBefore: number; // за сколько дней до платежа
   monthlyBudget?: number;      // PRO: месячный лимит расходов (0 = не задан)
   budgetCurrency?: DisplayCurrency; // валюта, в которой был введён бюджет
+  enabledSections?: { credits: boolean; mortgages: boolean }; // subscriptions всегда вкл
 }

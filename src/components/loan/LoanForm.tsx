@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import type { Subscription, Currency, ObligationKind, LoanType, PaymentScheme } from '@/lib/types';
-import { cn, generateId, getThemeAccentColor } from '@/lib/utils';
+import { cn, getThemeAccentColor } from '@/lib/utils';
 import { SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { Button } from '@/components/ui';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
+import { searchBanks, type BankTemplate } from '@/lib/banks';
 
 /* ── Constants ── */
 
@@ -27,13 +28,39 @@ const LOAN_TYPES: { value: LoanType; ruLabel: string; enLabel: string }[] = [
   { value: 'debt',     ruLabel: 'Долг',   enLabel: 'Debt' },
 ];
 
+/* ── Number formatting helpers ── */
+
+/** Format raw numeric string with space as thousands separator: "15000000" → "15 000 000" */
+function fmtNum(raw: string): string {
+  if (!raw) return '';
+  const [int, dec] = raw.split('.');
+  const formatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return dec !== undefined ? `${formatted}.${dec}` : formatted;
+}
+
+/** Strip spaces and replace comma with dot to get a parseable number string */
+function stripNum(s: string): string {
+  return s.replace(/\s/g, '').replace(',', '.');
+}
+
+/** Parse a (possibly formatted) number string to float */
+function parseNum(s: string): number {
+  return parseFloat(stripNum(s)) || 0;
+}
+
+/** Handle a change event on a formatted number input.
+ *  Strips formatting, validates the raw value, calls setter if valid.
+ */
+function handleNumChange(value: string, setter: (v: string) => void) {
+  const raw = stripNum(value);
+  if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+    setter(raw);
+  }
+}
+
 /* ── Helpers ── */
 
 const today = () => new Date().toISOString().split('T')[0];
-
-function parseNum(s: string): number {
-  return parseFloat(s.replace(',', '.')) || 0;
-}
 
 function FieldLabel({ text, error }: { text: string; error?: string }) {
   return (
@@ -72,6 +99,9 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
   /* ── State ── */
   const [name, setName] = useState(initialData?.name ?? '');
   const [lender, setLender] = useState(initialData?.lender ?? '');
+  const [bankSuggestions, setBankSuggestions] = useState<BankTemplate[]>([]);
+
+  // Raw number strings (no formatting) — formatted on display
   const [outstandingBalance, setOutstandingBalance] = useState(
     initialData?.outstandingBalance?.toString() ?? ''
   );
@@ -107,15 +137,29 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
 
   const accentColor = getThemeAccentColor(color, theme);
 
+  /* ── Bank autocomplete ── */
+
+  function handleLenderChange(value: string) {
+    setLender(value);
+    setBankSuggestions(value.length >= 1 ? searchBanks(value) : []);
+  }
+
+  function applyBank(bank: BankTemplate) {
+    haptic.tap();
+    setLender(bank.name);
+    setColor(bank.color);
+    // Auto-fill name if empty or if it was the previously selected bank name
+    if (!name.trim() || name === lender) setName(bank.name);
+    setBankSuggestions([]);
+  }
+
   /* ── Validation + Submit ── */
 
   function validate(): boolean {
     const errs: FormErrors = {};
     if (!name.trim()) errs.name = lang === 'en' ? 'Required' : 'Обязательно';
-    const bal = parseNum(outstandingBalance);
-    if (!outstandingBalance || bal <= 0) errs.outstandingBalance = lang === 'en' ? 'Required' : 'Обязательно';
-    const pmt = parseNum(price);
-    if (!price || pmt <= 0) errs.price = lang === 'en' ? 'Required' : 'Обязательно';
+    if (parseNum(outstandingBalance) <= 0) errs.outstandingBalance = lang === 'en' ? 'Required' : 'Обязательно';
+    if (parseNum(price) <= 0) errs.price = lang === 'en' ? 'Required' : 'Обязательно';
     if (!nextPaymentDate) errs.nextPaymentDate = lang === 'en' ? 'Required' : 'Обязательно';
     setErrors(errs);
     if (Object.keys(errs).length > 0) { haptic.error(); return false; }
@@ -169,36 +213,36 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
     'border-border-subtle focus:border-neon/40 focus:shadow-[var(--app-input-focus-shadow)]'
   );
 
+  // Shared classes for formatted number inputs
+  const numFieldCls = cn(fieldCls, 'tabular-nums');
+
   return (
     <div className="flex flex-col gap-4 pb-6">
 
       {/* Name + Color */}
       <div>
-        <FieldLabel
-          text={lang === 'en' ? 'Name' : 'Название'}
-          error={errors.name}
-        />
+        <FieldLabel text={lang === 'en' ? 'Name' : 'Название'} error={errors.name} />
         <div className="flex gap-2">
           <input
             type="text"
             value={name}
             onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: undefined })); }}
-            placeholder={isMortgage ? (lang === 'en' ? 'e.g. Sberbank mortgage' : 'Напр. Ипотека Сбер') : (lang === 'en' ? 'e.g. Consumer loan' : 'Напр. Кредит')}
+            placeholder={isMortgage
+              ? (lang === 'en' ? 'e.g. Sberbank mortgage' : 'Напр. Ипотека Сбер')
+              : (lang === 'en' ? 'e.g. Consumer loan' : 'Напр. Кредит Тинькофф')}
             className={cn(fieldCls, 'flex-1', errors.name && 'border-danger/40')}
           />
-          {/* Color dot */}
-          <div className="relative">
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.92 }}
-              onClick={() => {}} // сворачивать не будем — простая палитра ниже
-              className="w-[48px] h-[48px] rounded-xl border border-border-subtle bg-surface-2 flex items-center justify-center"
-            >
-              <span className="w-5 h-5 rounded-full" style={{ backgroundColor: accentColor }} />
-            </motion.button>
+          {/* Color swatch */}
+          <div
+            className="w-[48px] h-[48px] rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: accentColor }}
+          >
+            <span className="text-white font-bold text-lg">
+              {(lender || name).charAt(0).toUpperCase() || '?'}
+            </span>
           </div>
         </div>
-        {/* Color palette — always visible */}
+        {/* Color palette */}
         <div className="flex gap-2 mt-2 flex-wrap">
           {COLOR_PALETTE.map((c) => (
             <button
@@ -215,19 +259,51 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
         </div>
       </div>
 
-      {/* Lender */}
-      <div>
+      {/* Bank / Lender with autocomplete */}
+      <div className="relative">
         <FieldLabel text={lang === 'en' ? 'Bank / Lender' : 'Банк / Кредитор'} />
         <input
           type="text"
           value={lender}
-          onChange={(e) => setLender(e.target.value)}
+          onChange={(e) => handleLenderChange(e.target.value)}
+          onBlur={() => setTimeout(() => setBankSuggestions([]), 150)}
           placeholder={lang === 'en' ? 'Sberbank, Tinkoff…' : 'Сбер, Тинькофф…'}
           className={fieldCls}
+          autoComplete="off"
         />
+        <AnimatePresence>
+          {bankSuggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl bg-surface-3 border border-border-subtle shadow-xl overflow-hidden"
+            >
+              {bankSuggestions.map((bank) => (
+                <button
+                  key={bank.name}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()} // prevent blur before click
+                  onClick={() => applyBank(bank)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-4 active:bg-surface-4 transition-colors text-left"
+                >
+                  {/* Mini monogram */}
+                  <span
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[12px] font-bold shrink-0"
+                    style={{ backgroundColor: bank.color }}
+                  >
+                    {bank.name.charAt(0)}
+                  </span>
+                  <span className="text-[14px] text-text-primary font-medium">{bank.name}</span>
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Outstanding balance */}
+      {/* Outstanding balance + Currency */}
       <div>
         <FieldLabel
           text={lang === 'en' ? 'Outstanding balance' : 'Остаток долга'}
@@ -235,13 +311,15 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
         />
         <div className="flex gap-2">
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            value={outstandingBalance}
-            onChange={(e) => { setOutstandingBalance(e.target.value); setErrors((p) => ({ ...p, outstandingBalance: undefined })); }}
+            value={fmtNum(outstandingBalance)}
+            onChange={(e) => {
+              handleNumChange(e.target.value, setOutstandingBalance);
+              setErrors((p) => ({ ...p, outstandingBalance: undefined }));
+            }}
             placeholder="0"
-            className={cn(fieldCls, 'flex-1 appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-              errors.outstandingBalance && 'border-danger/40')}
+            className={cn(numFieldCls, 'flex-1', errors.outstandingBalance && 'border-danger/40')}
           />
           {/* Currency picker */}
           <div className="relative">
@@ -298,13 +376,15 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
           error={errors.price}
         />
         <input
-          type="number"
+          type="text"
           inputMode="decimal"
-          value={price}
-          onChange={(e) => { setPrice(e.target.value); setErrors((p) => ({ ...p, price: undefined })); }}
+          value={fmtNum(price)}
+          onChange={(e) => {
+            handleNumChange(e.target.value, setPrice);
+            setErrors((p) => ({ ...p, price: undefined }));
+          }}
           placeholder="0"
-          className={cn(fieldCls, 'appearance-none [&::-webkit-inner-spin-button]:appearance-none',
-            errors.price && 'border-danger/40')}
+          className={cn(numFieldCls, errors.price && 'border-danger/40')}
         />
       </div>
 
@@ -322,7 +402,7 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
         />
       </div>
 
-      {/* Loan type (only for credits) */}
+      {/* Loan type (credits only) */}
       {!isMortgage && (
         <div>
           <FieldLabel text={lang === 'en' ? 'Loan type' : 'Тип кредита'} />
@@ -346,7 +426,7 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
         </div>
       )}
 
-      {/* Property name (only for mortgage) */}
+      {/* Property name (mortgage only) */}
       {isMortgage && (
         <div>
           <FieldLabel text={lang === 'en' ? 'Property address / name' : 'Адрес / название объекта'} />
@@ -360,7 +440,7 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
         </div>
       )}
 
-      {/* Details section toggle */}
+      {/* Details toggle */}
       <motion.button
         type="button"
         whileTap={{ scale: 0.98 }}
@@ -385,16 +465,16 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             className="flex flex-col gap-4 overflow-hidden"
           >
-            {/* Principal amount */}
+            {/* Original loan amount */}
             <div>
               <FieldLabel text={lang === 'en' ? 'Original loan amount' : 'Исходная сумма кредита'} />
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
-                value={principalAmount}
-                onChange={(e) => setPrincipalAmount(e.target.value)}
+                value={fmtNum(principalAmount)}
+                onChange={(e) => handleNumChange(e.target.value, setPrincipalAmount)}
                 placeholder={lang === 'en' ? 'For progress bar' : 'Для прогресс-бара'}
-                className={cn(fieldCls, 'appearance-none [&::-webkit-inner-spin-button]:appearance-none')}
+                className={numFieldCls}
               />
             </div>
 
@@ -402,12 +482,15 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
             <div>
               <FieldLabel text={lang === 'en' ? 'Annual interest rate (%)' : 'Ставка % годовых'} />
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value.replace(',', '.');
+                  if (v === '' || /^\d*\.?\d*$/.test(v)) setInterestRate(v);
+                }}
                 placeholder="0"
-                className={cn(fieldCls, 'appearance-none [&::-webkit-inner-spin-button]:appearance-none')}
+                className={fieldCls}
               />
             </div>
 
@@ -415,43 +498,70 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
             <div>
               <FieldLabel text={lang === 'en' ? 'Remaining term (months)' : 'Оставшийся срок (мес)'} />
               <input
-                type="number"
+                type="text"
                 inputMode="numeric"
                 value={termMonths}
-                onChange={(e) => setTermMonths(e.target.value)}
-                placeholder="0"
-                className={cn(fieldCls, 'appearance-none [&::-webkit-inner-spin-button]:appearance-none')}
+                onChange={(e) => {
+                  const v = e.target.value.replace(/\D/g, '');
+                  setTermMonths(v);
+                }}
+                placeholder={lang === 'en' ? 'e.g. 240' : 'напр. 240'}
+                className={fieldCls}
               />
             </div>
 
-            {/* Payment scheme */}
+            {/* Payment scheme with info tooltips */}
             <div>
               <FieldLabel text={lang === 'en' ? 'Payment scheme' : 'Схема погашения'} />
               <div className="flex gap-2">
-                {(['annuity', 'differentiated'] as PaymentScheme[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setPaymentScheme(s)}
-                    className={cn(
-                      'flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-colors',
-                      paymentScheme === s
-                        ? 'bg-neon text-surface'
-                        : 'bg-surface-2 border border-border-subtle text-text-secondary'
-                    )}
-                  >
-                    {s === 'annuity'
-                      ? (lang === 'en' ? 'Annuity' : 'Аннуитет')
-                      : (lang === 'en' ? 'Differentiated' : 'Дифференц.')}
-                  </button>
-                ))}
+                {([
+                  {
+                    value: 'annuity' as PaymentScheme,
+                    label: lang === 'en' ? 'Annuity' : 'Аннуитет',
+                    hint: lang === 'en'
+                      ? 'Same payment every month. Higher total interest, but easy to budget.'
+                      : 'Одинаковый платёж весь срок. Чуть больше переплата, зато легко планировать бюджет.',
+                  },
+                  {
+                    value: 'differentiated' as PaymentScheme,
+                    label: lang === 'en' ? 'Differentiated' : 'Дифференц.',
+                    hint: lang === 'en'
+                      ? 'First payments are higher, last ones lower. Less total interest paid.'
+                      : 'Первые платежи больше, последние меньше. Итоговая переплата ниже.',
+                  },
+                ]).map(({ value: s, label, hint }) => {
+                  const isActive = paymentScheme === s;
+                  return (
+                    <div key={s} className="flex-1 flex flex-col gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setPaymentScheme(s)}
+                        className={cn(
+                          'w-full py-2.5 rounded-xl text-[13px] font-semibold transition-colors',
+                          isActive
+                            ? 'bg-neon text-surface'
+                            : 'bg-surface-2 border border-border-subtle text-text-secondary'
+                        )}
+                      >
+                        {label}
+                      </button>
+                      {/* Inline hint — always visible under each button */}
+                      <p className={cn(
+                        'text-[11px] leading-relaxed px-0.5 transition-colors',
+                        isActive ? 'text-text-secondary' : 'text-text-muted'
+                      )}>
+                        {hint}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Buttons */}
+      {/* Action buttons */}
       <div className="flex gap-3 pt-2">
         {mode === 'edit' && onDelete && (
           confirmDelete ? (
@@ -476,11 +586,7 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
             </motion.button>
           )
         )}
-        <Button
-          variant="primary"
-          className="flex-1"
-          onClick={handleSubmit}
-        >
+        <Button variant="primary" className="flex-1" onClick={handleSubmit}>
           {mode === 'add'
             ? (lang === 'en' ? 'Add' : 'Добавить')
             : (lang === 'en' ? 'Save' : 'Сохранить')}

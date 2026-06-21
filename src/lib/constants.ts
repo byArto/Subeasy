@@ -47,6 +47,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   notificationsEnabled: true,
   notifyDaysBefore: 3,
   monthlyBudget: 0,
+  enabledSections: { credits: false, mortgages: false },
 };
 
 export const CURRENCY_SYMBOLS: Record<string, string> = {

@@ -58,6 +58,10 @@ const LoanForm = dynamic(() =>
   import('@/components/loan/LoanForm').then((m) => ({ default: m.LoanForm })),
   { ssr: false }
 );
+const LoanDetail = dynamic(() =>
+  import('@/components/loan/LoanDetail').then((m) => ({ default: m.LoanDetail })),
+  { ssr: false }
+);
 const SettingsPage = dynamic(() =>
   import('@/components/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
   { ssr: false }
@@ -698,20 +702,19 @@ export default function Home() {
         size="full"
       >
         {detailSub && (isLoan(detailSub) ? (
-          <LoanForm
-            mode="edit"
-            obligationKind={detailSub.kind === 'mortgage' ? 'mortgage' : 'credit'}
-            initialData={detailSub}
-            onSubmit={async (data) => {
-              await wsUpdateSubscription(detailSub.id, data);
-              closeDetail();
+          <LoanDetail
+            obligation={detailSub}
+            settings={settings}
+            onClose={closeDetail}
+            onEdit={() => {
+              setEditingSubId(selectedSubId);
+              setSelectedSubId(null);
             }}
             onDelete={() => {
               const idToDelete = detailSub.id;
               closeDetail();
               setTimeout(() => wsDeleteSubscription(idToDelete), 400);
             }}
-            onClose={closeDetail}
           />
         ) : (
           <SubDetail
@@ -752,9 +755,29 @@ export default function Home() {
       <Modal
         open={!!editingSubId}
         onClose={closeEdit}
-        title={t('modal.editSubscription')}
+        title={
+          editingSub && isLoan(editingSub)
+            ? (editingSub.kind === 'mortgage' ? t('modal.newMortgage') : t('modal.newCredit'))
+            : t('modal.editSubscription')
+        }
       >
-        {editingSub && (
+        {editingSub && (isLoan(editingSub) ? (
+          <LoanForm
+            mode="edit"
+            obligationKind={editingSub.kind === 'mortgage' ? 'mortgage' : 'credit'}
+            initialData={editingSub}
+            onSubmit={async (data) => {
+              await wsUpdateSubscription(editingSubId!, data);
+              closeEdit();
+            }}
+            onDelete={async () => {
+              const idToDelete = editingSubId!;
+              closeEdit();
+              await wsDeleteSubscription(idToDelete);
+            }}
+            onClose={closeEdit}
+          />
+        ) : (
           <SubForm
             mode="edit"
             initialData={editingSub}
@@ -772,7 +795,7 @@ export default function Home() {
             onAddCategory={addCategory}
             onClose={closeEdit}
           />
-        )}
+        ))}
       </Modal>
 
       {/* PRO Modal */}

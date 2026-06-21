@@ -255,6 +255,7 @@ export async function pullSettings(userId: string): Promise<AppSettings | null> 
     useManualRate: data.use_manual_rate,
     notificationsEnabled: data.notifications_enabled,
     notifyDaysBefore: data.notify_days_before,
+    enabledSections: data.enabled_sections ?? undefined,
   };
 }
 
@@ -270,6 +271,7 @@ export async function pushSettings(userId: string, settings: AppSettings): Promi
       use_manual_rate: settings.useManualRate,
       notifications_enabled: settings.notificationsEnabled,
       notify_days_before: settings.notifyDaysBefore,
+      enabled_sections: settings.enabledSections ?? null,
     });
 
   if (error) console.warn('[sync] pushSettings error:', error.message);
@@ -283,7 +285,12 @@ export async function syncSettings(
   // Remote wins for synced fields, but preserve local-only fields
   // (monthlyBudget is not stored in Supabase yet)
   if (remote) {
-    return { ...remote, monthlyBudget: localSettings.monthlyBudget, budgetCurrency: localSettings.budgetCurrency };
+    return {
+      ...remote,
+      enabledSections: remote.enabledSections ?? localSettings.enabledSections,
+      monthlyBudget: localSettings.monthlyBudget,
+      budgetCurrency: localSettings.budgetCurrency,
+    };
   }
   await pushSettings(userId, localSettings);
   return localSettings;
@@ -330,6 +337,16 @@ function subscriptionToDb(s: Subscription, userId: string) {
     is_active: s.isActive ?? true,
     created_at: safeTimestamp(s.createdAt),
     updated_at: safeTimestamp(s.updatedAt),
+    cycle_anchor: s.cycleAnchor ?? null,
+    kind: s.kind ?? 'subscription',
+    lender: s.lender ?? null,
+    loan_type: s.loanType ?? null,
+    principal_amount: s.principalAmount != null && Number.isFinite(Number(s.principalAmount)) ? Number(s.principalAmount) : null,
+    outstanding_balance: s.outstandingBalance != null && Number.isFinite(Number(s.outstandingBalance)) ? Number(s.outstandingBalance) : null,
+    interest_rate: s.interestRate != null && Number.isFinite(Number(s.interestRate)) ? Number(s.interestRate) : null,
+    term_months: s.termMonths != null && Number.isFinite(Number(s.termMonths)) ? Number(s.termMonths) : null,
+    payment_scheme: s.paymentScheme ?? null,
+    property_name: s.propertyName ?? null,
   };
 }
 

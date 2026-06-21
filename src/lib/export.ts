@@ -30,9 +30,16 @@ export function exportCSV(
   const rates = resolveRates(settings);
   const sym = CURRENCY_SYMBOLS[settings.displayCurrency] ?? '';
 
+  const kindLabel = (sub: Subscription): string => {
+    const k = sub.kind ?? 'subscription';
+    if (k === 'credit') return isRu ? 'Кредит' : 'Credit';
+    if (k === 'mortgage') return isRu ? 'Ипотека' : 'Mortgage';
+    return isRu ? 'Подписка' : 'Subscription';
+  };
+
   const headers = isRu
-    ? ['Название', 'Категория', 'Сумма', 'Валюта', 'Цикл', 'Следующий платёж', 'Дата начала', 'Способ оплаты', 'Статус', 'Заметки']
-    : ['Name', 'Category', 'Amount', 'Currency', 'Cycle', 'Next payment', 'Start date', 'Payment method', 'Status', 'Notes'];
+    ? ['Название', 'Тип', 'Категория', 'Сумма', 'Валюта', 'Цикл', 'Следующий платёж', 'Дата начала', 'Способ оплаты', 'Статус', 'Заметки', 'Банк/Кредитор', 'Остаток долга', 'Ставка %', 'Срок (мес)']
+    : ['Name', 'Type', 'Category', 'Amount', 'Currency', 'Cycle', 'Next payment', 'Start date', 'Payment method', 'Status', 'Notes', 'Lender', 'Outstanding balance', 'Rate %', 'Term (months)'];
 
   const rows = subscriptions.map((sub) => {
     const converted = convertCurrency(
@@ -40,6 +47,7 @@ export function exportCSV(
     );
     return [
       sub.name,
+      kindLabel(sub),
       getCategoryName(sub, categories),
       `${converted} ${sym}`,
       settings.displayCurrency,
@@ -49,6 +57,10 @@ export function exportCSV(
       sub.paymentMethod || '—',
       sub.isActive ? (isRu ? 'Активна' : 'Active') : (isRu ? 'Неактивна' : 'Inactive'),
       sub.notes || '',
+      sub.lender || '',
+      sub.outstandingBalance != null ? String(sub.outstandingBalance) : '',
+      sub.interestRate != null ? String(sub.interestRate) : '',
+      sub.termMonths != null ? String(sub.termMonths) : '',
     ];
   });
 

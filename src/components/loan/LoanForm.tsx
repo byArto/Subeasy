@@ -148,8 +148,8 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
     haptic.tap();
     setLender(bank.name);
     setColor(bank.color);
-    // Auto-fill name if empty or if it was the previously selected bank name
-    if (!name.trim() || name === lender) setName(bank.name);
+    // «Название» не трогаем — банк и название кредита должны оставаться раздельными
+    // (на карточке название идёт первой строкой, банк — под ним).
     setBankSuggestions([]);
   }
 

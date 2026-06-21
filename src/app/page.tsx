@@ -42,6 +42,7 @@ import { getDemoSubscriptions, hasDemoData, isDemoId } from '@/lib/demoData';
 import { ModeSwitch } from '@/components/layout/ModeSwitch';
 import { matchesMode, visibleModes, type AppMode } from '@/lib/obligations';
 import { LoanList } from '@/components/loan/LoanList';
+import { AllOverview } from '@/components/dashboard/AllOverview';
 import { isLoan } from '@/lib/obligations';
 
 
@@ -68,6 +69,10 @@ const SettingsPage = dynamic(() =>
 );
 const AnalyticsPage = dynamic(() =>
   import('@/components/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+  { ssr: false }
+);
+const LoanAnalytics = dynamic(() =>
+  import('@/components/analytics/LoanAnalytics').then((m) => ({ default: m.LoanAnalytics })),
   { ssr: false }
 );
 const CalendarPage = dynamic(() =>
@@ -267,19 +272,23 @@ export default function Home() {
     }
   }, [isWorkspaceActive, workspace, user, deleteSubscription, refreshWorkspaceSubs]);
 
-  // Computed functions derived from activeSubscriptions (used by HomeTab)
-  const getActiveSubs = useCallback(() => activeSubscriptions.filter((s) => s.isActive), [activeSubscriptions]);
+  // Subscriptions-only view (loans excluded) — feeds the «Подписки» home, Share and budget,
+  // so credit/mortgage payments never leak into subscription totals/counts.
+  const subscriptionsOnly = useMemo(() => activeSubscriptions.filter((s) => !isLoan(s)), [activeSubscriptions]);
+
+  // Computed functions derived from subscriptionsOnly (used by HomeTab / Share)
+  const getActiveSubs = useCallback(() => subscriptionsOnly.filter((s) => s.isActive), [subscriptionsOnly]);
   const getUpcomingSubs = useCallback((days: number) =>
-    activeSubscriptions
+    subscriptionsOnly
       .filter((s) => { if (!s.isActive) return false; const d = getDaysUntilPayment(s.nextPaymentDate); return d >= 0 && d <= days; })
       .sort((a, b) => new Date(a.nextPaymentDate).getTime() - new Date(b.nextPaymentDate).getTime()),
-  [activeSubscriptions]);
+  [subscriptionsOnly]);
   const getTotalMonthlyActive = useCallback((currency: DisplayCurrency, rates: Record<Currency, number>) => {
-    const total = activeSubscriptions.filter((s) => s.isActive).reduce((sum, sub) => {
+    const total = subscriptionsOnly.filter((s) => s.isActive).reduce((sum, sub) => {
       return sum + convertCurrency(getMonthlyPrice(sub), sub.currency as Currency, currency, rates);
     }, 0);
     return Math.round(total * 100) / 100;
-  }, [activeSubscriptions]);
+  }, [subscriptionsOnly]);
   const getTotalYearlyActive = useCallback((currency: DisplayCurrency, rates: Record<Currency, number>) =>
     Math.round(getTotalMonthlyActive(currency, rates) * 12 * 100) / 100,
   [getTotalMonthlyActive]);
@@ -547,7 +556,15 @@ export default function Home() {
             {activeTab !== 'settings' && (
               <ModeSwitch modes={modes} active={appMode} onChange={setAppMode} />
             )}
-            {activeTab === 'home' && appMode !== 'subscriptions' && (
+            {activeTab === 'home' && appMode === 'all' && (
+              <AllOverview
+                obligations={activeSubscriptions}
+                settings={settings}
+                onTap={openDetail}
+                onShare={() => setShowShareModal(true)}
+              />
+            )}
+            {activeTab === 'home' && (appMode === 'credits' || appMode === 'mortgages') && (
               <LoanList
                 obligations={modeSubscriptions}
                 mode={appMode}
@@ -575,9 +592,17 @@ export default function Home() {
                 onOpenSettings={() => { setSettingsScrollTo('family-plan-section'); setActiveTab('settings'); }}
               />
             )}
-            {activeTab === 'analytics' && (
+            {activeTab === 'analytics' && (appMode === 'credits' || appMode === 'mortgages') && (
+              <LoanAnalytics
+                obligations={modeSubscriptions}
+                settings={settings}
+                mode={appMode}
+                onSubTap={openDetail}
+              />
+            )}
+            {activeTab === 'analytics' && (appMode === 'subscriptions' || appMode === 'all') && (
               <AnalyticsPage
-                subscriptions={modeSubscriptions}
+                subscriptions={subscriptionsOnly}
                 categories={categories}
                 settings={settings}
                 onSubTap={openDetail}
@@ -663,7 +688,7 @@ export default function Home() {
               : t('modal.newSubscription')
         }
       >
-        {appMode !== 'subscriptions' ? (
+        {(appMode === 'credits' || appMode === 'mortgages') ? (
           <LoanForm
             mode="add"
             obligationKind={appMode === 'mortgages' ? 'mortgage' : 'credit'}

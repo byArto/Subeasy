@@ -103,9 +103,9 @@ export function LoanDetail({ obligation: o, settings, onClose, onEdit, onDelete 
           {monogram}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-bold text-text truncate">{o.lender ?? o.name}</p>
+          <p className="text-[17px] font-bold text-text truncate">{o.name}</p>
           {o.lender && o.name !== o.lender && (
-            <p className="text-[13px] text-text-secondary truncate">{o.name}</p>
+            <p className="text-[13px] text-text-secondary truncate">{o.lender}</p>
           )}
         </div>
         <Badge variant={badgeVariant} pulse={days <= 1}>{badgeLabel}</Badge>

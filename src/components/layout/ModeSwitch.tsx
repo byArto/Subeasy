@@ -7,12 +7,14 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import type { AppMode } from '@/lib/obligations';
 
 const ICON: Record<AppMode, string> = {
+  all: '🗂️',
   subscriptions: '🔁',
   credits: '💳',
   mortgages: '🏦',
 };
 
 const LABEL_KEY: Record<AppMode, string> = {
+  all: 'mode.all',
   subscriptions: 'mode.subscriptions',
   credits: 'mode.credits',
   mortgages: 'mode.mortgages',

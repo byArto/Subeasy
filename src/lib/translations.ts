@@ -11,6 +11,7 @@ const dict: Translations = {
   'nav.settings': { ru: 'Настройки', en: 'Settings', es: 'Ajustes', tr: 'Ayarlar', de: 'Einstellungen', kk: 'Параметр', hy: 'Կարգ.', pl: 'Ustawienia' },
 
   // ── Modes / Sections (credits & mortgages) ──
+  'mode.all': { ru: 'Все', en: 'All' },
   'mode.subscriptions': { ru: 'Подписки', en: 'Subscriptions' },
   'mode.credits': { ru: 'Кредиты', en: 'Credits' },
   'mode.mortgages': { ru: 'Ипотека', en: 'Mortgage' },

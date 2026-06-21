@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { Subscription } from '@/lib/types';
 import type { AppMode } from '@/lib/obligations';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { obligationToLoanInput } from '@/lib/obligations';
 import { summarizeLoan } from '@/lib/loanUtils';
+import { cn, getDaysUntilPayment } from '@/lib/utils';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 interface LoanListProps {
@@ -20,15 +21,19 @@ interface LoanListProps {
 
 export function LoanList({ obligations, mode, onTap, onAddTap }: LoanListProps) {
   const { lang, t } = useLanguage();
+  const [showOverpay, setShowOverpay] = useState(false);
 
   const agg = useMemo(() => {
     const bySymbol: Record<string, { monthly: number; balance: number; overpay: number }> = {};
     let overallPayoff: string | null = null;
+    let upcomingCount = 0;
     for (const o of obligations) {
       const sym = CURRENCY_SYMBOLS[o.currency] || o.currency;
       if (!bySymbol[sym]) bySymbol[sym] = { monthly: 0, balance: 0, overpay: 0 };
       bySymbol[sym].monthly += o.price;
       bySymbol[sym].balance += o.outstandingBalance ?? 0;
+      const d = getDaysUntilPayment(o.nextPaymentDate);
+      if (d >= 0 && d <= 3) upcomingCount += 1;
       const li = obligationToLoanInput(o);
       if (li) {
         const s = summarizeLoan(li);
@@ -37,10 +42,13 @@ export function LoanList({ obligations, mode, onTap, onAddTap }: LoanListProps) 
         if (s.payoffDate && (!overallPayoff || s.payoffDate > overallPayoff)) overallPayoff = s.payoffDate;
       }
     }
-    return { bySymbol, overallPayoff, currencyCount: Object.keys(bySymbol).length };
+    return { bySymbol, overallPayoff, upcomingCount, currencyCount: Object.keys(bySymbol).length };
   }, [obligations]);
 
   const isMortgage = mode === 'mortgages';
+  const payoffShort = agg.overallPayoff
+    ? new Date(agg.overallPayoff).toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU', { month: 'short', year: 'numeric' })
+    : null;
 
   if (obligations.length === 0) {
     return (
@@ -73,51 +81,54 @@ export function LoanList({ obligations, mode, onTap, onAddTap }: LoanListProps) 
 
   return (
     <div className="flex flex-col gap-3 px-5 pb-6">
-      {/* Totals header — сколько всего должен (по валютам) */}
+      {/* Summary hero cards per currency: Остаток (тап → Переплата) + В месяц */}
       {Object.entries(agg.bySymbol).map(([sym, val]) => (
-        <div key={sym} className="flex items-center justify-between bg-surface-2 rounded-2xl px-4 py-3">
-          <div>
-            <p className="text-[11px] text-text-secondary mb-0.5">
-              {lang === 'en' ? 'Total outstanding' : 'Общий остаток'}
+        <div key={sym} className="grid grid-cols-2 gap-3">
+          {/* Left — Остаток / Переплата (tap to toggle) */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.97 }}
+            onClick={() => setShowOverpay((v) => !v)}
+            className="relative overflow-hidden rounded-2xl p-4 text-left bg-surface-2 border border-border-subtle"
+          >
+            <div className="absolute top-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-neon/0 via-neon/60 to-neon/0" />
+            <p className="text-text-muted text-xs font-medium">
+              {showOverpay
+                ? (lang === 'en' ? 'Overpayment' : 'Переплата')
+                : (lang === 'en' ? 'Total outstanding' : 'Общий остаток')}
             </p>
-            <p className="text-[17px] font-bold text-text">
-              {val.balance.toLocaleString('ru-RU')} {sym}
+            <p className={cn(
+              'font-display font-extrabold text-[24px] leading-tight mt-1.5 tabular-nums',
+              showOverpay ? 'text-warning' : 'text-text-primary',
+            )}>
+              {Math.round(showOverpay ? val.overpay : val.balance).toLocaleString('ru-RU')}
+              <span className="text-base font-bold ml-0.5">{sym}</span>
             </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[11px] text-text-secondary mb-0.5">
-              {lang === 'en' ? 'Monthly payments' : 'В месяц'}
+            {payoffShort && (
+              <p className="text-text-muted text-[10px] mt-1">
+                {lang === 'en' ? 'debt-free by ' : 'закрытие '}{payoffShort}
+              </p>
+            )}
+          </motion.button>
+
+          {/* Right — В месяц */}
+          <div className="relative overflow-hidden rounded-2xl p-4 bg-surface-2 border border-border-subtle">
+            <div className="absolute top-0 left-3 right-3 h-[2px] rounded-full bg-gradient-to-r from-neon/0 via-neon/60 to-neon/0" />
+            <p className="text-text-muted text-xs font-medium">{lang === 'en' ? 'Monthly' : 'В месяц'}</p>
+            <p className="font-display font-extrabold text-[24px] leading-tight mt-1.5 text-neon neon-text tabular-nums">
+              {Math.round(val.monthly).toLocaleString('ru-RU')}
+              <span className="text-base font-bold ml-0.5">{sym}</span>
             </p>
-            <p className="text-[17px] font-bold text-neon">
-              {val.monthly.toLocaleString('ru-RU')} {sym}
-            </p>
+            {agg.upcomingCount > 0 ? (
+              <p className="text-warning text-[10px] mt-1 font-medium">
+                {agg.upcomingCount} {t('dashboard.soonPayment')}
+              </p>
+            ) : (
+              <p className="text-text-muted text-[10px] mt-1">{t('dashboard.allGood')}</p>
+            )}
           </div>
         </div>
       ))}
-
-      {/* Общая дата закрытия + переплата */}
-      {agg.overallPayoff && (
-        <div className="flex items-center justify-between bg-surface-2 rounded-2xl px-4 py-3">
-          <div>
-            <p className="text-[11px] text-text-secondary mb-0.5">
-              {lang === 'en' ? 'Debt-free by' : 'Полное закрытие'}
-            </p>
-            <p className="text-[15px] font-bold text-text">
-              {new Date(agg.overallPayoff).toLocaleDateString(lang === 'en' ? 'en-US' : 'ru-RU', { month: 'long', year: 'numeric' })}
-            </p>
-          </div>
-          {agg.currencyCount === 1 && (
-            <div className="text-right">
-              <p className="text-[11px] text-text-secondary mb-0.5">
-                {lang === 'en' ? 'Total overpayment' : 'Переплата'}
-              </p>
-              <p className="text-[15px] font-bold text-warning">
-                {Math.round(Object.values(agg.bySymbol)[0].overpay).toLocaleString('ru-RU')} {Object.keys(agg.bySymbol)[0]}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Loan cards */}
       <AnimatePresence initial={false}>

@@ -86,10 +86,12 @@ export function LoanCard({ obligation: o, index = 0, onTap }: LoanCardProps) {
           {monogram}
         </div>
 
-        {/* Name + type */}
+        {/* Name first, then bank · type */}
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-semibold text-text truncate">{o.lender ?? o.name}</p>
-          <p className="text-[12px] text-text-secondary">{typeLabel}</p>
+          <p className="text-[15px] font-semibold text-text truncate">{o.name}</p>
+          <p className="text-[12px] text-text-secondary truncate">
+            {o.lender && o.lender !== o.name ? `${o.lender} · ${typeLabel}` : typeLabel}
+          </p>
         </div>
 
         {/* Payment status badge */}

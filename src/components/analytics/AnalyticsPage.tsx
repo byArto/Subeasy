@@ -13,6 +13,7 @@ import { getMonthlyPrice, convertCurrency, cn, getThemeAccentColor } from '@/lib
 import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { findDuplicates, getIgnoredPairs, isGroupIgnored } from '@/lib/duplicates';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -1101,56 +1102,62 @@ function calcSubScore(
 ): { total: number; grade: string; statusKey: string; factors: ScoreFactor[]; worstFactor: ScoreFactor | null } {
   const factors: ScoreFactor[] = [];
 
-  // ── Factor 1: Budget (25 pts) ──
+  const now = new Date();
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  // ── Factor 1: Budget (25 pts) — gentler floors; not setting a limit is only a
+  //    small ding, and going over budget never drops below 8 pts. ──
   const budget = settings.monthlyBudget ?? 0;
   let bPts: number; let bDesc: string; let bDescVars: Record<string, string | number> | undefined;
   let bTip: string; let bTipVars: Record<string, string | number> | undefined;
   if (budget <= 0) {
-    bPts = 15; bDesc = 'score.factorBudgetNoLimit'; bTip = 'score.tipBudget';
+    bPts = 20; bDesc = 'score.factorBudgetNoLimit'; bTip = 'score.tipBudget';
   } else {
     const pct = (monthlyTotal / budget) * 100;
     if (pct <= 80) {
       bPts = 25; bDesc = 'score.factorBudgetGood'; bDescVars = { pct: Math.round(pct) }; bTip = 'score.tipBudget';
     } else if (pct <= 100) {
-      bPts = Math.round(15 + ((100 - pct) / 20) * 10);
+      bPts = Math.round(20 + ((100 - pct) / 20) * 5);
       bDesc = 'score.factorBudgetWarn'; bDescVars = { pct: Math.round(pct) }; bTip = 'score.tipBudgetOver';
     } else {
       const over = Math.round(pct - 100);
-      bPts = Math.max(0, Math.round(15 - over * 0.5));
+      bPts = Math.max(8, Math.round(20 - over * 0.5));
       bDesc = 'score.factorBudgetOver'; bDescVars = { pct: over };
       bTip = 'score.tipBudgetOver'; bTipVars = { pct: over };
     }
   }
   factors.push({ icon: '💰', nameKey: 'score.factorBudget', descKey: bDesc, descVars: bDescVars, tipKey: bTip, tipVars: bTipVars, pts: bPts, maxPts: 25 });
 
-  // ── Factor 2: Activity (25 pts) ──
+  // ── Factor 2: No unused subs (20 pts) — softer −5 per inactive sub. ──
   const inactive = subscriptions.filter((s) => !s.isActive);
-  const aPts = Math.max(0, 25 - inactive.length * 7);
+  const aPts = Math.max(0, 20 - inactive.length * 5);
   factors.push({
     icon: '😴', nameKey: 'score.factorActive',
     descKey: inactive.length === 0 ? 'score.factorActiveGood' : 'score.factorActiveBad',
     descVars: inactive.length > 0 ? { n: inactive.length } : undefined,
     tipKey: 'score.tipActive', tipVars: inactive.length > 0 ? { n: inactive.length } : undefined,
-    pts: aPts, maxPts: 25,
+    pts: aPts, maxPts: 20,
   });
 
-  // ── Factor 3: No duplicates (20 pts) ──
-  const catCount = new Map<string, number>();
-  for (const s of active) catCount.set(s.category, (catCount.get(s.category) || 0) + 1);
-  const dupeCats = Array.from(catCount.values()).filter((c) => c >= 2).length;
-  const dPts = Math.max(0, 20 - dupeCats * 10);
+  // ── Factor 3: No duplicates (15 pts) — ONLY true same-service duplicates (same
+  //    name), and duplicates the user has explicitly marked "intentional" are not
+  //    counted. Two different services in one category are no longer flagged. ──
+  const ignoredPairs = getIgnoredPairs();
+  const dupeGroups = findDuplicates(active).filter((g) => !isGroupIgnored(g, ignoredPairs));
+  const dupeCount = dupeGroups.length;
+  const dPts = Math.max(0, 15 - dupeCount * 7);
   factors.push({
     icon: '🔄', nameKey: 'score.factorDupes',
-    descKey: dupeCats === 0 ? 'score.factorDupesGood' : 'score.factorDupesBad',
-    descVars: dupeCats > 0 ? { n: dupeCats } : undefined,
+    descKey: dupeCount === 0 ? 'score.factorDupesGood' : 'score.factorDupesBad',
+    descVars: dupeCount > 0 ? { n: dupeCount } : undefined,
     tipKey: 'score.tipDupes',
-    pts: dPts, maxPts: 20,
+    pts: dPts, maxPts: 15,
   });
 
-  // ── Factor 4: Diversification (15 pts) ──
+  // ── Factor 4: Diversification (15 pts) — one sub is fully "diversified". ──
   let divPts: number; let divDesc: string; let divDescVars: Record<string, string | number> | undefined;
   if (active.length <= 1) {
-    divPts = 10; divDesc = 'score.factorDiversifyGood';
+    divPts = 15; divDesc = 'score.factorDiversifyGood';
   } else {
     const catSpend = new Map<string, number>();
     for (const s of active) {
@@ -1165,7 +1172,7 @@ function calcSubScore(
     } else if (topPct <= 60) {
       divPts = 10; divDesc = 'score.factorDiversifyBad'; divDescVars = { pct: Math.round(topPct) };
     } else {
-      divPts = 5; divDesc = 'score.factorDiversifyBad'; divDescVars = { pct: Math.round(topPct) };
+      divPts = 6; divDesc = 'score.factorDiversifyBad'; divDescVars = { pct: Math.round(topPct) };
     }
   }
   factors.push({
@@ -1175,25 +1182,38 @@ function calcSubScore(
     pts: divPts, maxPts: 15,
   });
 
-  // ── Factor 5: No forgotten trials (10 pts) ──
+  // ── Factor 5: Trials under control (15 pts) — tracking a trial is GOOD, not a
+  //    penalty. Only a trial about to convert (≤5 days, or already due) costs a
+  //    few points, because that's the actual "you're about to be charged" risk. ──
   const trials = active.filter((s) => s.cycle === 'trial');
-  const tPts = Math.max(0, 10 - trials.length * 5);
+  const soonTrials = trials.filter((s) => {
+    const due = new Date(s.nextPaymentDate).getTime();
+    return !Number.isNaN(due) && (due - now.getTime()) / DAY_MS <= 5;
+  });
+  let tPts: number; let tDesc: string; let tDescVars: Record<string, string | number> | undefined;
+  if (trials.length === 0) {
+    tPts = 15; tDesc = 'score.factorTrialsGood';
+  } else if (soonTrials.length === 0) {
+    tPts = 15; tDesc = 'score.factorTrialsTracked'; tDescVars = { n: trials.length };
+  } else {
+    tPts = Math.max(5, 15 - soonTrials.length * 5);
+    tDesc = 'score.factorTrialsBad'; tDescVars = { n: soonTrials.length };
+  }
   factors.push({
     icon: '🧪', nameKey: 'score.factorTrials',
-    descKey: trials.length === 0 ? 'score.factorTrialsGood' : 'score.factorTrialsBad',
-    descVars: trials.length > 0 ? { n: trials.length } : undefined,
+    descKey: tDesc, descVars: tDescVars,
     tipKey: 'score.tipTrials',
-    pts: tPts, maxPts: 10,
+    pts: tPts, maxPts: 15,
   });
 
-  // ── Factor 6: Annual bonus (5 pts) ──
+  // ── Factor 6: Annual plans (10 pts) — a gentle nudge, never a hard zero. ──
   const annuals = active.filter((s) => s.cycle === 'yearly');
-  const anPts = annuals.length > 0 ? 5 : 0;
+  const anPts = annuals.length > 0 ? 10 : 7;
   factors.push({
     icon: '📅', nameKey: 'score.factorAnnual',
     descKey: annuals.length > 0 ? 'score.factorAnnualGood' : 'score.factorAnnualNone',
     tipKey: 'score.tipAnnual',
-    pts: anPts, maxPts: 5,
+    pts: anPts, maxPts: 10,
   });
 
   const total = factors.reduce((sum, f) => sum + f.pts, 0);

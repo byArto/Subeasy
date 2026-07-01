@@ -468,14 +468,15 @@ function CalendarGrid({
                     ))}
                   </div>
                 ) : (
-                  /* Future: service icons */
+                  /* Future: service icons — cap at 2 so busy days don't overflow
+                     the cell. A 3rd+ payment collapses into a compact "+N" chip. */
                   <div className="flex gap-0.5 mt-0.5 items-center">
-                    {daySubs.slice(0, 3).map((s, i) => (
+                    {daySubs.slice(0, 2).map((s, i) => (
                       <ServiceLogo key={i} name={s.name} emoji={s.icon} size={11} className="rounded-sm flex-shrink-0" />
                     ))}
-                    {daySubs.length > 3 && (
-                      <span className="text-[7px] text-text-muted leading-none ml-0.5">
-                        +{daySubs.length - 3}
+                    {daySubs.length > 2 && (
+                      <span className="text-[8px] font-semibold text-text-muted leading-none ml-0.5 tabular-nums">
+                        +{daySubs.length - 2}
                       </span>
                     )}
                   </div>

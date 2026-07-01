@@ -2013,15 +2013,11 @@ function formatRateDate(iso: string, lang: string): string {
 
 import { Lang } from '@/lib/translations';
 
+// Only shipped languages are shown. The "coming soon" locales (ES/TR/DE/KK/HY/PL)
+// were removed from the picker until they're actually translated.
 const LANG_OPTIONS: { code: Lang; label: string; name: string }[] = [
   { code: 'ru', label: 'RU', name: 'Русский' },
   { code: 'en', label: 'EN', name: 'English' },
-  { code: 'es', label: 'ES', name: 'Español' },
-  { code: 'tr', label: 'TR', name: 'Türkçe' },
-  { code: 'de', label: 'DE', name: 'Deutsch' },
-  { code: 'kk', label: 'KK', name: 'Қазақша' },
-  { code: 'hy', label: 'HY', name: 'Հայերեն' },
-  { code: 'pl', label: 'PL', name: 'Polski' },
 ];
 
 const READY_LANGS: Lang[] = ['ru', 'en'];
@@ -2039,7 +2035,7 @@ function LangGrid({
 }) {
   const soonLabel = lang === 'en' ? 'soon' : 'скоро';
   return (
-    <div className="grid grid-cols-4 gap-2">
+    <div className="grid grid-cols-2 gap-2">
       {LANG_OPTIONS.map((opt) => {
         const soon = !READY_LANGS.includes(opt.code);
         const active = value === opt.code;

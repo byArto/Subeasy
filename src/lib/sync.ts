@@ -72,8 +72,13 @@ export async function pullSubscriptions(userId: string): Promise<Subscription[]>
     .is('workspace_id', null); // personal only — exclude workspace subs
 
   if (error) {
+    // NEVER return [] on error. Callers MUST be able to tell "read failed" apart
+    // from "the account genuinely has no subscriptions". Returning [] here is what
+    // caused catastrophic data loss: a single transient read failure (network
+    // blip / token refresh / RLS hiccup) looked like an empty account, which then
+    // made syncSubscriptions() wipe local state AND delete every remote row.
     console.warn('[sync] pullSubscriptions error:', error.message);
-    return [];
+    throw new Error(`pullSubscriptions failed: ${error.message}`);
   }
 
   return (data ?? []).map(dbToSubscription);
@@ -117,8 +122,21 @@ export async function pushSubscriptions(userId: string, subs: Subscription[]): P
     .eq('user_id', userId)
     .is('workspace_id', null);
 
-  const staleIds = (existing ?? []).map((r) => r.id).filter((id) => !keepIds.has(id));
-  rememberKnownSubscriptionIds(userId, [...keepIds, ...(existing ?? []).map((r) => r.id)]);
+  const existingIds = (existing ?? []).map((r) => r.id);
+  rememberKnownSubscriptionIds(userId, [...keepIds, ...existingIds]);
+
+  // SAFETY NET: never delete EVERY remote row from an empty keep-set. A genuine
+  // "delete my last subscription" is handled by deletePersonalSubscription — a
+  // direct single-row delete that empties the server *before* this reconcile ever
+  // runs. So reaching here with keepIds empty while rows still exist means the
+  // local set is bad (a failed remote read or a hydration race). Bailing out is
+  // the last line of defence against wiping the whole account.
+  if (keepIds.size === 0 && existingIds.length > 0) {
+    console.warn('[sync] pushSubscriptions: refusing to delete all remote subs from an empty local set');
+    return;
+  }
+
+  const staleIds = existingIds.filter((id) => !keepIds.has(id));
   if (staleIds.length > 0) {
     const { error } = await client.from('subscriptions').delete().in('id', staleIds);
     if (error) console.warn('[sync] pushSubscriptions delete stale error:', error.message);
@@ -142,7 +160,16 @@ export async function syncSubscriptions(
   userId: string,
   localSubs: Subscription[]
 ): Promise<Subscription[]> {
-  const remoteSubs = await pullSubscriptions(userId); // already personal-only
+  let remoteSubs: Subscription[];
+  try {
+    remoteSubs = await pullSubscriptions(userId); // already personal-only
+  } catch (err) {
+    // The remote read FAILED — the cloud state is UNKNOWN, not empty. Do not
+    // merge, reconcile or push: any of those would delete good data on both
+    // ends. Keep whatever is already on this device and try again next sync.
+    console.warn('[sync] syncSubscriptions: remote read failed, keeping local data:', (err as Error).message);
+    return localSubs;
+  }
   const knownSyncedIds = readKnownSubscriptionIds(userId);
   const importLocalOnly = hasPendingLocalSubscriptionImport();
   // Demo/sample data is local-only — it must never be merged into or pushed to
@@ -199,7 +226,15 @@ export async function pushCategories(userId: string, cats: Category[]): Promise<
     .select('id')
     .eq('user_id', userId);
 
-  const staleIds = (existing ?? []).map((r) => r.id).filter((id) => !keepIds.has(id));
+  const existingIds = (existing ?? []).map((r) => r.id);
+  // Same safety net as subscriptions: an empty keep-set that would wipe every
+  // remote category is almost always a bad local state, not an intentional reset.
+  if (keepIds.size === 0 && existingIds.length > 0) {
+    console.warn('[sync] pushCategories: refusing to delete all remote categories from an empty local set');
+    return;
+  }
+
+  const staleIds = existingIds.filter((id) => !keepIds.has(id));
   if (staleIds.length > 0) {
     const { error } = await client.from('categories').delete().in('id', staleIds);
     if (error) console.warn('[sync] pushCategories delete stale error:', error.message);

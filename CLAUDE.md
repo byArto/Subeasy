@@ -8,7 +8,9 @@ Data is **offline-first**: localStorage is the primary store; when the user is s
 > **Monetization is currently DISABLED** (`NEXT_PUBLIC_MONETIZATION_ENABLED=false`) — the whole app is free, PRO is granted to everyone (`lib/monetization.ts`), and the payment UI/flows are hidden. The payment code paths (Telegram Stars + TON) remain in place behind that flag for when monetization returns. Plan pricing & expiry math live in `lib/plans.ts` (single source of truth).
 
 ## Version
-Current: 1.7.4
+Current: 1.11.0
+
+Versioning: **small fix → +0.0.1**, **notable feature/fix → +0.1.0**. Bump BOTH `package.json` and `src/lib/version.ts` (Settings shows `APP_VERSION`).
 
 ## Platforms & Deployment
 SubEasy runs on THREE surfaces, all serving the SAME deployed site:
@@ -161,6 +163,7 @@ All data in localStorage with prefix `neonsub-`:
 - Server routes use the **service-role** client only in trusted contexts (`createServiceClient`) and ALWAYS verify the caller first (`verifyAuth` for user routes; Telegram `initData` HMAC for `/api/telegram/connect`; webhook secrets / `CRON_SECRET` for webhooks & cron). Never trust a client-supplied user/chat id.
 - DB↔app row mapping: `lib/dbMappers.ts` (`dbToSubscription`/`dbToCategory`). Keep RLS enabled on all tables.
 - There is no Next.js middleware; every API route enforces its own auth (do not rely on a global guard).
+- **Sync must be non-destructive on a failed READ** (`lib/sync.ts`). A remote pull error must NEVER look like "empty account": `pullSubscriptions` throws on error, `syncSubscriptions` bails and keeps local data, and `pushSubscriptions`/`pushCategories` refuse to delete every remote row from an empty keep-set. This class of bug once silently wiped a user's subscriptions on both device and server. Never "simplify" these guards away.
 
 ## Git
 

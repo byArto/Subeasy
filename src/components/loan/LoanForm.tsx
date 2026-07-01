@@ -109,6 +109,11 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
   const [nextPaymentDate, setNextPaymentDate] = useState(
     initialData?.nextPaymentDate ?? today()
   );
+  // When the borrower started repaying (usually a date in the past). Lets us show
+  // real repayment progress rather than assuming payments began today.
+  const [startDate, setStartDate] = useState(
+    initialData?.startDate ?? today()
+  );
   const [currency, setCurrency] = useState<Currency>(initialData?.currency ?? 'RUB');
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [color, setColor] = useState(initialData?.color ?? '#007AFF');
@@ -183,7 +188,7 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
       currency,
       cycle: 'monthly',
       nextPaymentDate,
-      startDate: nextPaymentDate,
+      startDate: startDate || nextPaymentDate,
       isActive: true,
       color,
       category: '',
@@ -232,14 +237,14 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
               : (lang === 'en' ? 'e.g. Consumer loan' : 'Напр. Кредит Тинькофф')}
             className={cn(fieldCls, 'flex-1', errors.name && 'border-danger/40')}
           />
-          {/* Color swatch */}
+          {/* Auto icon — shows the obligation type (💳 credit / 🏦 mortgage)
+              tinted with the selected/bank colour, instead of the old first-letter
+              monogram. It's an automatic, meaningful preview of the card icon. */}
           <div
             className="w-[48px] h-[48px] rounded-xl flex items-center justify-center shrink-0"
             style={{ backgroundColor: accentColor }}
           >
-            <span className="text-white font-bold text-lg">
-              {(lender || name).charAt(0).toUpperCase() || '?'}
-            </span>
+            <span className="text-2xl leading-none">{isMortgage ? '🏦' : '💳'}</span>
           </div>
         </div>
         {/* Color palette */}
@@ -400,6 +405,23 @@ export function LoanForm({ obligationKind, mode, initialData, onSubmit, onDelete
           onChange={(e) => { setNextPaymentDate(e.target.value); setErrors((p) => ({ ...p, nextPaymentDate: undefined })); }}
           className={cn(fieldCls, errors.nextPaymentDate && 'border-danger/40')}
         />
+      </div>
+
+      {/* Loan start date — when repayment began */}
+      <div>
+        <FieldLabel text={lang === 'en' ? 'Payments started' : 'Начало выплат'} />
+        <input
+          type="date"
+          value={startDate}
+          max={nextPaymentDate || undefined}
+          onChange={(e) => setStartDate(e.target.value)}
+          className={fieldCls}
+        />
+        <p className="text-[11px] text-text-muted mt-1 px-0.5">
+          {lang === 'en'
+            ? 'When you started repaying — used to show progress.'
+            : 'Когда вы начали выплачивать кредит — нужно для прогресса.'}
+        </p>
       </div>
 
       {/* Loan type (credits only) */}

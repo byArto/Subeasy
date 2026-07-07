@@ -8,7 +8,7 @@ Data is **offline-first**: localStorage is the primary store; when the user is s
 > **Monetization is currently DISABLED** (`NEXT_PUBLIC_MONETIZATION_ENABLED=false`) — the whole app is free, PRO is granted to everyone (`lib/monetization.ts`), and the payment UI/flows are hidden. The payment code paths (Telegram Stars + TON) remain in place behind that flag for when monetization returns. Plan pricing & expiry math live in `lib/plans.ts` (single source of truth).
 
 ## Version
-Current: 1.11.0
+Current: 1.12.0
 
 Versioning: **small fix → +0.0.1**, **notable feature/fix → +0.1.0**. Bump BOTH `package.json` and `src/lib/version.ts` (Settings shows `APP_VERSION`).
 

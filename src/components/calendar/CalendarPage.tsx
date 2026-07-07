@@ -23,6 +23,7 @@ import { convertCurrency, cn } from '@/lib/utils';
 import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 
 /* ── Props ── */
@@ -547,7 +548,7 @@ function DayDetails({
           <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-border-subtle">
             <span className="text-xs text-text-muted">{t('calendar.total')}</span>
             <span className="text-sm font-bold text-neon tabular-nums">
-              {Math.round(total).toLocaleString('ru-RU')} {symbol}
+              <AnimatedNumber value={Math.round(total)} duration={0.6} /> {symbol}
             </span>
           </div>
         </div>
@@ -665,7 +666,7 @@ function MonthSchedule({
           {t('calendar.monthTotal', { month: monthName })}
         </span>
         <span className="text-base font-bold text-neon tabular-nums">
-          {Math.round(monthTotal).toLocaleString('ru-RU')} {symbol}
+          <AnimatedNumber value={Math.round(monthTotal)} /> {symbol}
         </span>
       </div>
     </div>

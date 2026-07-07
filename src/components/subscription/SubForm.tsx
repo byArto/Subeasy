@@ -17,6 +17,8 @@ import { resolveRates, SUPPORTED_CURRENCIES } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Button, InfoDot } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { Glyph, type AppIconName } from '@/components/ui/AppIcon';
 import { searchServices, ServiceTemplate } from '@/lib/services';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -26,7 +28,19 @@ import { parsePaymentMethod, encodePaymentMethod, type PaymentType, type CardTyp
 
 /* ── Constants ── */
 
-const EMOJI_GRID = [
+// Custom line-icon picker (variant A). Stored on the subscription as
+// `appicon:<name>` and rendered by ServiceLogo (known services still get their
+// real CDN logo, so this is what a custom subscription shows).
+const PICKER_ICONS: AppIconName[] = [
+  'film', 'music', 'code', 'cloud', 'gamepad', 'education',
+  'ai', 'phone', 'heart', 'food', 'cart', 'newspaper',
+  'server', 'card', 'bell', 'lock', 'budget', 'analytics',
+  'themes', 'reports', 'box', 'target', 'sprout', 'success',
+];
+
+// Custom (user-created) categories still pick a plain emoji — they fall back to
+// it everywhere, so their picker stays emoji-based.
+const CATEGORY_EMOJI_GRID = [
   '📺', '🎵', '💻', '☁️', '🎮', '📚',
   '🤖', '🔒', '📦', '💳', '🏠', '🚗',
   '✈️', '💪', '📱', '🎨', '📧', '🔔',
@@ -110,7 +124,7 @@ export function SubForm({
   const { theme } = useTheme();
 
   /* ── State ── */
-  const [icon, setIcon] = useState(initialData?.icon || serviceTemplate?.emoji || '📺');
+  const [icon, setIcon] = useState(initialData?.icon || serviceTemplate?.emoji || 'appicon:box');
   const [name, setName] = useState(initialData?.name || serviceTemplate?.name || '');
   const [price, setPrice] = useState(initialData?.price?.toString() || serviceTemplate?.defaultPrice?.toString() || '');
   const [currency, setCurrency] = useState<Currency>(initialData?.currency || serviceTemplate?.defaultCurrency || 'RUB');
@@ -404,7 +418,7 @@ export function SubForm({
           )}
           style={{ background: `${accentColor}15` }}
         >
-          <ServiceLogo name={name} emoji={icon} size={48} />
+          <ServiceLogo name={name} emoji={icon} size={48} color={accentColor} />
         </motion.button>
 
         {!showEmojiPicker && (
@@ -421,26 +435,27 @@ export function SubForm({
               className="overflow-hidden w-full"
             >
               <div className="grid grid-cols-6 gap-2 p-3 bg-surface-2 rounded-xl border border-border-subtle">
-                {EMOJI_GRID.map((emoji) => (
-                  <motion.button
-                    key={emoji}
-                    type="button"
-                    whileTap={{ scale: 0.85 }}
-                    onClick={() => {
-                      setIcon(emoji);
-                      setShowEmojiPicker(false);
-                    }}
-                    className={cn(
-                      'w-full aspect-square rounded-lg flex items-center justify-center text-xl',
-                      'transition-colors',
-                      icon === emoji
-                        ? 'bg-neon/15 border border-neon/30'
-                        : 'active:bg-surface-4'
-                    )}
-                  >
-                    {emoji}
-                  </motion.button>
-                ))}
+                {PICKER_ICONS.map((g) => {
+                  const token = `appicon:${g}`;
+                  const selected = icon === token;
+                  return (
+                    <motion.button
+                      key={g}
+                      type="button"
+                      whileTap={{ scale: 0.85 }}
+                      onClick={() => {
+                        setIcon(token);
+                        setShowEmojiPicker(false);
+                      }}
+                      className={cn(
+                        'w-full aspect-square rounded-lg flex items-center justify-center transition-colors',
+                        selected ? 'bg-neon/15 border border-neon/30' : 'active:bg-surface-4'
+                      )}
+                    >
+                      <Glyph name={g} color={accentColor} size={22} />
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -837,7 +852,7 @@ export function SubForm({
                   : 'bg-surface-2 border border-border-subtle text-text-secondary active:bg-surface-4'
               )}
             >
-              <span className="text-sm">{cat.emoji}</span>
+              <CategoryIcon id={cat.id} color={cat.color} emoji={cat.emoji} size={16} variant="lineCurrent" />
               {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
             </motion.button>
           ))}
@@ -913,7 +928,7 @@ export function SubForm({
                     className="overflow-hidden"
                   >
                     <div className="grid grid-cols-6 gap-2 p-3 mt-2 bg-surface-2 rounded-xl border border-border-subtle">
-                      {EMOJI_GRID.map((emoji) => (
+                      {CATEGORY_EMOJI_GRID.map((emoji) => (
                         <motion.button
                           key={emoji}
                           type="button"

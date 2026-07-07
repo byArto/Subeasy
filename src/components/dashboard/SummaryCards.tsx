@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { DisplayCurrency } from '@/lib/types';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
 
 interface SummaryCardsProps {
   totalMonthly: number;
@@ -32,7 +33,6 @@ export function SummaryCards({
   const symbol = CURRENCY_SYMBOLS[currency] || currency;
 
   const displayAmount = showYearly ? totalYearly : totalMonthly;
-  const formattedAmount = Math.round(displayAmount).toLocaleString('ru-RU');
   const toggleYearly = () => setShowYearly((p) => !p);
   const handleSummaryKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -65,7 +65,7 @@ export function SummaryCards({
         </p>
 
         <p className="font-display font-extrabold text-[26px] leading-tight mt-1.5 text-neon neon-text">
-          {formattedAmount}
+          <AnimatedNumber value={Math.round(displayAmount)} className="tabular-nums" />
           <span className="text-base font-bold ml-0.5">{symbol}</span>
         </p>
 
@@ -102,7 +102,7 @@ export function SummaryCards({
         <p className="text-text-muted text-xs font-medium">{t('dashboard.active')}</p>
 
         <p className="font-display font-extrabold text-[26px] leading-tight mt-1.5 text-text-primary">
-          {activeCount}
+          <AnimatedNumber value={activeCount} format={(n) => Math.round(n).toString()} className="tabular-nums" />
         </p>
 
         {upcomingSoonCount > 0 ? (

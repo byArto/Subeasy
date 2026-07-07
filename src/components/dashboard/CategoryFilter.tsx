@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MagnifyingGlassIcon,
@@ -166,7 +167,7 @@ export function ListFilters({
                     <PillButton
                       key={cat.id}
                       label={DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
-                      emoji={cat.emoji}
+                      icon={<CategoryIcon id={cat.id} color={cat.color} emoji={cat.emoji} size={15} variant="lineCurrent" />}
                       count={countForCategory(cat.id)}
                       isActive={activeCategory === cat.id}
                       onTap={() => onSelect(cat.id)}
@@ -273,13 +274,13 @@ function FilterIconButton({
 
 function PillButton({
   label,
-  emoji,
+  icon,
   count,
   isActive,
   onTap,
 }: {
   label: string;
-  emoji?: string;
+  icon?: ReactNode;
   count: number;
   isActive: boolean;
   onTap: () => void;
@@ -294,7 +295,7 @@ function PillButton({
         isActive ? 'bg-neon text-surface' : 'bg-surface-3 text-text-secondary active:bg-surface-4',
       )}
     >
-      {emoji && <span className="text-sm">{emoji}</span>}
+      {icon}
       {label}
       <span className={cn('text-[10px] font-bold', isActive ? 'text-surface/60' : 'text-text-muted')}>{count}</span>
     </motion.button>

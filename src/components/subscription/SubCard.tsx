@@ -161,6 +161,7 @@ export function SubCard({
 
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
@@ -169,6 +170,9 @@ export function SubCard({
         type: 'spring',
         stiffness: 450,
         damping: 35,
+        // Reorder (sort/filter) uses its own spring with NO delay, so cards glide
+        // to their new positions immediately instead of waiting on the enter-stagger.
+        layout: { type: 'spring', stiffness: 550, damping: 40 },
       }}
       className="flex flex-col"
     >
@@ -219,16 +223,18 @@ export function SubCard({
               className
             )}
           >
-            {/* Icon */}
-            <div
+            {/* Icon — shared element: morphs into the detail header when opened */}
+            <motion.div
+              layoutId={`sub-icon-${sub.id}`}
+              transition={{ type: 'spring', stiffness: 350, damping: 34 }}
               className="w-11 h-11 rounded-[14px] flex items-center justify-center shrink-0 text-lg"
               style={{
                 background: `linear-gradient(135deg, ${accentColor}22, ${accentColor}44)`,
                 boxShadow: `inset 0 0 0 1px ${accentColor}30`,
               }}
             >
-              <ServiceLogo name={sub.name} emoji={sub.icon} size={24} />
-            </div>
+              <ServiceLogo name={sub.name} emoji={sub.icon} size={24} color={accentColor} />
+            </motion.div>
 
             {/* Center — name + next payment */}
             <div className="flex-1 min-w-0">

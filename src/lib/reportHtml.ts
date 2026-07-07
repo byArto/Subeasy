@@ -32,7 +32,7 @@ export function generateReportHtml(
     const statusColor = sub.isActive ? '#00C43C' : '#888';
     return `
       <tr>
-        <td>${esc(sub.icon)} ${esc(sub.name)}</td>
+        <td>${sub.icon.startsWith('appicon:') ? '' : esc(sub.icon) + ' '}${esc(sub.name)}</td>
         <td>${esc(getCategoryName(sub, categories))}</td>
         <td class="num">${esc(amountStr)}</td>
         <td>${esc(formatCycleLabel(sub.cycle, isRu))}</td>

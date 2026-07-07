@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Modal } from '@/components/ui';
+import { ServiceLogo } from '@/components/ui/ServiceLogo';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import type { Subscription } from '@/lib/types';
@@ -162,7 +163,7 @@ function SubRow({ sub, isFirst }: { sub: Subscription; isFirst: boolean }) {
       className={`flex items-center gap-2.5 px-3 py-2.5 ${!isFirst ? 'border-t border-border-subtle' : ''}`}
       style={{ background: isFirst ? 'transparent' : 'rgba(255,184,0,0.03)' }}
     >
-      <span className="text-xl shrink-0">{sub.icon}</span>
+      <ServiceLogo name={sub.name} emoji={sub.icon} size={22} color={sub.color} className="shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-text-primary truncate">{sub.name}</p>
         <p className="text-xs text-text-muted">

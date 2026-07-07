@@ -4,6 +4,7 @@ import { resolveRates } from './currency';
 import { CURRENCY_SYMBOLS } from './constants';
 import { generateReportHtml } from './reportHtml';
 import { getCategoryName, formatCycleLabel, formatReportDate } from './reportFormat';
+import { APP_VERSION } from './version';
 
 // ─── Environment ──────────────────────────────────────────────────────────────
 
@@ -129,4 +130,77 @@ export function exportPDF(
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
+// ─── JSON backup ──────────────────────────────────────────────────────────────
+// Mobile — and especially the Telegram WKWebView / iOS Safari — can't reliably
+// "download" a blob: URL; it just opens the JSON as a page (no Save button). So:
+//   • Telegram      → copy the backup to the clipboard (+ alert how to restore)
+//   • other mobile  → native share sheet (Save to Files / Notes)
+//   • desktop       → normal file download
+
+export async function exportJSON(
+  subscriptions: Subscription[],
+  categories: Category[],
+  settings: AppSettings,
+  lang: string,
+): Promise<'downloaded' | 'copied' | 'shared' | 'failed'> {
+  const isRu = lang === 'ru';
+  const data = {
+    subscriptions,
+    categories,
+    settings,
+    exportedAt: new Date().toISOString(),
+    version: APP_VERSION,
+  };
+  const json = JSON.stringify(data, null, 2);
+  const filename = `subeasy-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+  // 1) Mobile (incl. iOS Telegram WKWebView) — the native share sheet is the only
+  // reliable way to SAVE a file (→ Save to Files / Notes). Try it first.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const nav = navigator as any;
+  if (isMobileBrowser() && typeof nav.canShare === 'function') {
+    const file = new File([json], filename, { type: 'application/json' });
+    if (nav.canShare({ files: [file] })) {
+      try {
+        await nav.share({ files: [file], title: 'SubEasy backup' });
+        return 'shared';
+      } catch (e) {
+        // AbortError = user closed the share sheet on purpose — respect it.
+        if ((e as Error)?.name === 'AbortError') return 'shared';
+        // any other failure → fall through to the next method
+      }
+    }
+  }
+
+  // 2) Telegram WebView without file-share support — copy to clipboard.
+  if (isTelegramWebApp()) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tg = (window as any).Telegram.WebApp;
+    try {
+      await navigator.clipboard.writeText(json);
+      tg.showAlert(
+        isRu
+          ? 'Резервная копия скопирована в буфер обмена. Сохраните её в заметку или файл .json — для восстановления вставьте её через «Импорт JSON».'
+          : 'Backup copied to clipboard. Save it into a note or a .json file — to restore, paste it via "Import JSON".',
+      );
+      return 'copied';
+    } catch {
+      tg.showAlert(isRu ? 'Не удалось скопировать резервную копию.' : 'Failed to copy the backup.');
+      return 'failed';
+    }
+  }
+
+  // 3) Desktop (and fallback) — normal blob download.
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return 'downloaded';
 }

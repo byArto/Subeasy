@@ -13,6 +13,9 @@ import { getMonthlyPrice, convertCurrency, cn, getThemeAccentColor } from '@/lib
 import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber';
+import { AppIcon, type AppIconName } from '@/components/ui/AppIcon';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { findDuplicates, getIgnoredPairs, isGroupIgnored } from '@/lib/duplicates';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { usePro } from '@/components/providers/ProProvider';
@@ -33,11 +36,11 @@ interface AnalyticsPageProps {
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
+  visible: {
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, type: 'spring' as const, stiffness: 300, damping: 30 },
-  }),
+    transition: { type: 'spring' as const, stiffness: 300, damping: 30 },
+  },
 };
 
 /* ── Helpers ── */
@@ -127,11 +130,9 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
     );
   }
 
-  let idx = 0;
-
   return (
     <div className="space-y-6 px-5 pt-2 pb-4">
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <PeriodTotal
           monthlyTotal={monthlyTotal}
           monthlyTotalAlt={monthlyTotalAlt}
@@ -143,7 +144,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         />
       </motion.div>
 
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <BudgetSection
           monthlyTotal={monthlyTotal}
           settings={settings}
@@ -157,7 +158,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         />
       </motion.div>
 
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <CategoryBreakdown
           active={active}
           categories={categories}
@@ -169,7 +170,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         />
       </motion.div>
 
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <TopExpensive
           active={active}
           displayCurrency={displayCurrency}
@@ -180,7 +181,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         />
       </motion.div>
 
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <InsightsBadges
           active={active}
           subscriptions={subscriptions}
@@ -191,7 +192,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
         />
       </motion.div>
 
-      <motion.div custom={idx++} variants={sectionVariants} initial="hidden" animate="visible">
+      <motion.div variants={sectionVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
         <SubScoreSection
           subscriptions={subscriptions}
           active={active}
@@ -211,6 +212,7 @@ export function AnalyticsPage({ subscriptions, categories, settings, onSubTap, o
    ═══════════════════════════════════════ */
 
 interface CategorySpend {
+  id: string;
   name: string;
   emoji: string;
   color: string;
@@ -272,6 +274,7 @@ function BudgetSection({
     for (const [catId, value] of map) {
       const cat = categories.find((c) => c.id === catId);
       result.push({
+        id: catId,
         name: cat ? (DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name) : t('analytics.other'),
         emoji: cat?.emoji || '📦',
         color: cat?.color || '#8E8E93',
@@ -483,7 +486,7 @@ function BudgetSection({
             </p>
             {topCategories.map((cat) => (
               <div key={cat.name} className="flex items-center gap-2">
-                <span className="text-sm shrink-0">{cat.emoji}</span>
+                <CategoryIcon id={cat.id} color={cat.color} emoji={cat.emoji} size={15} variant="line" className="shrink-0" />
                 <div className="flex-1 h-1.5 rounded-full bg-surface-4 overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
@@ -879,7 +882,7 @@ function CategoryBreakdown({
                     transition={{ duration: 0.18 }}
                     className="flex flex-col items-center"
                   >
-                    <span className="text-2xl">{selectedData.emoji}</span>
+                    <CategoryIcon id={selectedData.id} color={selectedData.color} emoji={selectedData.emoji} size={30} />
                     <span className="text-[11px] font-semibold text-text-primary mt-0.5 text-center leading-tight px-2">
                       {selectedData.name}
                     </span>
@@ -926,7 +929,7 @@ function CategoryBreakdown({
                   className={cn('w-2.5 h-2.5 rounded-full shrink-0 transition-transform', isSelected && 'scale-125')}
                   style={{ backgroundColor: d.color }}
                 />
-                <span className="text-sm shrink-0">{d.emoji}</span>
+                <CategoryIcon id={d.id} color={d.color} emoji={d.emoji} size={16} variant="line" className="shrink-0" />
                 <span className="text-sm text-text-primary flex-1 truncate text-left">{d.name}</span>
                 <span className="text-sm font-semibold text-text-primary tabular-nums shrink-0">
                   {formatAmount(d.value)} {symbol}
@@ -983,7 +986,7 @@ function CategoryBreakdown({
    СЕКЦИЯ 7: Топ-3 самых дорогих
    ═══════════════════════════════════════ */
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = ['#E3A93A', '#A6AEB8', '#C1793F'];
 
 function TopExpensive({
   active,
@@ -1035,7 +1038,7 @@ function TopExpensive({
               className="w-full bg-surface-2 rounded-2xl border border-border-subtle p-4 text-left active:bg-surface-3 transition-colors"
             >
               <div className="flex items-center gap-3 mb-2.5">
-                <span className="text-lg">{MEDALS[i]}</span>
+                <AppIcon name="medal" color={MEDAL_COLORS[i]} size={26} />
                 <span className="text-lg"><ServiceLogo name={sub.name} emoji={sub.icon} size={22} /></span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-text-primary truncate">{sub.name}</p>
@@ -1083,6 +1086,8 @@ const GRADE_COLORS: Record<string, string> = {
 
 interface ScoreFactor {
   icon: string;
+  iconName: AppIconName;
+  iconColor: string;
   nameKey: string;
   descKey: string;
   descVars?: Record<string, string | number>;
@@ -1126,13 +1131,13 @@ function calcSubScore(
       bTip = 'score.tipBudgetOver'; bTipVars = { pct: over };
     }
   }
-  factors.push({ icon: '💰', nameKey: 'score.factorBudget', descKey: bDesc, descVars: bDescVars, tipKey: bTip, tipVars: bTipVars, pts: bPts, maxPts: 25 });
+  factors.push({ icon: '💰', iconName: 'budget', iconColor: '#2FB86B', nameKey: 'score.factorBudget', descKey: bDesc, descVars: bDescVars, tipKey: bTip, tipVars: bTipVars, pts: bPts, maxPts: 25 });
 
   // ── Factor 2: No unused subs (20 pts) — softer −5 per inactive sub. ──
   const inactive = subscriptions.filter((s) => !s.isActive);
   const aPts = Math.max(0, 20 - inactive.length * 5);
   factors.push({
-    icon: '😴', nameKey: 'score.factorActive',
+    icon: '😴', iconName: 'inactive', iconColor: '#7C8AA5', nameKey: 'score.factorActive',
     descKey: inactive.length === 0 ? 'score.factorActiveGood' : 'score.factorActiveBad',
     descVars: inactive.length > 0 ? { n: inactive.length } : undefined,
     tipKey: 'score.tipActive', tipVars: inactive.length > 0 ? { n: inactive.length } : undefined,
@@ -1147,7 +1152,7 @@ function calcSubScore(
   const dupeCount = dupeGroups.length;
   const dPts = Math.max(0, 15 - dupeCount * 7);
   factors.push({
-    icon: '🔄', nameKey: 'score.factorDupes',
+    icon: '🔄', iconName: 'duplicates', iconColor: '#8B5CF6', nameKey: 'score.factorDupes',
     descKey: dupeCount === 0 ? 'score.factorDupesGood' : 'score.factorDupesBad',
     descVars: dupeCount > 0 ? { n: dupeCount } : undefined,
     tipKey: 'score.tipDupes',
@@ -1176,7 +1181,7 @@ function calcSubScore(
     }
   }
   factors.push({
-    icon: '📊', nameKey: 'score.factorDiversify',
+    icon: '📊', iconName: 'diversify', iconColor: '#3B82F6', nameKey: 'score.factorDiversify',
     descKey: divDesc, descVars: divDescVars,
     tipKey: 'score.tipDiversify',
     pts: divPts, maxPts: 15,
@@ -1200,7 +1205,7 @@ function calcSubScore(
     tDesc = 'score.factorTrialsBad'; tDescVars = { n: soonTrials.length };
   }
   factors.push({
-    icon: '🧪', nameKey: 'score.factorTrials',
+    icon: '🧪', iconName: 'trials', iconColor: '#14B8A6', nameKey: 'score.factorTrials',
     descKey: tDesc, descVars: tDescVars,
     tipKey: 'score.tipTrials',
     pts: tPts, maxPts: 15,
@@ -1210,7 +1215,7 @@ function calcSubScore(
   const annuals = active.filter((s) => s.cycle === 'yearly');
   const anPts = annuals.length > 0 ? 10 : 7;
   factors.push({
-    icon: '📅', nameKey: 'score.factorAnnual',
+    icon: '📅', iconName: 'annual', iconColor: '#F59E0B', nameKey: 'score.factorAnnual',
     descKey: annuals.length > 0 ? 'score.factorAnnualGood' : 'score.factorAnnualNone',
     tipKey: 'score.tipAnnual',
     pts: anPts, maxPts: 10,
@@ -1321,15 +1326,20 @@ function SubScoreSection({
               </div>
             </div>
             <p className="text-xl font-bold text-text-primary">{t(statusKey)}</p>
-            <p className="text-xs text-text-muted mt-0.5">{total} / 100 {t('score.pts')}</p>
+            <p className="text-xs text-text-muted mt-0.5">
+              <AnimatedNumber value={total} format={(n) => Math.round(n).toString()} /> / 100 {t('score.pts')}
+            </p>
           </div>
           {/* Ring gauge — shows the actual score, grade letter centered */}
           <div className="relative w-16 h-16 shrink-0">
             <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
               <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-text-muted/20" />
-              <circle
+              <motion.circle
                 cx="18" cy="18" r="15.5" fill="none" stroke={gradeColor} strokeWidth="3" strokeLinecap="round"
-                strokeDasharray={`${(total / 100) * 97.4} 97.4`}
+                strokeDasharray="97.4"
+                initial={{ strokeDashoffset: 97.4 }}
+                animate={{ strokeDashoffset: 97.4 - (total / 100) * 97.4 }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
@@ -1365,9 +1375,7 @@ function SubScoreSection({
             const fColor = ratio >= 0.8 ? 'var(--color-success)' : ratio >= 0.5 ? '#FFB800' : '#FF4444';
             return (
               <div key={i} className="px-4 py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center shrink-0 text-base">
-                  {f.icon}
-                </div>
+                <AppIcon name={f.iconName} color={f.iconColor} size={32} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-text-primary">{t(f.nameKey)}</p>
                   <p className="text-[11px] text-text-muted mt-0.5 leading-tight">{t(f.descKey, f.descVars)}</p>

@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptic';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { Glyph, type AppIconName } from '@/components/ui/AppIcon';
 import type { AppMode } from '@/lib/obligations';
 
-const ICON: Record<AppMode, string> = {
-  all: '🗂️',
-  subscriptions: '🔁',
-  credits: '💳',
-  mortgages: '🏦',
+const MODE_GLYPH: Record<AppMode, AppIconName> = {
+  all: 'folder',
+  subscriptions: 'repeat',
+  credits: 'card',
+  mortgages: 'bank',
 };
 
 const LABEL_KEY: Record<AppMode, string> = {
@@ -48,7 +49,7 @@ export function ModeSwitch({ modes, active, onChange }: ModeSwitchProps) {
                 : 'bg-surface-2 border border-border-subtle text-text-secondary',
             )}
           >
-            <span className="text-sm">{ICON[m]}</span>
+            <Glyph name={MODE_GLYPH[m]} size={16} strokeWidth={2} />
             {t(LABEL_KEY[m])}
           </motion.button>
         );

@@ -8,6 +8,7 @@ import { resolveRates } from '@/lib/currency';
 import { CURRENCY_SYMBOLS, DEFAULT_CATEGORY_NAME_KEYS } from '@/lib/constants';
 import { Badge, Button } from '@/components/ui';
 import { ServiceLogo } from '@/components/ui/ServiceLogo';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { haptic } from '@/lib/haptic';
@@ -379,16 +380,18 @@ export function SubDetail({
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="flex flex-col items-center gap-3 pt-2"
       >
-        {/* Icon */}
-        <div
+        {/* Icon — shared element: morphs from the tapped card's icon */}
+        <motion.div
+          layoutId={`sub-icon-${sub.id}`}
+          transition={{ type: 'spring', stiffness: 350, damping: 34 }}
           className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
           style={{
             background: `linear-gradient(135deg, ${accentColor}30, ${accentColor}10)`,
             boxShadow: `0 0 24px ${accentColor}15`,
           }}
         >
-          <ServiceLogo name={sub.name} emoji={sub.icon} size={36} />
-        </div>
+          <ServiceLogo name={sub.name} emoji={sub.icon} size={36} color={accentColor} />
+        </motion.div>
 
         {/* Name */}
         <h2 className="font-display font-bold text-xl text-text-primary text-center leading-tight">
@@ -398,8 +401,9 @@ export function SubDetail({
         {/* Category + Status */}
         <div className="flex items-center gap-2">
           {category && (
-            <span className="text-xs text-text-secondary">
-              {category.emoji} {DEFAULT_CATEGORY_NAME_KEYS[category.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[category.id]) : category.name}
+            <span className="flex items-center gap-1 text-xs text-text-secondary">
+              <CategoryIcon id={category.id} color={category.color} emoji={category.emoji} size={13} variant="line" />
+              {DEFAULT_CATEGORY_NAME_KEYS[category.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[category.id]) : category.name}
             </span>
           )}
           <Badge variant={status.variant} pulse={status.pulse}>

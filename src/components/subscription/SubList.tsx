@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Subscription, Category } from '@/lib/types';
 import { SubCard } from './SubCard';
+import { Glyph } from '@/components/ui/AppIcon';
 import { Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { getLogoUrl, searchServices, ServiceTemplate } from '@/lib/services';
@@ -109,7 +110,7 @@ export function SubList({
         animate={{ opacity: 1 }}
         className="flex flex-col items-center pt-12 pb-4 gap-2"
       >
-        <span className="text-3xl">🔍</span>
+        <Glyph name="search" size={30} strokeWidth={1.7} className="text-text-muted" />
         <p className="text-text-muted text-sm">
           {t('list.noCategory')}
         </p>
@@ -258,15 +259,15 @@ function EmptyOnboarding({ onAddTap, onAddWithService, onTryDemo }: { onAddTap?:
         className="flex flex-wrap items-center justify-center gap-2 -mt-1"
       >
         {[
-          { icon: '🔒', label: t('trust.noBank') },
-          { icon: '🆓', label: t('trust.free') },
-          { icon: '📡', label: t('trust.offline') },
+          { g: 'nobank' as const, color: '#22A06B', label: t('trust.noBank') },
+          { g: 'free' as const, color: '#EAB308', label: t('trust.free') },
+          { g: 'offline' as const, color: '#64748B', label: t('trust.offline') },
         ].map((it) => (
           <span
             key={it.label}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-2 border border-border-subtle text-[11px] font-medium text-text-secondary"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-2 border border-border-subtle text-[11px] font-medium text-text-secondary"
           >
-            <span>{it.icon}</span>
+            <Glyph name={it.g} color={it.color} size={13} strokeWidth={2} />
             {it.label}
           </span>
         ))}

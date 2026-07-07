@@ -194,7 +194,10 @@ export function checkAndSchedulePaymentReminders(
     const priceText = `${sub.price.toLocaleString('ru-RU')} ${symbol}`;
     const isRecurring = sub.cycle === 'monthly' || sub.cycle === 'quarterly' || sub.cycle === 'yearly';
 
-    const title = `${sub.icon} ${sub.name}`;
+    // Custom icons are `appicon:` tokens — not renderable in a text notification,
+    // so fall back to a neutral bell there.
+    const iconText = sub.icon.startsWith('appicon:') ? '🔔' : sub.icon;
+    const title = `${iconText} ${sub.name}`;
     // On the charge day itself, prompt to verify the amount — catches silent
     // price hikes (Netflix/Spotify, etc.) without needing bank access.
     const body =

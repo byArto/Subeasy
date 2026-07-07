@@ -15,12 +15,13 @@ import { useTheme, Theme } from '@/components/providers/ThemeProvider';
 import { THEME_OPTIONS } from '@/lib/themes';
 import { useWorkspace } from '@/components/providers/WorkspaceProvider';
 import { useTelegramContext } from '@/components/providers/TelegramProvider';
-import { exportCSV, exportPDF } from '@/lib/export';
+import { exportCSV, exportPDF, exportJSON } from '@/lib/export';
 import { createClient, getAuthToken } from '@/lib/supabase';
 import { upsertWorkspaceSubscription } from '@/lib/sync';
 import type { Workspace, WorkspaceMember } from '@/lib/types';
 import { Button } from '@/components/ui';
 import { APP_VERSION } from '@/lib/version';
+import { CategoryIcon } from '@/components/ui/CategoryIcon';
 import { isMonetizationEnabled } from '@/lib/monetization';
 
 /* ── Props ── */
@@ -186,20 +187,9 @@ export function SettingsPage({
   }
 
   function handleExport() {
-    const data = {
-      subscriptions,
-      categories,
-      settings,
-      exportedAt: new Date().toISOString(),
-      version: APP_VERSION,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `subeasy-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // exportJSON picks the right delivery per platform: Telegram → clipboard,
+    // other mobile → native share sheet, desktop → file download.
+    void exportJSON(subscriptions, categories, settings, lang);
   }
 
   function handleExportCsv() {
@@ -2281,7 +2271,7 @@ function CategoryRow({
         style={{ x }}
         className="relative flex items-center gap-3 px-4 py-3.5 bg-surface-2 cursor-grab active:cursor-grabbing"
       >
-        <span className="text-lg shrink-0">{cat.emoji}</span>
+        <CategoryIcon id={cat.id} color={cat.color} emoji={cat.emoji} size={30} className="shrink-0" />
         <span className="flex-1 text-sm text-text-primary font-medium">
           {DEFAULT_CATEGORY_NAME_KEYS[cat.id] ? t(DEFAULT_CATEGORY_NAME_KEYS[cat.id]) : cat.name}
         </span>
